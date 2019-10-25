@@ -22,8 +22,8 @@
 #include <cstdlib>
 
 #include "redbase.h"
-#include "pf.h"
-#include "rm.h"
+#include "pf/pf.h"
+#include "rm/rm.h"
 
 using namespace std;
 
@@ -55,8 +55,6 @@ struct TestRec {
 //
 // Global PF_Manager and RM_Manager variables
 //
-PF_Manager pfm;
-RM_Manager rmm(pfm);
 
 //
 // Function declarations
@@ -65,16 +63,16 @@ RC Test1(void);
 RC Test2(void);
 
 void PrintError(RC rc);
-void LsFile(char *fileName);
+void LsFile(const string& fileName);
 void PrintRecord(TestRec &recBuf);
 RC AddRecs(RM_FileHandle &fh, int numRecs);
 RC VerifyFile(RM_FileHandle &fh, int numRecs);
 RC PrintFile(RM_FileHandle &fh);
 
-RC CreateFile(char *fileName, int recordSize);
-RC DestroyFile(char *fileName);
-RC OpenFile(char *fileName, RM_FileHandle &fh);
-RC CloseFile(char *fileName, RM_FileHandle &fh);
+RC CreateFile(const string& fileName, int recordSize);
+RC DestroyFile(const string& fileName);
+RC OpenFile(const string&, RM_FileHandle &fh);
+RC CloseFile(const string&, RM_FileHandle &fh);
 RC InsertRec(RM_FileHandle &fh, char *record, RID &rid);
 RC UpdateRec(RM_FileHandle &fh, RM_Record &rec);
 RC DeleteRec(RM_FileHandle &fh, RID &rid);
@@ -83,11 +81,10 @@ RC GetNextRecScan(RM_FileScan &fs, RM_Record &rec);
 //
 // Array of pointers to the test functions
 //
-#define NUM_TESTS       2               // number of tests
+#define NUM_TESTS       1               // number of tests
 int (*tests[])() =                      // RC doesn't work on some compilers
 {
-    Test1,
-    Test2
+    Test1
 };
 
 //
@@ -176,11 +173,11 @@ void PrintError(RC rc)
 //
 // Desc: list the filename's directory entry
 //
-void LsFile(char *fileName)
+void LsFile(const string& fileName)
 {
     char command[80];
 
-    sprintf(command, "ls -l %s", fileName);
+    sprintf(command, "ls -l %s", fileName.c_str());
     printf("doing \"%s\"\n", command);
     system(command);
 }
@@ -365,10 +362,10 @@ RC PrintFile(RM_FileScan &fs)
 //
 // Desc: call RM_Manager::CreateFile
 //
-RC CreateFile(char *fileName, int recordSize)
+RC CreateFile(const string& fileName, int recordSize)
 {
-    printf("\ncreating %s\n", fileName);
-    return (rmm.CreateFile(fileName, recordSize));
+    printf("\ncreating %s\n", fileName.c_str());
+    return (RM_Manager::instance().CreateFile(fileName, recordSize));
 }
 
 //
@@ -376,10 +373,10 @@ RC CreateFile(char *fileName, int recordSize)
 //
 // Desc: call RM_Manager::DestroyFile
 //
-RC DestroyFile(char *fileName)
+RC DestroyFile(const string& fileName)
 {
-    printf("\ndestroying %s\n", fileName);
-    return (rmm.DestroyFile(fileName));
+    printf("\ndestroying %s\n", fileName.c_str());
+    return (RM_Manager::instance().DestroyFile(fileName));
 }
 
 //
@@ -387,10 +384,10 @@ RC DestroyFile(char *fileName)
 //
 // Desc: call RM_Manager::OpenFile
 //
-RC OpenFile(char *fileName, RM_FileHandle &fh)
+RC OpenFile(const string& fileName, RM_FileHandle &fh)
 {
-    printf("\nopening %s\n", fileName);
-    return (rmm.OpenFile(fileName, fh));
+    printf("\nopening %s\n", fileName.c_str());
+    return (RM_Manager::instance().OpenFile(fileName, fh));
 }
 
 //
@@ -398,11 +395,11 @@ RC OpenFile(char *fileName, RM_FileHandle &fh)
 //
 // Desc: call RM_Manager::CloseFile
 //
-RC CloseFile(char *fileName, RM_FileHandle &fh)
+RC CloseFile(const string& fileName, RM_FileHandle &fh)
 {
-    if (fileName != NULL)
-        printf("\nClosing %s\n", fileName);
-    return (rmm.CloseFile(fh));
+    if (fileName != "")
+        printf("\nClosing %s\n", fileName.c_str());
+    return (RM_Manager::instance().CloseFile(fh));
 }
 
 //

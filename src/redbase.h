@@ -50,6 +50,7 @@ typedef int RC;
 #define START_QL_WARN  401
 #define END_QL_WARN    500
 
+
 // ALL_PAGES is defined and used by the ForcePages method defined in RM
 // and PF layers
 const int ALL_PAGES = -1;

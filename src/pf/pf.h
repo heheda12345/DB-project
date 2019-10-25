@@ -119,7 +119,6 @@ private:
 //
 class PF_Manager {
 public:
-   PF_Manager    ();                              // Constructor
    ~PF_Manager   ();                              // Destructor
    RC CreateFile    (const char *fileName);       // Create a new file
    RC DestroyFile   (const char *fileName);       // Delete a file
@@ -154,7 +153,13 @@ public:
    // Dispose of a memory chunk managed by the buffer manager.
    RC DisposeBlock  (char *buffer);
 
+   static PF_Manager& instance() {
+      static PF_Manager ins;
+      return ins;
+   }
+
 private:
+   PF_Manager    ();                              // Constructor
    PF_BufferMgr *pBufferMgr;                      // page-buffer manager
 };
 
@@ -162,6 +167,8 @@ private:
 // Print-error function and PF return code defines
 //
 void PF_PrintError(RC rc);
+
+#define PFRC(rc) { if (rc) { PF_PrintError(rc); return rc;} }
 
 #define PF_PAGEPINNED      (START_PF_WARN + 0) // page pinned in buffer
 #define PF_PAGENOTINBUF    (START_PF_WARN + 1) // page isn't pinned in buffer
