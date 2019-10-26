@@ -62,6 +62,7 @@ struct TestRec {
 //
 RC Test1(void);
 RC Test2(void);
+RC Test3(void);
 
 void PrintError(RC rc);
 void LsFile(const string& fileName);
@@ -82,11 +83,12 @@ RC GetNextRecScan(RM_FileScan &fs, RM_Record &rec);
 //
 // Array of pointers to the test functions
 //
-#define NUM_TESTS       2               // number of tests
+#define NUM_TESTS       3               // number of tests
 int (*tests[])() =                      // RC doesn't work on some compilers
 {
     Test1,                               // Create, Open, Close, Destroy files
-    Test2                                // Add, delete, update records
+    Test2,                                // Add, delete, update records
+    Test3                                // Scan
 };
 
 //
@@ -582,11 +584,12 @@ RC Test3(void)
     RC            rc;
     RM_FileHandle fh;
 
-    printf("test2 starting ****************\n");
+    printf("test3 starting ****************\n");
 
     if ((rc = CreateFile(FILENAME, sizeof(TestRec))) ||
         (rc = OpenFile(FILENAME, fh)) ||
         (rc = AddRecs(fh, FEW_RECS)) ||
+        (rc = VerifyFile(fh, FEW_RECS)) ||
         (rc = CloseFile(FILENAME, fh)))
         return (rc);
 
@@ -595,6 +598,6 @@ RC Test3(void)
     if ((rc = DestroyFile(FILENAME)))
         return (rc);
 
-    printf("\ntest2 done ********************\n");
+    printf("\ntest3 done ********************\n");
     return (0);
 }

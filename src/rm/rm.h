@@ -36,6 +36,8 @@
 #define RM_FILEHANDLE_OPEN (START_RM_WARN + 16)
 #define RM_FILEHANDLE_CLOSE (START_RM_WARN + 17)
 #define RM_FILEHANDLE_CHECKRID (START_RM_WARN + 18)
+#define RM_FILEHANDLE_GETFIRSTREC (START_RM_WARN + 19)
+#define RM_FILEHANDLE_GETNEXTREC (START_RM_WARN + 20)
 #define RM_FILESCAN_OPENSCAN (START_RM_WARN + 21)
 #define RM_FILESCAN_GETNEXTREC (START_RM_WARN + 22)
 #define RM_FILESCAN_CLOSESCAN (START_RM_WARN + 23)
@@ -53,7 +55,8 @@
 #define RM_SLOT_OUTOFRANGE   (RM_NEW_WARN_START + 5)
 #define RM_NO_SUCH_REC       (RM_NEW_WARN_START + 6)
 #define RM_NOT_EMPTY_REC     (RM_NEW_WARN_START + 7)
-
+#define RM_SCAN_NOT_OPEN     (RM_NEW_WARN_START + 8)
+#define RM_SCAN_NOT_CLOSE    (RM_NEW_WARN_START + 9)
 //
 // RM_Record: RM Record interface
 //
@@ -61,8 +64,8 @@ class RM_Record {
 public:
     RM_Record () : valid(false) {}
     
-    RM_Record (const char* _data, int len, RID _rid):
-        rid(_rid), valid(true) {
+    RM_Record (const char* _data, int _len, RID _rid):
+        len(_len), rid(_rid), valid(true) {
             data = new char[len];
             memcpy(data, _data, len);
         }
@@ -89,17 +92,24 @@ public:
         return OK_RC;
     }
     
-    RC SetValue(const char* _data, int len, RID _rid) {
+    // assume data is not null
+    void SetValue(const char* _data, int _len, RID _rid) {
         if (valid)
             delete[] data;
         valid = true;
+        len = _len;
         data = new char[len];
         memcpy(data, _data, len);
+    }
+
+    void CopyTo(RM_Record& rec) {
+        rec.SetValue(data, len, rid);
     }
 
 
 private:
     char* data;
+    int len;
     RID rid;
     bool valid;
     const RM_Record& operator=(const RM_Record&);
@@ -125,6 +135,8 @@ public:
     // Forces a page (along with any contents stored in this class)
     // from the buffer pool to disk.  Default value forces all pages.
     RC ForcePages (PageNum pageNum = ALL_PAGES);
+    RC GetFirstRec(PageNum& pageNum, SlotNum& slotNum,  RM_Record &rec) const;
+    RC GetNextRec(PageNum& pageNum, SlotNum& slotNum,  RM_Record &rec) const; // pageNum & slotNum should be valid
 
 private:
     RC Open(PF_FileHandle& handle);
@@ -150,7 +162,7 @@ private:
 //
 class RM_FileScan {
 public:
-    RM_FileScan  () {};
+    RM_FileScan  () : state(CLOSE) {};
     ~RM_FileScan () = default;
 
     RC OpenScan  (const RM_FileHandle &fileHandle,
@@ -159,9 +171,18 @@ public:
                   int        attrOffset,
                   CompOp     compOp,
                   void       *value,
-                  ClientHint pinHint = NO_HINT) {}; // Initialize a file scan
-    RC GetNextRec(RM_Record &rec) {};               // Get next matching record
-    RC CloseScan () {};                             // Close the scan
+                  ClientHint pinHint = NO_HINT); // Initialize a file scan
+    RC GetNextRec(RM_Record &rec);               // Get next matching record
+    RC CloseScan ();                             // Close the scan
+private:
+    const RM_FileHandle *fileHandle;
+    CompOp     compOp;
+    RM_Attr attr;
+    enum State {
+        CLOSE, UNSTART, RUNNING, DONE
+    } state;
+    PageNum pageNum;
+    SlotNum slotNum;
 };
 
 //

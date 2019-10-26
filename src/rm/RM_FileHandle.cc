@@ -237,3 +237,68 @@ RC RM_FileHandle::ForcePages (PageNum pageNum) {
     PFRC(rc, rc_ret)
     return OK_RC;
 };
+
+RC RM_FileHandle::GetFirstRec(PageNum& pageNum, SlotNum& slotNum, RM_Record &rec) const {
+    PF_PageHandle pgHandle;
+    RC rc = pfFileHandle.GetFirstPage(pgHandle);
+    int rc_ret = RM_FILEHANDLE_GETFIRSTREC;
+    rc = pgHandle.GetPageNum(pageNum);
+    PFRC(rc, rc_ret)
+    rc = pfFileHandle.UnpinPage(pageNum);
+    PFRC(rc, rc_ret)
+    slotNum = fileHeader.recordPerPage - 1;
+    return GetNextRec(pageNum, slotNum, rec);
+}
+
+// RC RM_FileHandle::GetNextRec(RM_Record &rec) const {
+//     int rc_ret = RM_FILEHANDLE_GETNEXTREC;
+//     RID rid;
+//     PageNum pageNum;
+//     SlotNum slotNum;
+//     RC rc = rec.GetRid(rid);
+//     RMRC(rc, rc_ret)
+//     rc = rid.GetPageNum(pageNum);
+//     RMRC(rc, rc_ret)
+//     rc = rid.GetSlotNum(slotNum);
+//     RMRC(rc, rc_ret)
+
+//     return GetNextRec(pageNum, slotNum, rec);
+// }
+
+RC RM_FileHandle::GetNextRec(PageNum& pageNum, SlotNum& slotNum, RM_Record &rec) const {
+    int rc_ret = RM_FILEHANDLE_GETNEXTREC;
+    RC rc;
+    char* data;
+    PF_PageHandle pgHandle;
+    if (slotNum + 1 >= fileHeader.recordPerPage) {
+        rc = pfFileHandle.GetNextPage(pageNum, pgHandle);
+        slotNum = 0;
+    } else {
+        rc = pfFileHandle.GetThisPage(pageNum, pgHandle);
+        slotNum++;
+    }
+    while (true) {
+        rc = pgHandle.GetData(data);
+        PFRC(rc, rc_ret)
+        
+        for (SlotNum i=slotNum; i<fileHeader.recordPerPage; i++)
+            if (recordExist(data, i)) {
+                slotNum = i;
+                rc = pgHandle.GetPageNum(pageNum);
+                PFRC(rc, rc_ret)
+                rec.SetValue(data + getIndex(slotNum), fileHeader.recordSize, RID(pageNum, slotNum));
+                rc = pfFileHandle.UnpinPage(pageNum);
+                PFRC(rc, rc_ret)
+                return OK_RC;
+            }
+        rc = pfFileHandle.UnpinPage(pageNum);
+        PFRC(rc, rc_ret)
+
+        rc = pfFileHandle.GetNextPage(pageNum, pgHandle);
+        if (rc == PF_EOF)
+            return RM_NO_SUCH_REC;
+        PFRC(rc, rc_ret)
+        slotNum = 0;
+    }
+    return rc_ret;
+}
