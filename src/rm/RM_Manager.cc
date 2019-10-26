@@ -6,31 +6,30 @@ RM_Manager::RM_Manager() : pfm(PF_Manager::instance()) {
 
 RC RM_Manager::CreateFile (const std::string& fileName, int recordSize) {
     int rc = pfm.CreateFile(fileName.c_str());
-    PFRC(rc)
+    PFRC(rc, RM_MANAGER_CREATEFILE)
     PF_FileHandle fh;
     rc = pfm.OpenFile(fileName.c_str(), fh);
-    PFRC(rc)
+    PFRC(rc, RM_MANAGER_CREATEFILE)
     PF_PageHandle ph;
     rc = fh.AllocatePage(ph);
-    PFRC(rc)
+    PFRC(rc, RM_MANAGER_CREATEFILE)
     char* data;
     rc = ph.GetData(data);
-    PFRC(rc)
+    PFRC(rc, RM_MANAGER_CREATEFILE)
     FileHeader* fileHeader = reinterpret_cast<FileHeader*> (data);
-    fileHeader->pageCnt = 1;
     fileHeader->poolHead = 0;
     fileHeader->recordPerPage = std::min((int)(PF_PAGE_SIZE - sizeof(PageHeader)), MAX_RECORD_PER_PAGE);
     fileHeader->recordSize = recordSize;
 
     PageNum pageNum;
     rc = ph.GetPageNum(pageNum);
-    PFRC(rc)
+    PFRC(rc, RM_MANAGER_CREATEFILE)
     rc = fh.MarkDirty(pageNum);
-    PFRC(rc)
+    PFRC(rc, RM_MANAGER_CREATEFILE)
     rc = fh.UnpinPage(pageNum);
-    PFRC(rc)
+    PFRC(rc, RM_MANAGER_CREATEFILE)
     rc = pfm.CloseFile(fh);
-    PFRC(rc)
+    PFRC(rc, RM_MANAGER_CREATEFILE)
     return OK_RC;
 }
 
@@ -39,16 +38,20 @@ RC RM_Manager::DestroyFile(const std::string& fileName) {
 }
 
 RC RM_Manager::OpenFile(const std::string& fileName, RM_FileHandle &fileHandle) {
-    RC rc = pfm.OpenFile(fileName.c_str(), fileHandle.pfFileHandle);
-    PFRC(rc)
+    PF_FileHandle pfFileHandle;
+    RC rc = pfm.OpenFile(fileName.c_str(), pfFileHandle);
+    PFRC(rc, RM_MANAGER_OPENFILE)
+    rc = fileHandle.Open(pfFileHandle);
+    RMRC(rc, RM_MANAGER_OPENFILE)
     // need more action
     return OK_RC;
 }
 
 RC RM_Manager::CloseFile(RM_FileHandle &fileHandle) {
-    RC rc;
-    // need more action
+    RC rc = fileHandle.Close();
+    RMRC(rc, RM_MANAGER_CLOSEFILE)
+
     rc = pfm.CloseFile(fileHandle.pfFileHandle);
-    PFRC(rc)
+    PFRC(rc, RM_MANAGER_CLOSEFILE)
     return OK_RC;
 }

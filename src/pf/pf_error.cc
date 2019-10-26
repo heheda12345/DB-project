@@ -53,19 +53,19 @@ void PF_PrintError(RC rc)
   // Check the return code is within proper limits
   if (rc >= START_PF_WARN && rc <= PF_LASTWARN)
     // Print warning
-    cerr << "PF warning: " << PF_WarnMsg[rc - START_PF_WARN] << "\n";
+    cout << "PF warning: " << PF_WarnMsg[rc - START_PF_WARN] << "\n";
   // Error codes are negative, so invert everything
   else if (-rc >= -START_PF_ERR && -rc < -PF_LASTERROR)
     // Print error
-    cerr << "PF error: " << PF_ErrorMsg[-rc + START_PF_ERR] << "\n";
+    cout << "PF error: " << PF_ErrorMsg[-rc + START_PF_ERR] << "\n";
   else if (rc == PF_UNIX)
 #ifdef PC
-      cerr << "OS error\n";
+      cout << "OS error\n";
 #else
-      cerr << strerror(errno) << "\n";
+      cout << strerror(errno) << "\n";
 #endif
   else if (rc == 0)
-    cerr << "PF_PrintError called with return code of 0\n";
+    cout << "PF_PrintError called with return code of 0\n";
   else
-    cerr << "PF error: " << rc << " is out of bounds\n";
+    cout << "PF error: " << rc << " is out of bounds\n";
 }

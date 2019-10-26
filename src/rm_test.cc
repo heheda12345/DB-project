@@ -20,6 +20,7 @@
 #include <cstring>
 #include <unistd.h>
 #include <cstdlib>
+#include <assert.h>
 
 #include "redbase.h"
 #include "pf/pf.h"
@@ -81,10 +82,11 @@ RC GetNextRecScan(RM_FileScan &fs, RM_Record &rec);
 //
 // Array of pointers to the test functions
 //
-#define NUM_TESTS       1               // number of tests
+#define NUM_TESTS       2               // number of tests
 int (*tests[])() =                      // RC doesn't work on some compilers
 {
-    Test1
+    Test1,                               // Create, Open, Close, Destroy files
+    Test2                                // Add, delete, update records
 };
 
 //
@@ -470,10 +472,112 @@ RC Test1(void)
     return (0);
 }
 
-//
-// Test2 tests adding a few records to a file.
-//
+
+RC ChangeRecs(RM_FileHandle fh) {
+    printf("change records start\n");
+    int n = FEW_RECS;
+    RID rid[n];
+    TestRec rec1[n];
+    TestRec rec2[n];
+    string st1 = "hello\0";
+    string st2 = "world\0";
+    for (int i=0; i<n; i++) {
+        memset(rec1[i].str, ' ', STRLEN);
+        sprintf(rec1[i].str, "hello");
+        rec1[i].num = i+1;
+        rec1[i].r = i+1;
+    }
+    for (int i=0; i<n; i++) {
+        memset(rec2[i].str, ' ', STRLEN);
+        sprintf(rec2[i].str, "world");
+        rec2[i].num = i*2+1;
+        rec2[i].r = i*2+1;
+    }
+    RC rc;
+    // 新建
+    printf("inserting records\n");
+    for (int i=0; i<n; i++) {
+        rc = fh.InsertRec(reinterpret_cast<char*>(&rec1[i]), rid[i]);
+        RMRC(rc, rc);
+    }
+    // 查询+更改
+    printf("query & update records\n");
+    for (int i=0; i<n; i++) {
+        RM_Record rmRecord;
+        rc = fh.GetRec(rid[i], rmRecord);
+        RMRC(rc, rc);
+        char* data;
+        rmRecord.GetData(data);
+        RMRC(rc, rc);
+
+        TestRec *rec = reinterpret_cast<TestRec*>(data);
+        // assert (rec->num == rec1[i].num);
+        // assert (rec->r == rec1[i].r);
+        // assert(strcmp(rec->str, rec1[i].str) == 0);
+
+        RM_Record newRecord = RM_Record(reinterpret_cast<char*>(&rec2[i]), sizeof(TestRec), rid[i]);
+        rc = fh.UpdateRec(newRecord);
+        RMRC(rc, rc);
+    }
+    // 查询+删除
+    printf("query & delete records\n");
+    for (int i=0; i<n; i++) {
+        RM_Record rmRecord;
+        rc = fh.GetRec(rid[i], rmRecord);
+        RMRC(rc, rc);
+        char* data;
+        rc = rmRecord.GetData(data);
+        RMRC(rc, rc);
+        TestRec *rec = reinterpret_cast<TestRec*>(data);
+        assert (rec->num == rec2[i].num);
+        assert (rec->r == rec2[i].r);
+        assert(strcmp(rec->str, rec2[i].str) == 0);
+
+        rc = fh.DeleteRec(rid[i]);
+        RMRC(rc, rc);
+    }
+    // 查询+重新插入
+    printf("query & reinsert records\n");
+    for (int i=0; i<n; i++) {
+        RM_Record rmRecord;
+        rc = fh.GetRec(rid[i], rmRecord);
+        assert(rc != OK_RC);
+        rc = fh.InsertRec(reinterpret_cast<char*>(&rec1[i]), rid[i]);
+        RMRC(rc, rc);
+    }
+
+    printf("delete records\n");
+    for (int i=0; i<n; i++) {
+        rc = fh.DeleteRec(rid[i]);
+        RMRC(rc, rc);
+    }
+    printf("change records end\n");
+    return OK_RC;
+}
+
 RC Test2(void)
+{
+    RC            rc;
+    RM_FileHandle fh;
+
+    printf("test2 starting ****************\n");
+
+    if ((rc = CreateFile(FILENAME, sizeof(TestRec))) ||
+        (rc = OpenFile(FILENAME, fh)) ||
+        (rc = ChangeRecs(fh)) ||
+        (rc = CloseFile(FILENAME, fh)))
+        return (rc);
+
+    LsFile(FILENAME);
+
+    if ((rc = DestroyFile(FILENAME)))
+        return (rc);
+
+    printf("\ntest2 done ********************\n");
+    return (0);
+}
+
+RC Test3(void)
 {
     RC            rc;
     RM_FileHandle fh;

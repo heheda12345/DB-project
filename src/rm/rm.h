@@ -11,6 +11,7 @@
 #define RM_H
 
 #include <string>
+#include <cstring>
 
 // Please DO NOT include any files other than redbase.h and pf.h in this
 // file.  When you submit your code, the test program will be compiled
@@ -23,25 +24,58 @@
 #include "../redbase.h"
 #include "rm_rid.h"
 #include "../pf/pf.h"
+#include "rm_internal.h"
 
-#define RM_WARN_EMPTY_RECORD (START_RM_WARN + 1)
-#define RM_EOF               (START_RM_WARN + 2)
+#define RM_RECORD_GETDATA (START_RM_WARN + 1)
+#define RM_RECORD_GETRID  (START_RM_WARN + 2)
+#define RM_FILEHANDLE_GETREC (START_RM_WARN + 11)
+#define RM_FILEHANDLE_INSERTREC (START_RM_WARN + 12)
+#define RM_FILEHANDLE_DELETEREC (START_RM_WARN + 13)
+#define RM_FILEHANDLE_UPDATEREC (START_RM_WARN + 14)
+#define RM_FILEHANDLE_FORCEPAGES (START_RM_WARN + 15)
+#define RM_FILEHANDLE_OPEN (START_RM_WARN + 16)
+#define RM_FILEHANDLE_CLOSE (START_RM_WARN + 17)
+#define RM_FILEHANDLE_CHECKRID (START_RM_WARN + 18)
+#define RM_FILESCAN_OPENSCAN (START_RM_WARN + 21)
+#define RM_FILESCAN_GETNEXTREC (START_RM_WARN + 22)
+#define RM_FILESCAN_CLOSESCAN (START_RM_WARN + 23)
+#define RM_MANAGER_CREATEFILE (START_RM_WARN + 31)
+#define RM_MANAGER_DESTROYFILE (START_RM_WARN + 32)
+#define RM_MANAGER_OPENFILE (START_RM_WARN + 33)
+#define RM_MANAGER_CLOSEFILE (START_RM_WARN + 34)
+#define RM_NEW_WARN_START  (START_RM_WARN + 50)
+#define RM_NEW_ERROR_START (START_RM_ERR - 50)
 
+#define RM_WARN_EMPTY_RECORD (RM_NEW_WARN_START + 1)
+#define RM_EOF               (RM_NEW_WARN_START + 2)
+#define RM_FILE_IS_OPEN      (RM_NEW_WARN_START + 3)
+#define RM_FILE_NOT_OPEN     (RM_NEW_WARN_START + 4)
+#define RM_SLOT_OUTOFRANGE   (RM_NEW_WARN_START + 5)
+#define RM_NO_SUCH_REC       (RM_NEW_WARN_START + 6)
+#define RM_NOT_EMPTY_REC     (RM_NEW_WARN_START + 7)
 
 //
 // RM_Record: RM Record interface
 //
 class RM_Record {
 public:
-    RM_Record () : data(nullptr) {}
-    ~RM_Record() {
-        delete[] data;
+    RM_Record () : valid(false) {}
+    
+    RM_Record (const char* _data, int len, RID _rid):
+        rid(_rid), valid(true) {
+            data = new char[len];
+            memcpy(data, _data, len);
+        }
+
+    ~RM_Record () {
+        if (valid)
+            delete[] data;
     }
 
     // Return the data corresponding to the record.  Sets *pData to the
     // record contents.
-    RC GetData(char *&pData) const {
-        if (data == nullptr)
+    RC GetData(char * &pData) const {
+        if (!valid)
             return RM_WARN_EMPTY_RECORD;
         pData = data;
         return OK_RC;
@@ -49,15 +83,26 @@ public:
 
     // Return the RID associated with the record
     RC GetRid (RID &rid) const {
-        if (data == nullptr)
+        if (!valid)
             return RM_WARN_EMPTY_RECORD;
         rid = this->rid;
         return OK_RC;
     }
+    
+    RC SetValue(const char* _data, int len, RID _rid) {
+        if (valid)
+            delete[] data;
+        valid = true;
+        data = new char[len];
+        memcpy(data, _data, len);
+    }
+
 
 private:
     char* data;
     RID rid;
+    bool valid;
+    const RM_Record& operator=(const RM_Record&);
 };
 
 //
@@ -66,23 +111,38 @@ private:
 class RM_FileHandle {
     friend class RM_Manager;
 public:
-    RM_FileHandle () {};
+    RM_FileHandle(): isOpen(false) {}
     ~RM_FileHandle() = default;
 
     // Given a RID, return the record
-    RC GetRec     (const RID &rid, RM_Record &rec) const { return OK_RC; };
+    RC GetRec     (const RID &rid, RM_Record &rec) const;
 
-    RC InsertRec  (const char *pData, RID &rid) { return OK_RC; };       // Insert a new record
+    RC InsertRec  (const char *pData, RID &rid);       // Insert a new record
 
-    RC DeleteRec  (const RID &rid) { return OK_RC; };                    // Delete a record
-    RC UpdateRec  (const RM_Record &rec) { return OK_RC; };              // Update a record
+    RC DeleteRec  (const RID &rid);                    // Delete a record
+    RC UpdateRec  (const RM_Record &rec);              // Update a record
 
     // Forces a page (along with any contents stored in this class)
     // from the buffer pool to disk.  Default value forces all pages.
-    RC ForcePages (PageNum pageNum = ALL_PAGES) { return OK_RC; };
+    RC ForcePages (PageNum pageNum = ALL_PAGES);
 
 private:
+    RC Open(PF_FileHandle& handle);
+    RC Close();
+    RC checkRid(const RID &rid) const;
+
+    int getIndex(SlotNum slot) const;
+    bool recordExist(char* data, SlotNum slot) const {
+        // printf("record %x %d\n", data[slot>>3], slot);
+        return (data[slot >> 3] >> (slot & 7)) & 1;
+    }
+    void revRecord(char* data, SlotNum slot) const {
+        data[slot>>3] = data[slot>>3] ^ (1<<(slot&7));
+    }
+    
+    bool isOpen;
     PF_FileHandle pfFileHandle;
+    FileHeader fileHeader;
 };
 
 //
@@ -126,10 +186,15 @@ private:
     PF_Manager &pfm;
 };
 
-const int MAX_RECORD_PER_PAGE = 256;
 //
 // Print-error function
 //
 void RM_PrintError(RC rc);
-#define RMRC(rc)  { if (rc) { RM_PrintError(rc); return rc;} }
+
+#define RMRC(rc, ret_rc) { \
+   if (rc != 0) { \
+      RM_PrintError(rc); \
+      return rc > 0 ? ret_rc : -ret_rc;  \
+   } \
+}
 #endif

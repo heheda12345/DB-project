@@ -168,7 +168,12 @@ private:
 //
 void PF_PrintError(RC rc);
 
-#define PFRC(rc) { if (rc) { PF_PrintError(rc); return rc;} }
+#define PFRC(rc, ret_rc) { \
+   if (rc != 0) { \
+      PF_PrintError(rc); \
+      return rc > 0 ? ret_rc : -ret_rc;  \
+   } \
+}
 
 #define PF_PAGEPINNED      (START_PF_WARN + 0) // page pinned in buffer
 #define PF_PAGENOTINBUF    (START_PF_WARN + 1) // page isn't pinned in buffer
