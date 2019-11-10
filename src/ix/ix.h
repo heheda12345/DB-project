@@ -40,12 +40,15 @@
 // IX_FileHdr: Header structure for files
 //
 class IX_IndexHandle {
+    friend class IX_Manager;
 public:
 	IX_IndexHandle  () = default;                             // Constructor
 	~IX_IndexHandle () = default;                             // Destructor
 	RC InsertEntry     (void *pData, const RID &rid) {}  // Insert new index entry
 	RC DeleteEntry     (void *pData, const RID &rid) {}  // Delete index entry
 	RC ForcePages      () {}                             // Copy index to disk
+private:
+    PF_FileHandle fh;
 };
 
 //
@@ -73,17 +76,17 @@ public:
     // Create a new Index
     RC CreateIndex(const char *fileName, int indexNo,
 				    AttrType attrType, int attrLength,
-				    int pageSize = PF_PAGE_SIZE) {return OK_RC;}
+				    int pageSize = PF_PAGE_SIZE);
 
     // Destroy and Index
-    RC DestroyIndex(const char *fileName, int indexNo) {return OK_RC;}
+    RC DestroyIndex(const char *fileName, int indexNo);
 
     // Open an Index
     RC OpenIndex(const char *fileName, int indexNo,
-			    IX_IndexHandle &indexHandle) {return OK_RC;}
+			    IX_IndexHandle &indexHandle);
 
     // Close an Index
-    RC CloseIndex(IX_IndexHandle &indexHandle) {return OK_RC;}
+    RC CloseIndex(IX_IndexHandle &indexHandle);
 
     static IX_Manager& instance() {
         static IX_Manager ins;
@@ -94,6 +97,14 @@ public:
     PF_Manager& pfm;
 };
 
-void IX_PrintError(RC rc) {}
+void IX_PrintError(RC rc);
+
+#define IXRC(rc, ret_rc) { \
+   if (rc != 0) { \
+      IX_PrintError(rc); \
+      return rc > 0 ? ret_rc : -ret_rc;  \
+   } \
+}
+
 
 #endif // IX_H

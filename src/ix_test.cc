@@ -78,16 +78,16 @@ RC PrintIndex(IX_IndexHandle &ih);
 //
 // Array of pointers to the test functions
 //
-#define NUM_TESTS       7               // number of tests
+#define NUM_TESTS       1               // number of tests
 int (*tests[])() =                      // RC doesn't work on some compilers
 {
-   Test1,
-   Test2,
-   Test3,
-   Test4,
-   Test5,
-   Test6,
-   Test7
+   Test1
+   // ,Test2,
+   // ,Test3
+   // ,Test4
+   // ,Test5
+   // ,Test6
+   // ,Test7
 };
 
 //
@@ -507,7 +507,6 @@ RC Test1(void)
          (rc = ixm.OpenIndex(FILENAME, index, ih)) ||
          (rc = ixm.CloseIndex(ih)))
       return (rc);
-
    LsFiles(FILENAME);
 
    if ((rc = ixm.DestroyIndex(FILENAME, index)))
