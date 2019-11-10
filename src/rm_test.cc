@@ -63,6 +63,7 @@ struct TestRec {
 RC Test1(void);
 RC Test2(void);
 RC Test3(void);
+RC Test4(void);
 
 void PrintError(RC rc);
 void LsFile(const string& fileName);
@@ -71,7 +72,7 @@ RC AddRecs(RM_FileHandle &fh, int numRecs);
 RC VerifyFile(RM_FileHandle &fh, int numRecs);
 RC PrintFile(RM_FileHandle &fh);
 
-RC CreateFile(const string& fileName, int recordSize);
+RC CreateFile(const string& fileName, int recordSize, char* pMeta = nullptr, int metaSize = 0);
 RC DestroyFile(const string& fileName);
 RC OpenFile(const string&, RM_FileHandle &fh);
 RC CloseFile(const string&, RM_FileHandle &fh);
@@ -83,12 +84,13 @@ RC GetNextRecScan(RM_FileScan &fs, RM_Record &rec);
 //
 // Array of pointers to the test functions
 //
-#define NUM_TESTS       3               // number of tests
+#define NUM_TESTS       4               // number of tests
 int (*tests[])() =                      // RC doesn't work on some compilers
 {
-    Test1,                               // Create, Open, Close, Destroy files
-    Test2,                                // Add, delete, update records
-    Test3                                // Scan
+    Test1,                              // Create, Open, Close, Destroy files
+    Test2,                              // Add, delete, update records
+    Test3,                              // Scan
+    Test4                               // metaData
 };
 
 //
@@ -366,10 +368,13 @@ RC PrintFile(RM_FileScan &fs)
 //
 // Desc: call RM_Manager::CreateFile
 //
-RC CreateFile(const string& fileName, int recordSize)
+RC CreateFile(const string& fileName, int recordSize, char* pData, int metaSize)
 {
     printf("\ncreating %s\n", fileName.c_str());
-    return (RM_Manager::instance().CreateFile(fileName, recordSize));
+    if (metaSize == 0)
+        return (RM_Manager::instance().CreateFile(fileName, recordSize));
+    else
+        return (RM_Manager::instance().CreateFile(fileName, recordSize, pData, metaSize));
 }
 
 //
@@ -599,5 +604,43 @@ RC Test3(void)
         return (rc);
 
     printf("\ntest3 done ********************\n");
+    return (0);
+}
+
+RC Test4(void) {
+    RC            rc;
+    RM_FileHandle fh;
+
+    char meta1[] = "orz";
+    char meta2[] = "wotaicaile";
+    printf("test4 starting ****************\n");
+
+    if ((rc = CreateFile(FILENAME, sizeof(TestRec), meta1, strlen(meta1))) ||
+        (rc = OpenFile(FILENAME, fh)))
+        return (rc);
+    
+    char ans[100];
+    int size;
+    if (rc = fh.GetMeta(ans, size))
+        return (rc);
+    ans[size] = '\0';
+    printf("get: %s|expected: %s\n", ans, meta1);
+    assert(strcmp(ans, meta1)==0);
+
+    if (rc = fh.SetMeta(meta2, strlen(meta2)))
+        return (rc);
+    if (rc = fh.GetMeta(ans, size))
+        return (rc);
+
+    ans[size] = '\0';
+    printf("get: %s|expected %s\n", ans, meta2);
+    assert(strcmp(ans, meta2)==0);
+
+    LsFile(FILENAME);
+
+    if ((rc = DestroyFile(FILENAME)))
+        return (rc);
+
+    printf("\ntest4 done ********************\n");
     return (0);
 }

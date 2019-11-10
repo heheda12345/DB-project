@@ -4,7 +4,7 @@
 RM_Manager::RM_Manager() : pfm(PF_Manager::instance()) {
 }
 
-RC RM_Manager::CreateFile (const std::string& fileName, int recordSize) {
+RC RM_Manager::CreateFile (const std::string& fileName, int recordSize, char* metaData, int metaSize) {
     int rc = pfm.CreateFile(fileName.c_str());
     PFRC(rc, RM_MANAGER_CREATEFILE)
     PF_FileHandle fh;
@@ -20,6 +20,11 @@ RC RM_Manager::CreateFile (const std::string& fileName, int recordSize) {
     fileHeader->poolHead = 0;
     fileHeader->recordPerPage = std::min((int)(PF_PAGE_SIZE - sizeof(PageHeader)), MAX_RECORD_PER_PAGE);
     fileHeader->recordSize = recordSize;
+    fileHeader->metaSize = metaSize;
+
+    if (metaSize != 0) {
+        memcpy(data + sizeof(FileHeader), metaData, metaSize);
+    }
 
     PageNum pageNum;
     rc = ph.GetPageNum(pageNum);

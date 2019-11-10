@@ -9,6 +9,7 @@ const int MAX_RECORD_PER_PAGE = 256;
 struct FileHeader {
     int recordSize, recordPerPage;
     PageNum poolHead;
+    int metaSize;
     // recordSize的单位是字节
 };
 

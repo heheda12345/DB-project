@@ -38,15 +38,18 @@
 #define RM_FILEHANDLE_CHECKRID (START_RM_WARN + 18)
 #define RM_FILEHANDLE_GETFIRSTREC (START_RM_WARN + 19)
 #define RM_FILEHANDLE_GETNEXTREC (START_RM_WARN + 20)
-#define RM_FILESCAN_OPENSCAN (START_RM_WARN + 21)
-#define RM_FILESCAN_GETNEXTREC (START_RM_WARN + 22)
-#define RM_FILESCAN_CLOSESCAN (START_RM_WARN + 23)
+#define RM_FILEHANDLE_SETMETA (START_RM_WARN + 21)
+#define RM_FILEHANDLE_GETMETA (START_RM_WARN + 22)
 #define RM_MANAGER_CREATEFILE (START_RM_WARN + 31)
 #define RM_MANAGER_DESTROYFILE (START_RM_WARN + 32)
 #define RM_MANAGER_OPENFILE (START_RM_WARN + 33)
 #define RM_MANAGER_CLOSEFILE (START_RM_WARN + 34)
+#define RM_FILESCAN_OPENSCAN (START_RM_WARN + 41)
+#define RM_FILESCAN_GETNEXTREC (START_RM_WARN + 42)
+#define RM_FILESCAN_CLOSESCAN (START_RM_WARN + 43)
 #define RM_NEW_WARN_START  (START_RM_WARN + 50)
 #define RM_NEW_ERROR_START (START_RM_ERR - 50)
+
 
 #define RM_WARN_EMPTY_RECORD (RM_NEW_WARN_START + 1)
 #define RM_EOF               (RM_NEW_WARN_START + 2)
@@ -132,6 +135,9 @@ public:
     RC DeleteRec  (const RID &rid);                    // Delete a record
     RC UpdateRec  (const RM_Record &rec);              // Update a record
 
+    RC GetMeta(char* pData, int& size);
+    RC SetMeta(const char* pData, int size);
+
     // Forces a page (along with any contents stored in this class)
     // from the buffer pool to disk.  Default value forces all pages.
     RC ForcePages (PageNum pageNum = ALL_PAGES);
@@ -192,7 +198,8 @@ class RM_Manager {
 public:
     ~RM_Manager   () = default;
 
-    RC CreateFile (const std::string& fileName, int recordSize);
+    RC CreateFile (const std::string& fileName, int recordSize,
+        char* pMeta = nullptr, int metaSize = 0);
     RC DestroyFile(const std::string& fileName);
     RC OpenFile   (const std::string& fileName, RM_FileHandle &fileHandle);
 

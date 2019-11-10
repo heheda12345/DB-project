@@ -12,6 +12,7 @@
 #include "../redbase.h"  // Please don't change these lines
 #include "../rm/rm_rid.h"  // Please don't change these lines
 #include "../pf/pf.h"
+#include "../rm/rm.h"
 
 #define IX_KEYNOTFOUND    (START_IX_WARN + 0)  // cannot find key
 #define IX_INVALIDSIZE    (START_IX_WARN + 1)  // invalid entry size
@@ -33,6 +34,7 @@
 #define IX_BADRID          (START_IX_ERR - 7)
 #define IX_BADKEY          (START_IX_ERR - 8)
 #define IX_EOF             (START_IX_ERR - 9)  // end of file
+#define IX_RM              (START_IX_ERR - 10)
 
 #define IX_LASTERROR IX_EOF
 
@@ -42,13 +44,19 @@
 class IX_IndexHandle {
     friend class IX_Manager;
 public:
-	IX_IndexHandle  () = default;                             // Constructor
+	IX_IndexHandle  ();                             // Constructor
 	~IX_IndexHandle () = default;                             // Destructor
-	RC InsertEntry     (void *pData, const RID &rid) {}  // Insert new index entry
-	RC DeleteEntry     (void *pData, const RID &rid) {}  // Delete index entry
-	RC ForcePages      () {}                             // Copy index to disk
+	RC InsertEntry     (void *pData, const RID &rid);  // Insert new index entry
+	RC DeleteEntry     (void *pData, const RID &rid);  // Delete index entry
+	RC ForcePages      ();                             // Copy index to disk
 private:
-    PF_FileHandle fh;
+    RM_FileHandle fh;
+    void loadHeader();
+    struct Header {
+        AttrType attrType;
+        int attrLength;
+    } header;
+
 };
 
 //
@@ -56,14 +64,14 @@ private:
 //
 class IX_IndexScan {
 public:
-	IX_IndexScan  () = default;                                // Constructor
+	IX_IndexScan  ();                                 // Constructor
 	~IX_IndexScan () = default;                       // Destructor
 	RC OpenScan      (const IX_IndexHandle &indexHandle, // Initialize index scan
 					  CompOp      compOp,
 					  void        *value,
-					  ClientHint  pinHint = NO_HINT) {return OK_RC;}          
-	RC GetNextEntry  (RID &rid) {return OK_RC;}          // Get next matching entry
-	RC CloseScan     () {return OK_RC;}                  // Terminate index scan
+					  ClientHint  pinHint = NO_HINT);       
+	RC GetNextEntry  (RID &rid);                          // Get next matching entry
+	RC CloseScan     ();                                  // Terminate index scan
 };
 
 //
@@ -75,8 +83,7 @@ public:
 
     // Create a new Index
     RC CreateIndex(const char *fileName, int indexNo,
-				    AttrType attrType, int attrLength,
-				    int pageSize = PF_PAGE_SIZE);
+				    AttrType attrType, int attrLength);
 
     // Destroy and Index
     RC DestroyIndex(const char *fileName, int indexNo);
@@ -93,8 +100,8 @@ public:
         return ins;
     }
     private:
-    IX_Manager(): pfm(PF_Manager::instance()) {}
-    PF_Manager& pfm;
+    IX_Manager(): rmm(RM_Manager::instance()) {} // rmm is shorter than RM_Maneger::instance()
+    RM_Manager &rmm;
 };
 
 void IX_PrintError(RC rc);
