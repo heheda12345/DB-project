@@ -1,13 +1,18 @@
+cmake_minimum_required(VERSION 3.10)
 project(DB.out)
 
+add_subdirectory(ix)
 add_subdirectory(rm)
 add_subdirectory(pf)
+
 add_compile_options("-g")
 add_compile_options("-std=c++11")
 
 add_executable(${CMAKE_PROJECT_NAME} main.cpp)
-target_link_libraries(${CMAKE_PROJECT_NAME} rm pf)
+target_link_libraries(${CMAKE_PROJECT_NAME} rm pf ix)
 
 add_executable(rm_test.out rm_test.cc)
 target_link_libraries(rm_test.out rm pf)
 
+add_executable(ix_test.out ix_test.cc)
+target_link_libraries(ix_test.out ix rm pf)

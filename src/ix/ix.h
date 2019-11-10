@@ -16,9 +16,9 @@
 #define IX_KEYNOTFOUND    (START_IX_WARN + 0)  // cannot find key
 #define IX_INVALIDSIZE    (START_IX_WARN + 1)  // invalid entry size
 #define IX_ENTRYEXISTS    (START_IX_WARN + 2)  // key,rid already
-                                               // exists in index
+											   // exists in index
 #define IX_NOSUCHENTRY    (START_IX_WARN + 3)  // key,rid combination
-                                               // does not exist in index
+											   // does not exist in index
 
 #define IX_LASTWARN IX_ENTRYEXISTS
 
@@ -37,58 +37,63 @@
 #define IX_LASTERROR IX_EOF
 
 //
-// IX_Manager: provides IX index file management
+// IX_FileHdr: Header structure for files
 //
-class IX_Manager {
- public:
-  IX_Manager(PF_Manager &pfm);
-  ~IX_Manager();
-
-  // Create a new Index
-  RC CreateIndex(const char *fileName, int indexNo,
-                 AttrType attrType, int attrLength,
-                 int pageSize = PF_PAGE_SIZE);
-
-  // Destroy and Index
-  RC DestroyIndex(const char *fileName, int indexNo);
-
-  // Open an Index
-  RC OpenIndex(const char *fileName, int indexNo,
-               IX_IndexHandle &indexHandle);
-
-  // Close an Index
-  RC CloseIndex(IX_IndexHandle &indexHandle);
- private:
-  PF_Manager& pfm;
+class IX_IndexHandle {
+public:
+	IX_IndexHandle  () = default;                             // Constructor
+	~IX_IndexHandle () = default;                             // Destructor
+	RC InsertEntry     (void *pData, const RID &rid) {}  // Insert new index entry
+	RC DeleteEntry     (void *pData, const RID &rid) {}  // Delete index entry
+	RC ForcePages      () {}                             // Copy index to disk
 };
 
 //
 // IX_IndexScan: condition-based scan of index entries
 //
 class IX_IndexScan {
-  public:
-       IX_IndexScan  ();                                 // Constructor
-       ~IX_IndexScan ();                                 // Destructor
-    RC OpenScan      (const IX_IndexHandle &indexHandle, // Initialize index scan
-                      CompOp      compOp,
-                      void        *value,
-                      ClientHint  pinHint = NO_HINT);           
-    RC GetNextEntry  (RID &rid);                         // Get next matching entry
-    RC CloseScan     ();                                 // Terminate index scan
+public:
+	IX_IndexScan  () = default;                                // Constructor
+	~IX_IndexScan () = default;                       // Destructor
+	RC OpenScan      (const IX_IndexHandle &indexHandle, // Initialize index scan
+					  CompOp      compOp,
+					  void        *value,
+					  ClientHint  pinHint = NO_HINT) {return OK_RC;}          
+	RC GetNextEntry  (RID &rid) {return OK_RC;}          // Get next matching entry
+	RC CloseScan     () {return OK_RC;}                  // Terminate index scan
 };
 
 //
-// IX_FileHdr: Header structure for files
+// IX_Manager: provides IX index file management
 //
-class IX_IndexHandle {
-  public:
-       IX_IndexHandle  ();                             // Constructor
-       ~IX_IndexHandle ();                             // Destructor
-    RC InsertEntry     (void *pData, const RID &rid);  // Insert new index entry
-    RC DeleteEntry     (void *pData, const RID &rid);  // Delete index entry
-    RC ForcePages      ();                             // Copy index to disk
+class IX_Manager {
+public:
+    ~IX_Manager() {}
+
+    // Create a new Index
+    RC CreateIndex(const char *fileName, int indexNo,
+				    AttrType attrType, int attrLength,
+				    int pageSize = PF_PAGE_SIZE) {return OK_RC;}
+
+    // Destroy and Index
+    RC DestroyIndex(const char *fileName, int indexNo) {return OK_RC;}
+
+    // Open an Index
+    RC OpenIndex(const char *fileName, int indexNo,
+			    IX_IndexHandle &indexHandle) {return OK_RC;}
+
+    // Close an Index
+    RC CloseIndex(IX_IndexHandle &indexHandle) {return OK_RC;}
+
+    static IX_Manager& instance() {
+        static IX_Manager ins;
+        return ins;
+    }
+    private:
+    IX_Manager(): pfm(PF_Manager::instance()) {}
+    PF_Manager& pfm;
 };
 
-void IX_PrintError(RC rc);
+void IX_PrintError(RC rc) {}
 
 #endif // IX_H
