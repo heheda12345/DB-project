@@ -13,30 +13,8 @@
 #include "../rm/rm_rid.h"  // Please don't change these lines
 #include "../pf/pf.h"
 #include "../rm/rm.h"
-
-#define IX_KEYNOTFOUND    (START_IX_WARN + 0)  // cannot find key
-#define IX_INVALIDSIZE    (START_IX_WARN + 1)  // invalid entry size
-#define IX_ENTRYEXISTS    (START_IX_WARN + 2)  // key,rid already
-											   // exists in index
-#define IX_NOSUCHENTRY    (START_IX_WARN + 3)  // key,rid combination
-											   // does not exist in index
-
-#define IX_LASTWARN IX_ENTRYEXISTS
-
-
-#define IX_SIZETOOBIG      (START_IX_ERR - 0)  // key size too big
-#define IX_PF              (START_IX_ERR - 1)  // error in PF
-#define IX_BADIXPAGE       (START_IX_ERR - 2)  
-#define IX_FCREATEFAIL     (START_IX_ERR - 3)  // record size mismatch
-#define IX_HANDLEOPEN      (START_IX_ERR - 4)
-#define IX_BADOPEN         (START_IX_ERR - 5)
-#define IX_FNOTOPEN        (START_IX_ERR - 6)
-#define IX_BADRID          (START_IX_ERR - 7)
-#define IX_BADKEY          (START_IX_ERR - 8)
-#define IX_EOF             (START_IX_ERR - 9)  // end of file
-#define IX_RM              (START_IX_ERR - 10)
-
-#define IX_LASTERROR IX_EOF
+#include "ix_internal.h"
+#include "ix_error.h"
 
 //
 // IX_FileHdr: Header structure for files
@@ -44,19 +22,45 @@
 class IX_IndexHandle {
     friend class IX_Manager;
 public:
-	IX_IndexHandle  ();                             // Constructor
+	IX_IndexHandle  () = default;                           // Constructor
 	~IX_IndexHandle () = default;                             // Destructor
+    IX_IndexHandle(const IX_IndexHandle&) = delete;
 	RC InsertEntry     (void *pData, const RID &rid);  // Insert new index entry
 	RC DeleteEntry     (void *pData, const RID &rid);  // Delete index entry
 	RC ForcePages      ();                             // Copy index to disk
+    int getAttrLen() {
+        return header.attrLength;
+    }
+
+    IX_BTNode get(RID pos);
+
+    IX_BTNode loadRoot() {
+        return get(header.btRoot);
+    }
+    
+    void update(IX_BTNode& node);
+
+    RID newNode(IX_BTNode& tr);
+
+    int getAttrLen() const {
+        return header.attrLength;
+    }
+    IX_IndexHandle& operator = (const IX_IndexHandle&) = delete;
+
 private:
     RM_FileHandle fh;
-    void loadHeader();
+    void loadHeader() {
+
+    }
     struct Header {
         AttrType attrType;
         int attrLength;
+        int btm;
+        RID btRoot;
+        int nodeSize;
     } header;
 
+    IX_BT* bTree;
 };
 
 //
@@ -103,15 +107,5 @@ public:
     IX_Manager(): rmm(RM_Manager::instance()) {} // rmm is shorter than RM_Maneger::instance()
     RM_Manager &rmm;
 };
-
-void IX_PrintError(RC rc);
-
-#define IXRC(rc, ret_rc) { \
-   if (rc != 0) { \
-      IX_PrintError(rc); \
-      return rc > 0 ? ret_rc : -ret_rc;  \
-   } \
-}
-
 
 #endif // IX_H

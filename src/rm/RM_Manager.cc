@@ -5,11 +5,12 @@ RM_Manager::RM_Manager() : pfm(PF_Manager::instance()) {
 }
 
 RC RM_Manager::CreateFile (const std::string& fileName, int recordSize, char* metaData, int metaSize) {
+    const int rc_ret = RM_MANAGER_CREATEFILE;
     int rc = pfm.CreateFile(fileName.c_str());
-    PFRC(rc, RM_MANAGER_CREATEFILE)
+    PFRC(rc, rc_ret);
     PF_FileHandle fh;
     rc = pfm.OpenFile(fileName.c_str(), fh);
-    PFRC(rc, RM_MANAGER_CREATEFILE)
+    PFRC(rc, rc_ret);
     PF_PageHandle ph;
     rc = fh.AllocatePage(ph);
     PFRC(rc, RM_MANAGER_CREATEFILE)
@@ -48,7 +49,6 @@ RC RM_Manager::OpenFile(const std::string& fileName, RM_FileHandle &fileHandle) 
     PFRC(rc, RM_MANAGER_OPENFILE)
     rc = fileHandle.Open(pfFileHandle);
     RMRC(rc, RM_MANAGER_OPENFILE)
-    // need more action
     return OK_RC;
 }
 

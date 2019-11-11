@@ -1,11 +1,9 @@
 #pragma once
 
-struct IX_Node {
+#include "ix.h"
+#include "ix_btree.h"
+#include "ix_error.h"
+class IX_IndexHandle;
 
-};
-
-struct IX_Util {
-    static int recSize(int attrLen) {
-        return attrLen + sizeof(IX_Node);
-    } 
-};
+typedef IX_BTNode_T<IX_BTKEY, IX_IndexHandle> IX_BTNode;
+typedef IX_BTree_T<IX_BTKEY, IX_BTNode, IX_IndexHandle> IX_BT;

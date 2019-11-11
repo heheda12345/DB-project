@@ -10,9 +10,24 @@ RC IX_Manager::CreateIndex(const char *fileName, int indexNo, AttrType attrType,
     IX_IndexHandle::Header header;
     header.attrLength = attrLength;
     header.attrType = attrType;
-    RC rc = rmm.CreateFile(name.c_str(), IX_Util::recSize(attrLength),
+    header.btm = 3;
+    header.nodeSize = IX_BTNode::getSize(attrLength, header.btm);
+    RC rc = rmm.CreateFile(name.c_str(), header.nodeSize,
         reinterpret_cast<char*>(&header), sizeof(IX_IndexHandle::Header));
-    RMRC(rc, IX_PF);
+    RMRC(rc, IX_RM);
+
+    RM_FileHandle handle;
+    rc = rmm.OpenFile(name.c_str(), handle);
+    RMRC(rc, IX_RM);
+    IX_BTNode root;
+    char data[header.nodeSize];
+    root.dump(data, header.attrLength, header.btm);
+    RID rid;
+    rc = handle.InsertRec(data, rid);
+    RMRC(rc, IX_RM);
+    header.btRoot = rid;
+    rc = handle.SetMeta(reinterpret_cast<char*>(&header), sizeof(IX_IndexHandle::Header));
+    RMRC(rc, IX_RM);
     return OK_RC;
 }
 
@@ -30,6 +45,7 @@ RC IX_Manager::OpenIndex(const char *fileName, int indexNo,
     string name = string(fileName) + "." + to_string(indexNo);
     RC rc = rmm.OpenFile(name.c_str(), indexHandle.fh);
     RMRC(rc, IX_PF);
+    indexHandle.loadHeader();
     return OK_RC;
 }
 

@@ -10,6 +10,7 @@
 // We separate the interface of RID from the rest of RM because some
 // components will require the use of RID but not the rest of RM.
 
+#include "assert.h"
 #include "../redbase.h"
 
 //
@@ -50,6 +51,19 @@ public:
         if (!valid)
             return RID_INVALID;
         return OK_RC;
+    }
+    bool isValid() {
+        return valid;
+    }
+    bool operator < (const RID& that) const{
+        assert(valid);
+        assert(that.valid);
+        return pageNum < that.pageNum || (pageNum == that.pageNum && slotNum < that.slotNum);
+    }
+    bool operator == (const RID& that) const{
+        assert(valid);
+        assert(that.valid);
+        return pageNum == that.pageNum && slotNum == that.slotNum;
     }
 
 private:

@@ -19,6 +19,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <ctime>
+#include <unistd.h>
 
 #include "redbase.h"
 #include "pf/pf.h"
@@ -82,12 +83,12 @@ RC PrintIndex(IX_IndexHandle &ih);
 int (*tests[])() =                      // RC doesn't work on some compilers
 {
    Test1
-   // ,Test2,
-   // ,Test3
-   // ,Test4
-   // ,Test5
-   // ,Test6
-   // ,Test7
+   , Test2
+   , Test3
+   , Test4
+   , Test5
+   , Test6
+   , Test7
 };
 
 //
@@ -181,7 +182,7 @@ void PrintError(RC rc)
 //
 // Desc: list the filename's directory entry
 //
-void LsFiles(char *fileName)
+void LsFiles(const char *fileName)
 {
    char command[80];
 
@@ -465,7 +466,7 @@ RC VerifyIntIndex(IX_IndexHandle &ih, int nStart, int nEntries, int bExists)
 
          if (pageNum != value || slotNum != (value*2)) {
             printf("Verify error: incorrect rid (%d,%d) found for entry %d\n",
-                  pageNum, slotNum, value);
+                  (int)pageNum, (int)slotNum, value);
             return (IX_EOF);  // What should be returned here?
          }
 
@@ -500,15 +501,16 @@ RC Test1(void)
    RC rc;
    int index=0;
    IX_IndexHandle ih;
-
-   printf("Test 1: create, open, close, delete an index... \n");
+   // SOS
+   printf("Test1: test ix system\n");
+   // printf("Test 1: create, open, close, delete an index... \n");
 
    if ((rc = ixm.CreateIndex(FILENAME, index, INT, sizeof(int))) ||
          (rc = ixm.OpenIndex(FILENAME, index, ih)) ||
          (rc = ixm.CloseIndex(ih)))
       return (rc);
    LsFiles(FILENAME);
-
+   sleep(2);
    if ((rc = ixm.DestroyIndex(FILENAME, index)))
       return (rc);
 
@@ -770,6 +772,7 @@ RC Test5(void)
       return (rc);
    if (rc = InsertIntEntry(ih, 15))
       return (rc);
+   int sn = slotCnt;
    if (rc = InsertIntEntry(ih, 2))
       return (rc);
    if (rc = InsertIntEntry(ih, 2))
@@ -778,6 +781,10 @@ RC Test5(void)
       return (rc);
    if (rc = InsertIntEntry(ih, 3))
       return (rc);
+   if (rc = DeleteIntEntry(ih, 15, sn))
+      return (rc);
+   rc = DeleteIntEntry(ih, 15, sn);
+   assert(rc != 0);
 #ifdef DEBUG_IX
    PrintAll(ih);
    ih.VerifyOrder();
