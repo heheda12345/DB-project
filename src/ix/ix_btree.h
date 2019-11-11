@@ -68,6 +68,10 @@ struct IX_BTKEY {
         return cmp(that) == 0;
     }
 
+    // static bool check(const IX_BTKEY &a, CompOp op, const IX_BTKEY &b) {
+
+    // }
+
     static int getSize(int attrLen) {
         return sizeof(RID) + sizeof(AttrType) + attrLen;
     }

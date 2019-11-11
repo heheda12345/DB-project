@@ -15,12 +15,13 @@
 #include "../rm/rm.h"
 #include "ix_internal.h"
 #include "ix_error.h"
-
+#include "queue"
 //
 // IX_FileHdr: Header structure for files
 //
 class IX_IndexHandle {
     friend class IX_Manager;
+    friend class IX_IndexScan;
 public:
 	IX_IndexHandle  () = default;                           // Constructor
 	~IX_IndexHandle () = default;                             // Destructor
@@ -50,7 +51,7 @@ public:
 private:
     RM_FileHandle fh;
     void loadHeader() {
-
+        // SOS 
     }
     struct Header {
         AttrType attrType;
@@ -70,12 +71,19 @@ class IX_IndexScan {
 public:
 	IX_IndexScan  ();                                 // Constructor
 	~IX_IndexScan () = default;                       // Destructor
-	RC OpenScan      (const IX_IndexHandle &indexHandle, // Initialize index scan
+	RC OpenScan      (IX_IndexHandle &indexHandle, // Initialize index scan
 					  CompOp      compOp,
 					  void        *value,
 					  ClientHint  pinHint = NO_HINT);       
 	RC GetNextEntry  (RID &rid);                          // Get next matching entry
 	RC CloseScan     ();                                  // Terminate index scan
+private:
+    enum State {
+        UNSTART, RUNNING
+    } state;
+    IX_IndexHandle* handle;
+    std::queue<RID> entrys;
+    RC search(RID pos, CompOp compOp, IX_BTKEY &key, bool needCheck);
 };
 
 //
