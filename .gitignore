@@ -45,3 +45,5 @@ _deps
 
 # lex & yacc
 *.yy.c
+*.tab.c
+*.tab.h
