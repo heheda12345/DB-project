@@ -42,3 +42,6 @@ _deps
 *.exe
 *.out
 *.app
+
+# lex & yacc
+*.yy.c
