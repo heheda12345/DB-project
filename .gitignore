@@ -44,6 +44,6 @@ _deps
 *.app
 
 # lex & yacc
-*.yy.c
-*.tab.c
+*.yy.cc
+*.tab.cc
 *.tab.h

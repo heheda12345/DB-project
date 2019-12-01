@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(DB.out)
 
+add_subdirectory(parser)
 add_subdirectory(ql)
 add_subdirectory(sm)
 add_subdirectory(ix)
@@ -18,3 +19,9 @@ target_link_libraries(rm_test.out rm pf)
 
 add_executable(ix_test.out ix_test.cc)
 target_link_libraries(ix_test.out ix rm pf)
+
+add_compile_options("-ly")
+add_compile_options("-ll")
+
+add_executable(main.out main.cc)
+target_link_libraries(main.out parser ql sm ix rm pf)
