@@ -56,6 +56,7 @@ DATE { return TYPE_DATE; }
 FLOAT { return TYPE_FLOAT; }
 FOREIGN { return FOREIGN; }
 TO { return TO; }
+EXIT { return EXIT; }
 "," { return yytext[0]; }
 "(" { return yytext[0]; }
 ")" { return yytext[0]; }
@@ -67,20 +68,11 @@ TO { return TO; }
 '>' { return GT; }
 '<=' { return LE; }
 '>=' { return GE; }
-{IDENTIFIER} { 
-    yylval.strval.st = new char[yyleng];
-    memcpy(yylval.strval.st, yytext, yyleng);
-    yylval.strval.len = yyleng;
-    return IDENTIFIER;
-}
+{IDENTIFIER} { yylval.strval = new std::string(yytext, yyleng); return IDENTIFIER; }
 {FORMAT_INT} { sscanf(yytext, "%d", &yylval.intval); return VALUE_INT; }
 {FORMAT_FLOAT} { sscanf(yytext, "%f", &yylval.floatval); return VALUE_FLOAT; }
 {FORMAT_STRING} {
-    yylval.strval.st = new char[yyleng];
-    memcpy(yylval.strval.st, yytext, yyleng);
-    yylval.strval.len = yyleng;
-    return VALUE_STRING; 
-}
+    yylval.strval = new std::string(yytext, yyleng); return VALUE_STRING; }
 {FORMAT_DATE} {
     int year, month, date;
     sscanf(yytext, "%d-%d-%d", &year, &month, &date);

@@ -63,6 +63,7 @@ enum AttrType {
     INT,
     FLOAT,
     STRING,
+    DATE,
     NO_TYPE
 };
 
