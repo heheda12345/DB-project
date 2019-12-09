@@ -118,15 +118,16 @@ IX_BTree::IX_BTree(IX_IndexHandle& saver): _order(saver.getHeader().btm), _root(
 RC IX_BTree::search(IX_BTKEY& e, RID& ret) {
     printf("start search\n");
     ret = RID();
-    IX_BTNode v = saver.get(_root);
+    RID cur = _root;
     _hot.pos = RID();
-    while (v.pos.isValid()) {
+    while (cur.isValid()) {
+        IX_BTNode v = saver.get(cur);
         int r = IX_BTKEY::search(v.key, e);
         if (0 <= r && e == v.key[r]) {
             ret = v.pos;
             return IX_ENTRYEXISTS;
         }
-        _hot = v; v = saver.get(v.child[r+1]);
+        _hot = v; cur = v.child[r+1];
     }
     return IX_KEYNOTFOUND;
 }
@@ -142,7 +143,7 @@ RC IX_BTree::insert(IX_BTKEY& e) {
         IXRC(rc, IX_BTREE);
     }
     assert(_hot.pos.isValid());
-    printf("%s\n not found, start insert\n", e.attr.c_str());
+    printf("%s not found, start insert\n", e.attr.c_str());
     int r = IX_BTKEY::search(_hot.key, e);
     _hot.key.insert(_hot.key.begin() + r + 1, e);
     _hot.child.insert(_hot.child.begin() + r + 2, RID());
