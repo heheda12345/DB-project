@@ -119,7 +119,7 @@ RC IX_BTree::search(IX_BTKEY& e, RID& ret) {
     printf("start search\n");
     ret = RID();
     RID cur = _root;
-    _hot.pos = RID();
+    _hot.pos = _root;
     while (cur.isValid()) {
         IX_BTNode v = saver.get(cur);
         int r = IX_BTKEY::search(v.key, e);
@@ -145,11 +145,14 @@ RC IX_BTree::insert(IX_BTKEY& e) {
     assert(_hot.pos.isValid());
     printf("%s not found, start insert\n", e.attr.c_str());
     int r = IX_BTKEY::search(_hot.key, e);
+    printf("r %d\n", r);
     _hot.key.insert(_hot.key.begin() + r + 1, e);
     _hot.child.insert(_hot.child.begin() + r + 2, RID());
     // _size ++;
     saver.update(_hot);
+    printf("insert end, try overflow\n");
     solveOverflow(_hot);
+    return OK_RC;
 }
 
 RC IX_BTree::remove(IX_BTKEY& e) {
