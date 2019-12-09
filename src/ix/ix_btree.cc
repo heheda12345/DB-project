@@ -105,10 +105,10 @@ void IX_BTNode::dump(char* pData, int attrLen, int m) {
 void IX_BTNode::load(char* pData, int attrLen, int m) {
     int n = *reinterpret_cast<int*>(pData);
     parent = *reinterpret_cast<RID*>(pData + sizeof(int));
-    for (int i = 0, start = sizeof(int) + sizeof(RID); i < m-1; i++, start += IX_BTKEY::getSize(attrLen)) {
+    for (int i = 0, start = sizeof(int) + sizeof(RID); i < n-1; i++, start += IX_BTKEY::getSize(attrLen)) {
         key.push_back(IX_BTKEY(pData + start, attrLen));
     }
-    for (int i=0, start = sizeof(int) + sizeof(RID) + (m-1) * IX_BTKEY::getSize(attrLen); i < m; i++, start += sizeof(RID)) {
+    for (int i=0, start = sizeof(int) + sizeof(RID) + (m-1) * IX_BTKEY::getSize(attrLen); i < n; i++, start += sizeof(RID)) {
         child.push_back(*reinterpret_cast<RID*>(pData + start));
     }
 }
@@ -118,8 +118,6 @@ IX_BTree::IX_BTree(IX_IndexHandle& saver): _order(saver.getHeader().btm), _root(
 RC IX_BTree::search(IX_BTKEY& e, RID& ret) {
     printf("start search\n");
     ret = RID();
-    printf("ret\n");
-    printf("root %lld %d %d\n", _root.GetPageNum(), _root.GetSlotNum(), _root.isValid());
     IX_BTNode v = saver.get(_root);
     _hot.pos = RID();
     while (v.pos.isValid()) {
