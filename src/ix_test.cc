@@ -34,7 +34,7 @@ using namespace std;
 #define FILENAME     "testrel"        // test file name
 #define BADFILE      "/abc/def/xyz"   // bad file name
 #define STRLEN       39               // length of strings to index
-#define FEW_ENTRIES  200
+#define FEW_ENTRIES  5
 #define MANY_ENTRIES 1000
 #define NENTRIES     50000            // Size of values array
 #define PROG_UNIT    200              // how frequently to give progress
@@ -79,7 +79,7 @@ RC PrintIndex(IX_IndexHandle &ih);
 //
 // Array of pointers to the test functions
 //
-#define NUM_TESTS       1               // number of tests
+#define NUM_TESTS       2               // number of tests
 int (*tests[])() =                      // RC doesn't work on some compilers
 {
    Test1
@@ -501,16 +501,13 @@ RC Test1(void)
    RC rc;
    int index=0;
    IX_IndexHandle ih;
-   // SOS
-   printf("Test1: test ix system\n");
-   // printf("Test 1: create, open, close, delete an index... \n");
+   printf("Test 1: create, open, close, delete an index... \n");
 
    if ((rc = ixm.CreateIndex(FILENAME, index, INT, sizeof(int))) ||
          (rc = ixm.OpenIndex(FILENAME, index, ih)) ||
          (rc = ixm.CloseIndex(ih)))
       return (rc);
    LsFiles(FILENAME);
-   sleep(2);
    if ((rc = ixm.DestroyIndex(FILENAME, index)))
       return (rc);
 
@@ -519,9 +516,76 @@ RC Test1(void)
 }
 
 //
-// Test2 tests inserting a few integer entries into the index.
+// Test2 tests inserting and deleting a few integer entries from an index
 //
+// RC Test2(void)
+// {
+//    RC rc;
+//    int index=0;
+//    int nDelete = FEW_ENTRIES * 8/10;
+//    IX_IndexHandle ih;
+
+//    printf("Test2: Insert and delete a few integer entries from an index... \n");
+
+//    if ((rc = ixm.CreateIndex(FILENAME, index, INT, sizeof(int))) ||
+//          (rc = ixm.OpenIndex(FILENAME, index, ih)) ||
+//          (rc = InsertIntEntries(ih, FEW_ENTRIES)) ||
+//          (rc = DeleteIntEntries(ih, nDelete)) ||
+//          (rc = ixm.CloseIndex(ih)) ||
+//          (rc = ixm.OpenIndex(FILENAME, index, ih)) ||
+//          // ensure deleted entries are gone
+//          (rc = VerifyIntIndex(ih, 0, nDelete, FALSE)) ||
+//          // ensure non-deleted entries still exist
+//          (rc = VerifyIntIndex(ih, nDelete, FEW_ENTRIES - nDelete, TRUE)) ||
+//          (rc = ixm.CloseIndex(ih)))
+//       return (rc);
+
+//    LsFiles(FILENAME);
+
+//    if ((rc = ixm.DestroyIndex(FILENAME, index)))
+//       return (rc);
+
+//    printf("Passed Test 3\n\n");
+//    return (0);
+// }
+
 RC Test2(void)
+{
+   RC rc;
+   int index=0;
+   int nDelete = FEW_ENTRIES * 8/10;
+   IX_IndexHandle ih;
+
+   printf("Test2: Insert and delete a few integer entries from an index... \n");
+
+   if ((rc = ixm.CreateIndex(FILENAME, index, STRING, 4)) ||
+         (rc = ixm.OpenIndex(FILENAME, index, ih)))
+         return (rc);
+   char a[] = "aaaa";
+   char b[] = "bbbb";
+   if ((rc = ih.InsertEntry(a, RID(1,1))) ||
+       (rc = ih.InsertEntry(b, RID(1,2))))
+       return (rc);
+   rc = ih.InsertEntry(a, RID(1,3));
+   assert(rc == IX_ENTRYEXISTS);
+   rc = ih.InsertEntry(b, RID(1,4));
+   assert(rc == IX_ENTRYEXISTS);
+   if ((rc = ixm.CloseIndex(ih)))
+      return (rc);
+
+   LsFiles(FILENAME);
+
+   if ((rc = ixm.DestroyIndex(FILENAME, index)))
+      return (rc);
+
+   printf("Passed Test 3\n\n");
+   return (0);
+}
+
+//
+// Test3 tests inserting a few integer entries into the index.
+//
+RC Test3(void)
 {
    RC rc;
    IX_IndexHandle ih;
@@ -549,40 +613,6 @@ RC Test2(void)
       return (rc);
 
    printf("Passed Test 2\n\n");
-   return (0);
-}
-
-//
-// Test3 tests deleting a few integer entries from an index
-//
-RC Test3(void)
-{
-   RC rc;
-   int index=0;
-   int nDelete = FEW_ENTRIES * 8/10;
-   IX_IndexHandle ih;
-
-   printf("Test3: Delete a few integer entries from an index... \n");
-
-   if ((rc = ixm.CreateIndex(FILENAME, index, INT, sizeof(int))) ||
-         (rc = ixm.OpenIndex(FILENAME, index, ih)) ||
-         (rc = InsertIntEntries(ih, FEW_ENTRIES)) ||
-         (rc = DeleteIntEntries(ih, nDelete)) ||
-         (rc = ixm.CloseIndex(ih)) ||
-         (rc = ixm.OpenIndex(FILENAME, index, ih)) ||
-         // ensure deleted entries are gone
-         (rc = VerifyIntIndex(ih, 0, nDelete, FALSE)) ||
-         // ensure non-deleted entries still exist
-         (rc = VerifyIntIndex(ih, nDelete, FEW_ENTRIES - nDelete, TRUE)) ||
-         (rc = ixm.CloseIndex(ih)))
-      return (rc);
-
-   LsFiles(FILENAME);
-
-   if ((rc = ixm.DestroyIndex(FILENAME, index)))
-      return (rc);
-
-   printf("Passed Test 3\n\n");
    return (0);
 }
 

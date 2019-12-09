@@ -13,9 +13,14 @@
 #include "../rm/rm_rid.h"  // Please don't change these lines
 #include "../pf/pf.h"
 #include "../rm/rm.h"
-#include "ix_internal.h"
 #include "ix_error.h"
+#include "ix_btree.h"
 #include "queue"
+
+class IX_BTKEY;
+class IX_BTNode;
+class IX_BTree;
+
 //
 // IX_FileHdr: Header structure for files
 //
@@ -35,9 +40,7 @@ public:
 
     IX_BTNode get(RID pos);
 
-    IX_BTNode loadRoot() {
-        return get(header.btRoot);
-    }
+    IX_BTNode loadRoot();
     
     void update(IX_BTNode& node);
 
@@ -48,20 +51,29 @@ public:
     }
     IX_IndexHandle& operator = (const IX_IndexHandle&) = delete;
 
-private:
-    RM_FileHandle fh;
-    void loadHeader() {
-        // SOS 
-    }
     struct Header {
         AttrType attrType;
         int attrLength;
         int btm;
         RID btRoot;
         int nodeSize;
-    } header;
+    };
+    
+    Header getHeader() const {
+        return header;
+    }
 
-    IX_BT* bTree;
+private:
+    RM_FileHandle fh;
+    void loadHeader() {
+        int loaded;
+        fh.GetMeta(reinterpret_cast<char*>(&header), loaded);
+        // printf("load header(%d) %d %d %d\n", loaded, header.attrLength, header.btm, header.nodeSize);
+        assert(loaded == sizeof(Header));
+    }
+    Header header;
+
+    IX_BTree* bTree;
 };
 
 //

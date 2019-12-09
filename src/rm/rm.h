@@ -222,7 +222,7 @@ void RM_PrintError(RC rc);
 #define RMRC(rc, ret_rc) { \
    if (rc != 0) { \
       RM_PrintError(rc); \
-      return rc > 0 ? ret_rc : -ret_rc;  \
+      return ret_rc;  \
    } \
 }
 #endif

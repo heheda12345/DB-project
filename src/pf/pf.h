@@ -171,7 +171,7 @@ void PF_PrintError(RC rc);
 #define PFRC(rc, ret_rc) { \
    if (rc != 0) { \
       PF_PrintError(rc); \
-      return rc > 0 ? ret_rc : -ret_rc;  \
+      return ret_rc;  \
    } \
 }
 

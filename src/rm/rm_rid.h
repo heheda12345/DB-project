@@ -12,6 +12,7 @@
 
 #include "assert.h"
 #include "../redbase.h"
+#include <cstdio>
 
 //
 // PageNum: uniquely identifies a page in a file
@@ -47,14 +48,26 @@ public:
         _slotNum = slotNum;
         return OK_RC;
     };         // Return slot number
+
+    // SOS
+    PageNum GetPageNum() const {
+        return pageNum;
+    }
+
+    SlotNum GetSlotNum() const {
+        return slotNum;
+    }
+
     RC check() const {
         if (!valid)
             return RID_INVALID;
         return OK_RC;
     }
-    bool isValid() {
+
+    bool isValid() const {
         return valid;
     }
+    
     bool operator < (const RID& that) const{
         assert(valid);
         assert(that.valid);

@@ -1,7 +1,6 @@
 #include "ix.h"
 #include <cstring>
 #include <string>
-#include "ix_internal.h"
 using namespace std;
 
 // Create a new Index
@@ -26,6 +25,7 @@ RC IX_Manager::CreateIndex(const char *fileName, int indexNo, AttrType attrType,
     rc = handle.InsertRec(data, rid);
     RMRC(rc, IX_RM);
     header.btRoot = rid;
+    // printf("save header(%d) %d %d %d\n", (int)sizeof(IX_IndexHandle::Header), header.attrLength, header.btm, header.nodeSize);
     rc = handle.SetMeta(reinterpret_cast<char*>(&header), sizeof(IX_IndexHandle::Header));
     RMRC(rc, IX_RM);
     return OK_RC;

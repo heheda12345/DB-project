@@ -40,7 +40,9 @@ RC RM_Manager::CreateFile (const std::string& fileName, int recordSize, char* me
 }
 
 RC RM_Manager::DestroyFile(const std::string& fileName) {
-    return pfm.DestroyFile(fileName.c_str());
+    RC rc = pfm.DestroyFile(fileName.c_str());
+    PFRC(rc, RM_MANAGER_DESTROYFILE);
+    return OK_RC;
 }
 
 RC RM_Manager::OpenFile(const std::string& fileName, RM_FileHandle &fileHandle) {

@@ -1,4 +1,5 @@
 #include "ix.h"
+#include "ix_btree.h"
 
 RC IX_IndexHandle::InsertEntry(void *pData, const RID &rid) {
     IX_BTKEY key = IX_BTKEY((char*)pData, header.attrLength, header.attrType);
@@ -36,7 +37,12 @@ IX_BTNode IX_IndexHandle::get(RID pos) {
     IX_BTNode ret;
     ret.load(st, header.attrLength, header.btm);
     ret.pos = pos;
+    // printf("in get %lld %d %d\n", ret.pos.GetPageNum(), ret.pos.GetSlotNum(), ret.pos.isValid());
     return ret;
+}
+
+IX_BTNode IX_IndexHandle::loadRoot() {
+    return get(header.btRoot);
 }
 
 void IX_IndexHandle::update(IX_BTNode& node) {
