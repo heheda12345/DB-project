@@ -47,3 +47,6 @@ _deps
 *.yy.cc
 *.tab.cc
 *.tab.h
+
+# generated
+testrel.*

@@ -113,7 +113,7 @@ void IX_BTNode::load(char* pData, int attrLen, int m) {
     }
 }
 
-IX_BTree::IX_BTree(IX_IndexHandle& saver): _order(saver.getHeader().btm), _root(saver.loadRoot().pos), _hot(), saver(saver) {}
+IX_BTree::IX_BTree(IX_IndexHandle& saver): _order(saver.getHeader().btm), _root(saver.loadRoot().pos), _hot(), saver(saver) { }
 
 RC IX_BTree::search(IX_BTKEY& e, RID& ret) {
     printf("start search\n");

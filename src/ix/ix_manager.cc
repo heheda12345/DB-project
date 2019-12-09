@@ -24,10 +24,12 @@ RC IX_Manager::CreateIndex(const char *fileName, int indexNo, AttrType attrType,
     RID rid;
     rc = handle.InsertRec(data, rid);
     RMRC(rc, IX_RM);
-    header.btRoot = rid;
-    // printf("save header(%d) %d %d %d\n", (int)sizeof(IX_IndexHandle::Header), header.attrLength, header.btm, header.nodeSize);
+    header.rootPage = rid.GetPageNum();
+    header.rootSlot = rid.GetSlotNum();
     rc = handle.SetMeta(reinterpret_cast<char*>(&header), sizeof(IX_IndexHandle::Header));
+    // printf("save header(%d) %lld %d %d\n", (int)sizeof(IX_IndexHandle::Header), header.rootPage, header.rootSlot, header.nodeSize);
     RMRC(rc, IX_RM);
+    rmm.CloseFile(handle);
     return OK_RC;
 }
 
@@ -45,13 +47,13 @@ RC IX_Manager::OpenIndex(const char *fileName, int indexNo,
     string name = string(fileName) + "." + to_string(indexNo);
     RC rc = rmm.OpenFile(name.c_str(), indexHandle.fh);
     RMRC(rc, IX_PF);
-    indexHandle.loadHeader();
+    indexHandle.init();
     return OK_RC;
 }
 
 // Close an Index
 RC IX_Manager::CloseIndex(IX_IndexHandle &indexHandle) {
     RC rc = rmm.CloseFile(indexHandle.fh);
-    PFRC(rc, IX_PF);
+    RMRC(rc, IX_PF);
     return OK_RC;
 }

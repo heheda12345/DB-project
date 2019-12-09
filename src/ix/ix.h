@@ -29,7 +29,9 @@ class IX_IndexHandle {
     friend class IX_IndexScan;
 public:
 	IX_IndexHandle  () = default;                           // Constructor
-	~IX_IndexHandle () = default;                             // Destructor
+	~IX_IndexHandle () {                             // Destructor
+        delete bTree;
+    }
     IX_IndexHandle(const IX_IndexHandle&) = delete;
 	RC InsertEntry     (void *pData, const RID &rid);  // Insert new index entry
 	RC DeleteEntry     (void *pData, const RID &rid);  // Delete index entry
@@ -55,24 +57,20 @@ public:
         AttrType attrType;
         int attrLength;
         int btm;
-        RID btRoot;
+        long long rootPage;
+        int rootSlot;
         int nodeSize;
     };
     
     Header getHeader() const {
         return header;
     }
+    
+    void init();
 
 private:
     RM_FileHandle fh;
-    void loadHeader() {
-        int loaded;
-        fh.GetMeta(reinterpret_cast<char*>(&header), loaded);
-        // printf("load header(%d) %d %d %d\n", loaded, header.attrLength, header.btm, header.nodeSize);
-        assert(loaded == sizeof(Header));
-    }
     Header header;
-
     IX_BTree* bTree;
 };
 

@@ -67,7 +67,7 @@ public:
     bool isValid() const {
         return valid;
     }
-    
+
     bool operator < (const RID& that) const{
         assert(valid);
         assert(that.valid);

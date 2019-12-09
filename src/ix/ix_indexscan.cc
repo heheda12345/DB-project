@@ -17,7 +17,7 @@ RC IX_IndexScan::OpenScan(IX_IndexHandle &indexHandle,
         entrys.pop();
     }
     IX_BTKEY key((char*)value, indexHandle.header.attrLength, indexHandle.header.attrType);
-    RC rc = search(handle->header.btRoot, compOp, key, true);
+    RC rc = search(RID(handle->header.rootPage, handle->header.rootSlot), compOp, key, true);
     IXRC(rc, IX_BTREE)
     state = RUNNING;
     return OK_RC;

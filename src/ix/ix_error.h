@@ -32,6 +32,6 @@ void IX_PrintError(RC rc);
 #define IXRC(rc, ret_rc) { \
    if (rc != 0) { \
       IX_PrintError(rc); \
-      return rc > 0 ? ret_rc : -ret_rc;  \
+      return ret_rc;  \
    } \
 }

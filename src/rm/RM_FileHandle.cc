@@ -316,8 +316,8 @@ RC RM_FileHandle::GetMeta(char* pData, int &size) {
     PFRC(rc, rc_ret)
     fileHeader = *reinterpret_cast<FileHeader*> (data);
     size = fileHeader.metaSize;
-    
-    memcpy(pData, data + sizeof(fileHeader), fileHeader.metaSize);
+
+    memcpy(pData, data + sizeof(FileHeader), fileHeader.metaSize);
 
     PageNum pageNum;
     rc = pfPageHandle.GetPageNum(pageNum);

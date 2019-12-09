@@ -25,24 +25,21 @@ IX_BTNode IX_IndexHandle::get(RID pos) {
     RM_Record record;
     RC rc = fh.GetRec(pos, record);
     if (rc) {
-        printf("ix error %d\n", rc);
-        return IX_BTNode();
+        RMRC(rc, IX_BTNode())
     }
     char* st;
     rc = record.GetData(st);
     if (rc) {
-        printf("ix error %d\n", rc);
-        return IX_BTNode();
+        RMRC(rc, IX_BTNode())
     }
     IX_BTNode ret;
     ret.load(st, header.attrLength, header.btm);
     ret.pos = pos;
-    // printf("in get %lld %d %d\n", ret.pos.GetPageNum(), ret.pos.GetSlotNum(), ret.pos.isValid());
     return ret;
 }
 
 IX_BTNode IX_IndexHandle::loadRoot() {
-    return get(header.btRoot);
+    return get(RID(header.rootPage, header.rootSlot));
 }
 
 void IX_IndexHandle::update(IX_BTNode& node) {
@@ -73,9 +70,16 @@ RID IX_IndexHandle::newNode(IX_BTNode &tr) {
     tr.dump(st, header.attrLength, header.btm);
     RC rc = fh.InsertRec(st, rid);
     if (rc) {
-        printf("ix error %d\n", rc);
-        return RID();
+        RMRC(rc, RID());
     }
     tr.pos = rid;
     return rid;
+}
+
+void IX_IndexHandle::init(){
+    int loaded;
+    fh.GetMeta(reinterpret_cast<char*>(&header), loaded);
+    // printf("load header(%d) %lld %d %d\n", loaded, header.rootPage, header.rootSlot, header.nodeSize);
+    assert(loaded == sizeof(Header));
+    bTree = new IX_BTree(*this);
 }
