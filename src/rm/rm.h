@@ -102,6 +102,7 @@ public:
         valid = true;
         len = _len;
         data = new char[len];
+        rid = _rid;
         memcpy(data, _data, len);
     }
 
