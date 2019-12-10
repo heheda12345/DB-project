@@ -47,7 +47,7 @@ int IX_BTKEY::cmp(const IX_BTKEY &that) const {
         return -1;
     if (rid == that.rid)
         return 0;
-    return 0;
+    return 1;
 }
 
 int IX_BTKEY::getSize(int attrLen) {
@@ -91,18 +91,19 @@ IX_BTNode::IX_BTNode(IX_IndexHandle &saver, IX_BTKEY e, RID lc, RID rc): parent(
 IX_BTNode::IX_BTNode(IX_IndexHandle &saver, RID pos): IX_BTNode(saver.get(pos)) {}
 
 RC IX_BTNode::getSize(int attrLen, int m) {
-    return sizeof(int) + sizeof(RID) + sizeof(RID) + (m-1) * attrLen + m * sizeof(RID);
+    return sizeof(int) + sizeof(RID) + sizeof(RID) + (m-1) * IX_BTKEY::getSize(attrLen) + m * sizeof(RID);
     // int is child.size()
 }
 
 void IX_BTNode::dump(char* pData, int attrLen, int m) {
-    printf("dump size %d\n", child.size());
+    printf("dump(%d) size %d\n", m, child.size());
     *reinterpret_cast<int*>(pData) = child.size();
     *reinterpret_cast<RID*>(pData + sizeof(int)) = parent;
-    for (int i = 0, start = sizeof(int) + sizeof(RID); i < key.size(); i++, start += IX_BTKEY::getSize(attrLen)) {
+    *reinterpret_cast<RID*>(pData + sizeof(int) + sizeof(RID)) = pos;
+    for (int i = 0, start = sizeof(int) + sizeof(RID) + sizeof(RID); i < key.size(); i++, start += IX_BTKEY::getSize(attrLen)) {
         key[i].toCharArray(pData + start);
     }
-    for (int i=0, start = sizeof(int) + sizeof(RID) + (m-1) * IX_BTKEY::getSize(attrLen); i < child.size(); i++, start += sizeof(RID)) {
+    for (int i=0, start = sizeof(int) + sizeof(RID) + sizeof(RID) + (m-1) * IX_BTKEY::getSize(attrLen); i < child.size(); i++, start += sizeof(RID)) {
         *reinterpret_cast<RID*>(pData + start) = child[i];
     }
 }
@@ -110,14 +111,30 @@ void IX_BTNode::dump(char* pData, int attrLen, int m) {
 void IX_BTNode::load(char* pData, int attrLen, int m) {
     int n = *reinterpret_cast<int*>(pData);
     parent = *reinterpret_cast<RID*>(pData + sizeof(int));
+    pos = *reinterpret_cast<RID*>(pData + sizeof(int) + sizeof(RID));
     key.clear(); child.clear();
-    for (int i = 0, start = sizeof(int) + sizeof(RID); i < n-1; i++, start += IX_BTKEY::getSize(attrLen)) {
+    for (int i = 0, start = sizeof(int) + sizeof(RID) + sizeof(RID); i < n-1; i++, start += IX_BTKEY::getSize(attrLen)) {
         key.push_back(IX_BTKEY(pData + start, attrLen));
     }
-    for (int i=0, start = sizeof(int) + sizeof(RID) + (m-1) * IX_BTKEY::getSize(attrLen); i < n; i++, start += sizeof(RID)) {
+    for (int i=0, start = sizeof(int) + sizeof(RID) + sizeof(RID) + (m-1) * IX_BTKEY::getSize(attrLen); i < n; i++, start += sizeof(RID)) {
         child.push_back(*reinterpret_cast<RID*>(pData + start));
     }
-    printf("load size %d: %d %d\n", n, key.size(), child.size());
+    printf("load(%d) size %d: %d %d\n", m, n, key.size(), child.size());
+}
+
+void IX_BTNode::outit() {
+    printf("(%lld %d)\n", this->pos.GetPageNum(), this->pos.GetSlotNum());
+    for (auto key: this->key) {
+        printf("%s ",key.attr.c_str());
+    }
+    printf("\n");
+    for (auto child: this->child) {
+        if (child.isValid())
+            printf("(%lld %d) ", child.GetPageNum(), child.GetSlotNum());
+        else
+            printf("(x)");
+    }
+    printf("\n");
 }
 
 IX_BTree::IX_BTree(IX_IndexHandle& saver): _order(saver.getHeader().btm), _root(saver.loadRoot().pos), _hot(), saver(saver) { }
@@ -140,7 +157,7 @@ RC IX_BTree::search(IX_BTKEY& e, RID& ret) {
 }
 
 RC IX_BTree::insert(IX_BTKEY& e) {
-    printf("start insert %s\n", e.attr.c_str());
+    printf("[insert] %s %lld %d\n", e.attr.c_str(), e.rid.GetPageNum(), e.rid.GetSlotNum());
     RID v;
     RC rc = search(e, v);
     if (rc == IX_ENTRYEXISTS) {
@@ -220,8 +237,10 @@ void IX_BTree::solveOverflow(IX_BTNode& v) {
 
     IX_BTNode p = v.parent.isValid() ? saver.get(v.parent) : IX_BTNode(saver);
     if (!v.parent.isValid()) {
+        _root = p.pos;
         p.child[0] = v.pos;
         v.parent = p.pos; 
+        saver.setRoot(p.pos);
     }
 
     int r = IX_BTKEY::search(p.key, v.key[0]) + 1;

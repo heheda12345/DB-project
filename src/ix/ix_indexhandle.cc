@@ -35,6 +35,7 @@ IX_BTNode IX_IndexHandle::get(RID pos) {
     IX_BTNode ret;
     ret.load(st, header.attrLength, header.btm);
     ret.pos = pos;
+    // printf("[get]"); ret.outit();
     return ret;
 }
 
@@ -42,29 +43,36 @@ IX_BTNode IX_IndexHandle::loadRoot() {
     return get(RID(header.rootPage, header.rootSlot));
 }
 
+void IX_IndexHandle::setRoot(const RID& rid) {
+    header.rootPage = rid.GetPageNum();
+    header.rootSlot = rid.GetSlotNum();
+    RC rc = fh.SetMeta(reinterpret_cast<char*>(&header), sizeof(IX_IndexHandle::Header));
+    if (rc) {
+        IX_PrintError(rc);
+        return;
+    }
+}
+
 void IX_IndexHandle::update(IX_BTNode& node) {
-    printf("saver.update\n");
+    // printf("[update]"); node.outit();
     RM_Record record;
     RC rc = fh.GetRec(node.pos, record);
     if (rc) {
-        printf("ix error %d\n", rc);
+        IX_PrintError(rc);
         return;
     }
-    printf("get rec end\n");
     char* st;
     rc = record.GetData(st);
     if (rc) {
-        printf("ix error %d\n", rc);
+        IX_PrintError(rc);
         return;
     }
     node.dump(st, header.attrLength, header.btm);
-    printf("get data end\n");
     rc = fh.UpdateRec(record);
     if (rc) {
-        printf("ix error %d\n", rc);
+        IX_PrintError(rc);
         return;
     }
-    printf("update end\n");
 }
 
 RID IX_IndexHandle::newNode(IX_BTNode &tr) {

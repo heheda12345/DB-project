@@ -12,7 +12,7 @@ const int IX_NODE_SIZE = 3;
 class IX_IndexHandle;
 
 struct IX_BTKEY {
-    RID rid;
+    RID rid; // provided by users
     AttrType ty;
     std::string attr;
 
@@ -52,6 +52,7 @@ struct IX_BTNode {
     static RC getSize(int attrLen, int m);
     void dump(char* pData, int attrLen, int m);
     void load(char* pData, int attrLen, int m);
+    void outit();
 };
 
 // T is IX_BTKEY, Node is IX_BTNode, Saver is ix_indexhandle

@@ -563,12 +563,20 @@ RC Test2(void)
          return (rc);
    char a[] = "aaaa";
    char b[] = "bbbb";
-   if ((rc = ih.InsertEntry(a, RID(1,1))) ||
-       (rc = ih.InsertEntry(b, RID(1,2))))
+   char c[] = "cccc";
+   char d[] = "dddd";
+   if ((rc = ih.InsertEntry(a, RID(10, 10))) ||
+       (rc = ih.InsertEntry(b, RID(10, 20))) ||
+       (rc = ih.InsertEntry(c, RID(10, 30))) ||
+       (rc = ih.InsertEntry(d, RID(10, 40))))
        return (rc);
-   rc = ih.InsertEntry(a, RID(1,1));
+   rc = ih.InsertEntry(a, RID(10, 10));
    assert(rc == IX_ENTRYEXISTS);
-   rc = ih.InsertEntry(b, RID(1,2));
+   rc = ih.InsertEntry(b, RID(10, 20));
+   assert(rc == IX_ENTRYEXISTS);
+   rc = ih.InsertEntry(c, RID(10, 30));
+   assert(rc == IX_ENTRYEXISTS);
+   rc = ih.InsertEntry(d, RID(10, 40));
    assert(rc == IX_ENTRYEXISTS);
    if ((rc = ixm.CloseIndex(ih)))
       return (rc);

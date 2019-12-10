@@ -43,6 +43,7 @@ public:
     IX_BTNode get(RID pos);
 
     IX_BTNode loadRoot();
+    void setRoot(const RID& pos);
     
     void update(IX_BTNode& node);
 
