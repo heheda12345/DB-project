@@ -18,7 +18,7 @@ struct IX_BTKEY {
 
     IX_BTKEY(char* pData, int attrLen);
 
-    IX_BTKEY(char* pData, int attrLen, AttrType ty);
+    IX_BTKEY(char* pData, int attrLen, AttrType ty, const RID& rid);
 
     void toCharArray(char* pData);
 

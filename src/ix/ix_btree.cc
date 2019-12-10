@@ -7,7 +7,7 @@ IX_BTKEY::IX_BTKEY(char* pData, int attrLen) { // from saver
         attr = std::string(pData + sizeof(RID) + sizeof(AttrType), attrLen);
     }
 
-IX_BTKEY::IX_BTKEY(char* pData, int attrLen, AttrType ty): rid(), ty(ty), attr(pData, attrLen) {}
+IX_BTKEY::IX_BTKEY(char* pData, int attrLen, AttrType ty, const RID& rid): rid(rid), ty(ty), attr(pData, attrLen) {}
 
 void IX_BTKEY::toCharArray(char* pData) {
     *reinterpret_cast<RID*>(pData) = rid;
@@ -41,11 +41,13 @@ int IX_BTKEY::cmp(const IX_BTKEY &that) const {
                     return l[i] < r[i] ? -1 : 1;
         }
     }
+    assert(rid.isValid());
+    assert(that.rid.isValid());
     if (rid < that.rid)
         return -1;
     if (rid == that.rid)
         return 0;
-    return 1;
+    return 0;
 }
 
 int IX_BTKEY::getSize(int attrLen) {
@@ -142,6 +144,7 @@ RC IX_BTree::insert(IX_BTKEY& e) {
     RID v;
     RC rc = search(e, v);
     if (rc == IX_ENTRYEXISTS) {
+        printf("%s found\n", e.attr.c_str());
         return IX_ENTRYEXISTS;
     }
     if (rc != IX_KEYNOTFOUND) {

@@ -16,7 +16,7 @@ RC IX_IndexScan::OpenScan(IX_IndexHandle &indexHandle,
     while (!entrys.empty()) {
         entrys.pop();
     }
-    IX_BTKEY key((char*)value, indexHandle.header.attrLength, indexHandle.header.attrType);
+    IX_BTKEY key((char*)value, indexHandle.header.attrLength, indexHandle.header.attrType, RID()); // SOS pass an invalid rid for compile
     RC rc = search(RID(handle->header.rootPage, handle->header.rootSlot), compOp, key, true);
     IXRC(rc, IX_BTREE)
     state = RUNNING;

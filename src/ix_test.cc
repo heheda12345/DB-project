@@ -566,9 +566,9 @@ RC Test2(void)
    if ((rc = ih.InsertEntry(a, RID(1,1))) ||
        (rc = ih.InsertEntry(b, RID(1,2))))
        return (rc);
-   rc = ih.InsertEntry(a, RID(1,3));
+   rc = ih.InsertEntry(a, RID(1,1));
    assert(rc == IX_ENTRYEXISTS);
-   rc = ih.InsertEntry(b, RID(1,4));
+   rc = ih.InsertEntry(b, RID(1,2));
    assert(rc == IX_ENTRYEXISTS);
    if ((rc = ixm.CloseIndex(ih)))
       return (rc);

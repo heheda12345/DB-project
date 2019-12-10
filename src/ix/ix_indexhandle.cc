@@ -2,14 +2,14 @@
 #include "ix_btree.h"
 
 RC IX_IndexHandle::InsertEntry(void *pData, const RID &rid) {
-    IX_BTKEY key = IX_BTKEY((char*)pData, header.attrLength, header.attrType);
+    IX_BTKEY key = IX_BTKEY((char*)pData, header.attrLength, header.attrType, rid);
     RC rc = bTree->insert(key);
     IXRC(rc, rc)
     return OK_RC;
 }
 
 RC IX_IndexHandle::DeleteEntry(void *pData, const RID &rid) {
-    IX_BTKEY key = IX_BTKEY((char*)pData, header.attrLength, header.attrType);
+    IX_BTKEY key = IX_BTKEY((char*)pData, header.attrLength, header.attrType, rid);
     RC rc = bTree->remove(key);
     IXRC(rc, rc)
     return OK_RC;
@@ -43,12 +43,14 @@ IX_BTNode IX_IndexHandle::loadRoot() {
 }
 
 void IX_IndexHandle::update(IX_BTNode& node) {
+    printf("saver.update\n");
     RM_Record record;
     RC rc = fh.GetRec(node.pos, record);
     if (rc) {
         printf("ix error %d\n", rc);
         return;
     }
+    printf("get rec end\n");
     char* st;
     rc = record.GetData(st);
     if (rc) {
@@ -56,12 +58,13 @@ void IX_IndexHandle::update(IX_BTNode& node) {
         return;
     }
     node.dump(st, header.attrLength, header.btm);
-
+    printf("get data end\n");
     rc = fh.UpdateRec(record);
     if (rc) {
         printf("ix error %d\n", rc);
         return;
     }
+    printf("update end\n");
 }
 
 RID IX_IndexHandle::newNode(IX_BTNode &tr) {
