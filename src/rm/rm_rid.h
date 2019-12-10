@@ -51,10 +51,12 @@ public:
 
     // SOS
     PageNum GetPageNum() const {
+        assert(valid);
         return pageNum;
     }
 
     SlotNum GetSlotNum() const {
+        assert(valid);
         return slotNum;
     }
 
