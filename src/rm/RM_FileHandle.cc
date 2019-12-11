@@ -14,6 +14,7 @@ RC RM_FileHandle::Open(PF_FileHandle& handle) {
     rc = pfPageHandle.GetData(data);
     PFRC(rc, rc_ret)
     fileHeader = *reinterpret_cast<FileHeader*> (data);
+    printf("[Open]fileHeader %d %d %d\n", fileHeader.recordSize, fileHeader.recordPerPage, fileHeader.metaSize);
     isOpen = true;
 
     PageNum pageNum;
@@ -37,10 +38,12 @@ RC RM_FileHandle::Close() {
 }
 
 RC RM_FileHandle::checkRid(const RID &rid) const {
+    assert(rid.GetPageNum() > 0);
     SlotNum slot;
     RC rc = rid.GetSlotNum(slot);
     RIDRC(rc, RM_FILEHANDLE_CHECKRID)
     if (slot < 0 || slot >= fileHeader.recordPerPage) {
+        printf("ERROR! slot %d out of range [%d %d]\n", slot, 0, fileHeader.recordPerPage-1);
         return RM_SLOT_OUTOFRANGE;
     }
     return OK_RC;
@@ -51,6 +54,7 @@ int RM_FileHandle::getIndex(SlotNum slot) const{
 }
 
 RC RM_FileHandle::GetRec(const RID &rid, RM_Record &rec) const {
+    // printf("[RM GetRec] %lld %d\n", rid.GetPageNum(), rid.GetSlotNum());
     int rc_ret = RM_FILEHANDLE_GETREC;
     if (!isOpen) {
         RMRC(RM_FILE_NOT_OPEN, rc_ret);
@@ -162,6 +166,7 @@ RC RM_FileHandle::DeleteRec(const RID &rid) {
     RIDRC(rc, rc_ret)
     rc = checkRid(rid);
     RMRC(rc, rc_ret)
+    // printf("[RM DeleteRec] %lld %d\n", rid.GetPageNum(), rid.GetSlotNum());
     rc = rid.GetPageNum(pageNum);
     RIDRC(rc, rc_ret)
     rc = rid.GetSlotNum(slotNum);
@@ -198,6 +203,7 @@ RC RM_FileHandle::UpdateRec(const RM_Record &rec) {
     SlotNum slotNum;
     RC rc = rec.GetRid(rid);
     RMRC(rc, rc_ret)
+    // printf("[RM UpdRec] %lld %d\n", rid.GetPageNum(), rid.GetSlotNum());
     rc = rid.check();
     RIDRC(rc, rc_ret)
     rc = checkRid(rid);
@@ -221,8 +227,8 @@ RC RM_FileHandle::UpdateRec(const RM_Record &rec) {
     rc = rec.GetData(pData);
     RMRC(rc, rc_ret)
     memcpy(data + getIndex(slotNum), pData, fileHeader.recordSize);
-    pfFileHandle.MarkDirty(pageNum);
-
+    rc = pfFileHandle.MarkDirty(pageNum);
+    PFRC(rc, rc_ret);
     rc = pfFileHandle.UnpinPage(pageNum);
     PFRC(rc, rc_ret);
     return OK_RC;
@@ -315,6 +321,7 @@ RC RM_FileHandle::GetMeta(char* pData, int &size) {
     rc = pfPageHandle.GetData(data);
     PFRC(rc, rc_ret)
     fileHeader = *reinterpret_cast<FileHeader*> (data);
+    // printf("[GetMeta] fileHeader %d %d %d\n", fileHeader.recordSize, fileHeader.recordPerPage, fileHeader.metaSize);
     size = fileHeader.metaSize;
 
     memcpy(pData, data + sizeof(FileHeader), fileHeader.metaSize);
@@ -340,12 +347,14 @@ RC RM_FileHandle::SetMeta(const char* pData, int size) {
     PFRC(rc, rc_ret)
     (reinterpret_cast<FileHeader*>(data))->metaSize = size;
     fileHeader = *reinterpret_cast<FileHeader*> (data);
+    // printf("[SetMeta] fileHeader %d %d %d\n", fileHeader.recordSize, fileHeader.recordPerPage, fileHeader.metaSize);
     memcpy(data + sizeof(FileHeader), pData, size);
     
     PageNum pageNum;
     rc = pfPageHandle.GetPageNum(pageNum);
+    PFRC(rc, rc_ret);
     pfFileHandle.MarkDirty(pageNum);
-
+    PFRC(rc, rc_ret);
     rc = pfFileHandle.UnpinPage(pageNum);
     PFRC(rc, rc_ret);
     return OK_RC;

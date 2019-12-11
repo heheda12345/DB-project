@@ -85,6 +85,7 @@ RID IX_IndexHandle::newNode(IX_BTNode &tr) {
         RMRC(rc, RID());
     }
     tr.pos = rid;
+    // printf("new Node at rid (%lld %d)\n", rid.GetPageNum(), rid.GetSlotNum());
     return rid;
 }
 

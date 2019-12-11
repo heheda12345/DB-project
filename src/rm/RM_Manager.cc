@@ -19,7 +19,7 @@ RC RM_Manager::CreateFile (const std::string& fileName, int recordSize, char* me
     PFRC(rc, RM_MANAGER_CREATEFILE)
     FileHeader* fileHeader = reinterpret_cast<FileHeader*> (data);
     fileHeader->poolHead = 0;
-    fileHeader->recordPerPage = std::min((int)(PF_PAGE_SIZE - sizeof(PageHeader)), MAX_RECORD_PER_PAGE);
+    fileHeader->recordPerPage = std::min((int)(PF_PAGE_SIZE - sizeof(PageHeader))/recordSize, MAX_RECORD_PER_PAGE);
     fileHeader->recordSize = recordSize;
     fileHeader->metaSize = metaSize;
 
