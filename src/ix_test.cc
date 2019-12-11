@@ -1153,7 +1153,7 @@ RC Test7(void)
    // Delete half
    printf("[Step 4]             Deleting %d non-existing int entries\n", N/4);
    for (j = 0; j < N/4; j++) {
-      if ((rc = DeleteIntEntry(ih, values[j], j*2)) != IX_NOSUCHENTRY)
+      if ((rc = DeleteIntEntry(ih, values[j], j*2)) != IX_KEYNOTFOUND)
          goto err;
       if((j + 1) % PROG_UNIT == 0){
          // cast to long for PC's
