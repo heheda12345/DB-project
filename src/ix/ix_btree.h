@@ -25,10 +25,14 @@ struct IX_BTKEY {
     int cmp(const IX_BTKEY &that) const;
 
     bool operator < (const IX_BTKEY& that) {
+        assert(this->rid.isValid());
+        assert(that.rid.isValid());
         return cmp(that) == -1;
     }
 
     bool operator == (const IX_BTKEY& that) {
+        assert(this->rid.isValid());
+        assert(that.rid.isValid());
         return cmp(that) == 0;
     }
 

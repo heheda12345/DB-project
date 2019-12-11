@@ -73,56 +73,88 @@ RC IX_IndexScan::search(RID pos, CompOp compOp, IX_BTKEY &key, bool needCheck) {
             IXRC(rc, IX_BTREE)
             return OK_RC;
         }
-        case EQ_OP: { // SOS
-            int last = node.key.size();
-            bool need = true;
+        case EQ_OP: {
+            bool isFirst = true;
             for (int i=0; i<node.key.size(); i++) {
                 key.rid = node.key[i].rid;
                 int xx = node.key[i].cmp(key);
-                if (xx >= 0) {
-                    rc = search(node.child[i], compOp, key, need);
-                    IXRC(rc, IX_BTREE)
-                }
-                if (xx == 0)
-                    entrys.push(node.key[i].rid);
-                if (xx > 0) {
-                    last = i;
-                    break;
+                switch (xx) {
+                    case -1: {
+                        break;
+                    }
+                    case 0: {
+                        rc = search(node.child[i], compOp, key, isFirst);
+                        IXRC(rc, IX_BTREE)
+                        isFirst = false;
+                        entrys.push(node.key[i].rid);
+                        break;
+                    }
+                    case 1: {
+                        rc = search(node.child[i], compOp, key, true);
+                        IXRC(rc, IX_BTREE)
+                        return OK_RC;
+                    }
                 }
             }
-            search(node.child[last], compOp, key, true);
+            rc = search(*--node.child.end(), compOp, key, true);
+            IXRC(rc, IX_BTREE)
             return OK_RC;
         }
         case NE_OP: {
-            for (int i=0; i<node.child.size(); i++) {
+            bool isFirst = true;
+            for (int i=0; i<node.key.size(); i++) {
                 key.rid = node.key[i].rid;
                 int xx = node.key[i].cmp(key);
-                rc = search(node.child[i], compOp, key, true);
-                IXRC(rc, IX_BTREE)
-                if (xx != 0)
-                    entrys.push(node.key[i].rid);
+                switch (xx) {
+                    case -1: {
+                        rc = search(node.child[i], compOp, key, false);
+                        IXRC(rc, IX_BTREE)
+                        entrys.push(node.key[i].rid);
+                        break;
+                    }
+                    case 0: {
+                        rc = search(node.child[i], compOp, key, true);
+                        IXRC(rc, IX_BTREE)
+                        break;
+                    }
+                    case 1: {
+                        rc = search(node.child[i], compOp, key, isFirst);
+                        IXRC(rc, IX_BTREE)
+                        entrys.push(node.key[i].rid);
+                        isFirst = false;
+                        break;
+                    }
+                }
             }
-            search(*--node.child.end(), compOp, key, false);
+            rc = search(*--node.child.end(), compOp, key, isFirst);
             IXRC(rc, IX_BTREE)
             return OK_RC;
         }
         case LE_OP: {
-            int last = node.key.size();
             for (int i=0; i<node.key.size(); i++) {
                 key.rid = node.key[i].rid;
                 int xx = node.key[i].cmp(key);
-                if (xx >= 0) {
-                    rc = search(node.child[i], compOp, key, false);
-                    IXRC(rc, IX_BTREE)
-                }
-                if (xx <= 0)
-                    entrys.push(node.key[i].rid);
-                if (xx > 0) {
-                    last = i;
-                    break;
+                switch (xx) {
+                    case -1: {
+                        rc = search(node.child[i], compOp, key, false);
+                        IXRC(rc, IX_BTREE)
+                        entrys.push(node.key[i].rid);
+                        break;
+                    }
+                    case 0: {
+                        rc = search(node.child[i], compOp, key, false);
+                        IXRC(rc, IX_BTREE)
+                        entrys.push(node.key[i].rid);
+                        break;
+                    }
+                    case 1: {
+                        rc = search(node.child[i], compOp, key, true);
+                        IXRC(rc, IX_BTREE)
+                        return OK_RC;
+                    }
                 }
             }
-            rc = search(node.child[last], compOp, key, true);
+            rc = search(*--node.child.end(), compOp, key, true);
             IXRC(rc, IX_BTREE)
             return OK_RC;
         }
@@ -135,7 +167,6 @@ RC IX_IndexScan::search(RID pos, CompOp compOp, IX_BTKEY &key, bool needCheck) {
                         rc = search(node.child[i], compOp, key, false);
                         IXRC(rc, IX_BTREE)
                         entrys.push(node.key[i].rid);
-                        *reinterpret_cast<const int*>(node.key[i].attr.c_str());
                         break;
                     }
                     case 0: {
@@ -155,42 +186,56 @@ RC IX_IndexScan::search(RID pos, CompOp compOp, IX_BTKEY &key, bool needCheck) {
             return OK_RC;
         }
         case GE_OP: {
-            int last = 0;
-            for (int i=node.key.size(); i>0; i--) {
-                key.rid = node.key[i-1].rid;
-                int xx = node.key[i-1].cmp(key);
-                if (xx <= 0) {
-                    rc = search(node.child[i], compOp, key, false);
-                    IXRC(rc, IX_BTREE)
-                }
-                if (xx >= 0)
-                    entrys.push(node.key[i].rid);
-                if (xx >= 0) {
-                    last = i;
-                    break;
+            bool isFirst = true;
+            for (int i=0; i<node.key.size(); i++) {
+                key.rid = node.key[i].rid;
+                int xx = node.key[i].cmp(key);
+                switch (xx) {
+                    case -1: {
+                        break;
+                    }
+                    case 0: {
+                        rc = search(node.child[i], compOp, key, isFirst);
+                        IXRC(rc, IX_BTREE)
+                        entrys.push(node.key[i].rid);
+                        isFirst = false;
+                        break;
+                    }
+                    case 1: {
+                        rc = search(node.child[i], compOp, key, isFirst);
+                        IXRC(rc, IX_BTREE)
+                        entrys.push(node.key[i].rid);
+                        isFirst = false;
+                        break;
+                    }
                 }
             }
-            rc = search(node.child[last], compOp, key, true);
+            rc = search(*--node.child.end(), compOp, key, isFirst);
             IXRC(rc, IX_BTREE)
             return OK_RC;
         }
         case GT_OP: {
-            int last = 0;
-            for (int i=node.key.size(); i>0; i--) {
-                key.rid = node.key[i-1].rid;
-                int xx = node.key[i-1].cmp(key);
-                if (xx <= 0) {
-                    rc = search(node.child[i], compOp, key, false);
-                    IXRC(rc, IX_BTREE)
-                }
-                if (xx >= 0)
-                    entrys.push(node.key[i].rid);
-                if (xx >= 0) {
-                    last = i;
-                    break;
+            bool isFirst = true;
+            for (int i=0; i<node.key.size(); i++) {
+                key.rid = node.key[i].rid;
+                int xx = node.key[i].cmp(key);
+                switch (xx) {
+                    case -1: {
+                        break;
+                    }
+                    case 0: {
+                        break;
+                    }
+                    case 1: {
+                        rc = search(node.child[i], compOp, key, isFirst);
+                        IXRC(rc, IX_BTREE)
+                        entrys.push(node.key[i].rid);
+                        isFirst = false;
+                        break;
+                    }
                 }
             }
-            rc = search(node.child[last], compOp, key, true);
+            rc = search(*--node.child.end(), compOp, key, isFirst);
             IXRC(rc, IX_BTREE)
             return OK_RC;
         }

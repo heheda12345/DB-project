@@ -3,6 +3,7 @@
 #include <cstdio>
 
 void IX_PrintError(RC rc) {
+    return;
     switch (rc) {
         case IX_KEYNOTFOUND: { printf("ix error IX_KEYNOTFOUND\n"); break;}
         case IX_INVALIDSIZE: { printf("ix error IX_INVALIDSIZE\n"); break;}

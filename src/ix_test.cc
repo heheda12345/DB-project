@@ -34,7 +34,7 @@ using namespace std;
 #define FILENAME     "testrel"        // test file name
 #define BADFILE      "/abc/def/xyz"   // bad file name
 #define STRLEN       39               // length of strings to index
-#define FEW_ENTRIES  10
+#define FEW_ENTRIES  20
 #define MANY_ENTRIES 1000
 #define NENTRIES     50000            // Size of values array
 #define PROG_UNIT    200              // how frequently to give progress
@@ -81,11 +81,10 @@ RC PrintIndex(IX_IndexHandle &ih);
 //
 // Array of pointers to the test functions
 //
-#define NUM_TESTS       1               // number of tests
+#define NUM_TESTS       7               // number of tests
 int (*tests[])() =                      // RC doesn't work on some compilers
 {
-   Test4
-   , Test1
+   Test1
    , Test2
    , Test3
    , Test4
@@ -115,6 +114,7 @@ int main(int argc, char *argv[])
    rmm.DestroyFile(FILENAME);
    for (int i=0; i<10; i++)
       ixm.DestroyIndex(FILENAME, i);
+   ixm.DestroyIndex(FILENAME, 233);
 
    // If no argument given, do all tests
    if (argc == 1) {
@@ -666,7 +666,7 @@ RC Test4(void)
    IX_IndexHandle ih;
    int            index=4;
    int            i;
-   int            value=FEW_ENTRIES/2;
+   int            value = FEW_ENTRIES/2;
    RID            rid;
 
    printf("Test4: Inequality scans... \n");
@@ -855,7 +855,7 @@ RC Test5(void)
 {
    RC rc;
    IX_IndexHandle ih;
-   int index=100;
+   int index=233;
    int value=10;
 
    printf("Test5: Creating an sample index... \n");
@@ -890,7 +890,7 @@ RC Test5(void)
       return (rc);
    if (rc = InsertIntEntry(ih, 15))
       return (rc);
-   int sn = slotCnt;
+   int sn = slotCnt - 1;
    if (rc = InsertIntEntry(ih, 2))
       return (rc);
    if (rc = InsertIntEntry(ih, 2))
@@ -912,6 +912,8 @@ RC Test5(void)
    if (rc = ixm.CloseIndex(ih))
       return (rc);
 
+   // not destroy index as test6 uses it
+
    printf("Passed Test 5\n\n");
 //    PF_Statistics();
    return (0);
@@ -924,7 +926,7 @@ RC Test6(void)
 {
    RC rc;
    IX_IndexHandle ih;
-   int index=100;
+   int index=233;
    int value=10;
    IX_IndexScan scan;
    RID rid;
@@ -940,7 +942,8 @@ RC Test6(void)
    // Scan NO_OP
    printf("NO_OP\n");
    IX_IndexScan scanno;
-   if ((rc = scanno.OpenScan(ih, NO_OP, NULL))) {
+   int num = 0;
+   if ((rc = scanno.OpenScan(ih, NO_OP, &num))) {
      printf("Scan error: opening scan\n");
      return (rc);
    }
@@ -955,6 +958,7 @@ RC Test6(void)
       return (rc);
 
    printf("Found %d entries in no-scan.\n", i);
+   assert (i == 15);
 
    // Scan =
    printf("Key = %d\n", value);
@@ -974,6 +978,7 @@ RC Test6(void)
       return (rc);
 
    printf("Found %d entries in =-scan.\n", i);
+   assert(i == 8);
 
    // Scan <
    printf("Key < %d\n", value);
@@ -993,6 +998,7 @@ RC Test6(void)
       return (rc);
 
    printf("Found %d entries in <-scan.\n", i);
+   assert(i == 7);
 
    // Scan <=
    printf("Key <= %d\n", value);
@@ -1011,6 +1017,7 @@ RC Test6(void)
       return (rc);
 
    printf("Found %d entries in <=-scan.\n", i);
+   assert(i == 15);
 
    // Scan >
    printf("Key > %d\n", value);
@@ -1029,6 +1036,7 @@ RC Test6(void)
       return (rc);
 
    printf("Found %d entries in >-scan.\n", i);
+   assert(i == 0);
 
    // Scan >=
    printf("Key >= %d\n", value);
@@ -1047,8 +1055,12 @@ RC Test6(void)
       return (rc);
 
    printf("Found %d entries in >=-scan.\n", i);
+   assert(i == 8);
 
    if (rc = ixm.CloseIndex(ih))
+      return (rc);
+
+   if ((rc = ixm.DestroyIndex(FILENAME, index)))
       return (rc);
 
    printf("Passed Test 6\n\n");
@@ -1063,7 +1075,7 @@ RC Test7(void)
 {
    RC rc;
    IX_IndexHandle ih;
-   int index=100;
+   int index=7;
    int value=10;
    IX_IndexScan scan;
    IX_IndexScan scanle;
@@ -1085,7 +1097,7 @@ RC Test7(void)
    randup(N);
 
    // Add
-   printf("             Adding %d int entries\n", N/2);
+   printf("[Step 1]             Adding %d int entries\n", N/2);
    for (i = 0; i < N/2; i++) {
       if (rc = InsertIntEntry(ih, values[i], i*2))
          goto err;
@@ -1103,7 +1115,7 @@ RC Test7(void)
 #endif
 
    // Add
-   printf("             Adding %d existing int entries\n", N/2);
+   printf("[Step 2]             Adding %d existing int entries\n", N/2);
    for (i = 0; i < N/2; i++) {
       if ((rc = InsertIntEntry(ih, values[i], i*2)) != IX_ENTRYEXISTS)
          goto err;
@@ -1121,7 +1133,7 @@ RC Test7(void)
 #endif
 
    // Delete half
-   printf("             Deleting %d int entries\n", N/4);
+   printf("[Step 3]             Deleting %d int entries\n", N/4);
    for (j = 0; j < N/4; j++) {
       if (rc = DeleteIntEntry(ih, values[j], j*2))
          goto err;
@@ -1139,7 +1151,7 @@ RC Test7(void)
 #endif
 
    // Delete half
-   printf("             Deleting %d non-existing int entries\n", N/4);
+   printf("[Step 4]             Deleting %d non-existing int entries\n", N/4);
    for (j = 0; j < N/4; j++) {
       if ((rc = DeleteIntEntry(ih, values[j], j*2)) != IX_NOSUCHENTRY)
          goto err;
@@ -1157,7 +1169,7 @@ RC Test7(void)
 #endif
 
    // Add
-   printf("             Adding %d int entries\n", N/2);
+   printf("[Step 5]             Adding %d int entries\n", N/2);
    for (i = 0; i < N/2; i++) {
       if (rc = InsertIntEntry(ih, values[i+N/2], (i+N/2)*2))
          goto err;
@@ -1175,7 +1187,7 @@ RC Test7(void)
 #endif
 
    // Delete
-   printf("             Deleting %d int entries\n", N/4);
+   printf("[Step 6]             Deleting %d int entries\n", N/4);
    for (j = 0; j < N/4; j++) {
       if (rc = DeleteIntEntry(ih, values[j+N/4], (j+N/4)*2))
          goto err;
@@ -1193,7 +1205,7 @@ RC Test7(void)
 #endif
 
    // Deletion scan
-   printf("             Deleting entries = %d\n", values[N-1]);
+   printf("[Step 7]             Deleting entries = %d\n", values[N-1]);
    if ((rc = scanle.OpenScan(ih, EQ_OP, &values[N-1]))) {
      printf("Scan error: opening scan\n");
      return (rc);
@@ -1219,7 +1231,7 @@ RC Test7(void)
    printf("%d entries deleted in scan.\n", i);
 
    // Deletion scan
-   printf("             Deleting entries = %d\n", values[N-1]);
+   printf("[Step 8]             Deleting entries = %d\n", values[N-1]);
    if ((rc = scanle.OpenScan(ih, EQ_OP, &values[N-1]))) {
      printf("Scan error: opening scan\n");
      return (rc);
@@ -1231,7 +1243,7 @@ RC Test7(void)
    scanle.CloseScan();
 
    // Deletion scan
-   printf("             Deleting entries < %d\n", values[1]);
+   printf("[Step 9]             Deleting entries < %d\n", values[1]);
    if ((rc = scanle.OpenScan(ih, LT_OP, &values[1]))) {
      printf("Scan error: opening scan\n");
      return (rc);
@@ -1257,7 +1269,7 @@ RC Test7(void)
    printf("%d entries deleted in scan.\n", i);
 
    // Deletion scan
-   printf("             Deleting entries < %d\n", values[1]);
+   printf("[Step 10]             Deleting entries < %d\n", values[1]);
    if ((rc = scanle.OpenScan(ih, LT_OP, &values[1]))) {
      printf("Scan error: opening scan\n");
      return (rc);
@@ -1269,7 +1281,7 @@ RC Test7(void)
    scanle.CloseScan();
 
    // Deletion scan
-   printf("             Deleting entries >= %d\n", values[2]);
+   printf("[Step 11]             Deleting entries >= %d\n", values[2]);
    if ((rc = scanle.OpenScan(ih, GE_OP, &values[2]))) {
      printf("Scan error: opening scan\n");
      return (rc);
@@ -1295,7 +1307,7 @@ RC Test7(void)
    printf("%d entries deleted in scan.\n", i);
 
    // Deletion scan
-   printf("             Deleting entries >= %d\n", values[2]);
+   printf("[Step 12]             Deleting entries >= %d\n", values[2]);
    if ((rc = scanle.OpenScan(ih, GE_OP, &values[2]))) {
      printf("Scan error: opening scan\n");
      return (rc);
@@ -1313,7 +1325,7 @@ RC Test7(void)
 #endif
 
    // Add
-   printf("             Adding %d int entries\n", N/2);
+   printf("[Step 13]             Adding %d int entries\n", N/2);
    for (i = 0; i < N/2; i++) {
       if (rc = InsertIntEntry(ih, values[i], i*2))
          goto err;

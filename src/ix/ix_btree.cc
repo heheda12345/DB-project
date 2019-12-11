@@ -167,11 +167,10 @@ RC IX_BTree::search(IX_BTKEY& e, RID& ret) {
 }
 
 RC IX_BTree::insert(IX_BTKEY& e) {
-    printf("[[[[[[insert]]]]]] %d %lld %d\n", *reinterpret_cast<const int*>(e.attr.c_str()), e.rid.GetPageNum(), e.rid.GetSlotNum());
+    // printf("[[[[[[insert]]]]]] %d %lld %d\n", *reinterpret_cast<const int*>(e.attr.c_str()), e.rid.GetPageNum(), e.rid.GetSlotNum());
     RID v;
     RC rc = search(e, v);
     if (rc == IX_ENTRYEXISTS) {
-        // printf("%d found\n", *e.attr.c_str());
         return IX_ENTRYEXISTS;
     }
     if (rc != IX_KEYNOTFOUND) {
@@ -180,20 +179,16 @@ RC IX_BTree::insert(IX_BTKEY& e) {
     assert(_hot.pos.isValid());
     // printf("%d not found, start insert\n", *e.attr.c_str());
     int r = IX_BTKEY::search(_hot.key, e);
-    // printf("r %d\n", r);
-    // printf("_hot %d %d: %d %d\n", _hot.pos.GetPageNum(), _hot.pos.GetSlotNum(), _hot.key.size(), _hot.child.size());
     _hot.key.insert(_hot.key.begin() + r + 1, e);
     _hot.child.insert(_hot.child.begin() + r + 2, RID());
-    // _size ++;
-    // printf("_hot %d %d: %d %d\n", _hot.pos.GetPageNum(), _hot.pos.GetSlotNum(), _hot.key.size(), _hot.child.size());
     saver.update(_hot);
-    printf("insert end, try overflow\n");
+    // printf("insert end, try overflow\n");
     solveOverflow(_hot);
     return OK_RC;
 }
 
 RC IX_BTree::remove(IX_BTKEY& e) {
-    printf("[[[[[[remove]]]]]] %d %lld %d\n", *reinterpret_cast<const int*>(e.attr.c_str()), e.rid.GetPageNum(), e.rid.GetSlotNum());
+    // printf("[[[[[[remove]]]]]] %d %lld %d\n", *reinterpret_cast<const int*>(e.attr.c_str()), e.rid.GetPageNum(), e.rid.GetSlotNum());
     RID vid;
     RC rc = search(e, vid);
     if (rc == IX_KEYNOTFOUND) {
@@ -202,7 +197,7 @@ RC IX_BTree::remove(IX_BTKEY& e) {
     if (rc != IX_ENTRYEXISTS) {
         IXRC(rc, IX_BTREE);
     }
-    printf("found entry, hot (%lld %d) v (%lld %d) start delete\n", _hot.pos.GetPageNum(), _hot.pos.GetSlotNum(), vid.GetPageNum(), vid.GetSlotNum());
+    // printf("found entry, hot (%lld %d) v (%lld %d) start delete\n", _hot.pos.GetPageNum(), _hot.pos.GetSlotNum(), vid.GetPageNum(), vid.GetSlotNum());
     assert(vid.isValid());
     assert(_hot.pos.isValid()); // hot is not used in remove
     IX_BTNode v = saver.get(vid);
@@ -219,7 +214,7 @@ RC IX_BTree::remove(IX_BTKEY& e) {
     v.key.erase(v.key.begin() + r); v.child.erase(v.child.begin() + r + 1);
     // _size--;
     saver.update(v);
-    printf("remove end, try underflow\n");
+    // printf("remove end, try underflow\n");
     solveUnderflow(v);
     return OK_RC;
 }
@@ -227,7 +222,7 @@ RC IX_BTree::remove(IX_BTKEY& e) {
 void IX_BTree::solveOverflow(IX_BTNode& v) {
     if (_order >= v.child.size())
         return;
-    printf("solve overflow\n");
+    // printf("solve overflow\n");
     int s = _order >> 1;
     IX_BTNode u(saver);
     u.child[0] = v.child[s+1];
@@ -274,26 +269,24 @@ void IX_BTree::solveOverflow(IX_BTNode& v) {
     saver.update(v);
     saver.update(p);
     solveOverflow(p);
-    printf("solve overflow end\n");
+    // printf("solve overflow end\n");
 }
 
 void IX_BTree::solveUnderflow(IX_BTNode& v) {
     if ((_order+1) / 2 <= v.child.size())
         return;
-    printf("solve underflow\n");
+    // printf("solve underflow\n");
     IX_BTNode p = v.parent.isValid() ? saver.get(v.parent) : IX_BTNode(saver);
     if (!v.parent.isValid()) {
         if (!v.key.size() && v.child[0].isValid()) {
             _root = v.child[0];
             IX_BTNode newRoot = saver.get(_root);
             newRoot.parent = RID();
-            // v.child[0] = RID();
-            // saver.update(v);
             saver.deleteNode(v);
             saver.update(newRoot);
             saver.setRoot(_root);
         }
-        printf("solve underflow end, root\n");
+        // printf("solve underflow end, root\n");
         return;
     }
     int r = 0;
@@ -317,7 +310,7 @@ void IX_BTree::solveUnderflow(IX_BTNode& v) {
             saver.update(p);
             saver.update(v);
             saver.update(ls);
-            printf("solve underflow finish, left\n");
+            // printf("solve underflow finish, left\n");
             return;
         }
     }
@@ -337,7 +330,7 @@ void IX_BTree::solveUnderflow(IX_BTNode& v) {
             saver.update(p);
             saver.update(v);
             saver.update(rs);
-            printf("solve underflow finish, right\n");
+            // printf("solve underflow finish, right\n");
             return;
         }
     }
@@ -391,5 +384,5 @@ void IX_BTree::solveUnderflow(IX_BTNode& v) {
         saver.update(rs);
     }
     solveUnderflow(p);
-    printf("solve underflow end\n");
+    // printf("solve underflow end\n");
 }
