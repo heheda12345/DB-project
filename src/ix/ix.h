@@ -51,6 +51,8 @@ public:
     void update(IX_BTNode& node);
 
     RID newNode(IX_BTNode& tr);
+    
+    void deleteNode(IX_BTNode& tr);
 
     int getAttrLen() const {
         return header.attrLength;

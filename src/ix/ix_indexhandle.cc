@@ -25,14 +25,10 @@ IX_BTNode IX_IndexHandle::get(RID pos) {
     // printf("getting %lld %d\n", pos.GetPageNum(), pos.GetSlotNum());
     RM_Record record;
     RC rc = fh.GetRec(pos, record);
-    if (rc) {
-        RMRC(rc, IX_BTNode())
-    }
+    RMRC(rc, IX_BTNode())
     char* st;
     rc = record.GetData(st);
-    if (rc) {
-        RMRC(rc, IX_BTNode())
-    }
+    RMRC(rc, IX_BTNode());
     IX_BTNode ret;
     ret.load(st, header.attrLength, header.btm);
     ret.pos = pos;
@@ -81,12 +77,18 @@ RID IX_IndexHandle::newNode(IX_BTNode &tr) {
     char st[header.nodeSize];
     tr.dump(st, header.attrLength, header.btm);
     RC rc = fh.InsertRec(st, rid);
-    if (rc) {
-        RMRC(rc, RID());
-    }
+    RMRC(rc, RID());
     tr.pos = rid;
     // printf("new Node at rid (%lld %d)\n", rid.GetPageNum(), rid.GetSlotNum());
     return rid;
+}
+
+void IX_IndexHandle::deleteNode(IX_BTNode &tr) {
+    RC rc = fh.DeleteRec(tr.pos);
+    if (rc) {
+        IX_PrintError(rc);
+        return;
+    }
 }
 
 void IX_IndexHandle::init(){

@@ -199,7 +199,7 @@ RC IX_BTree::remove(IX_BTKEY& e) {
     assert(vid.isValid());
     assert(_hot.pos.isValid());
     IX_BTNode v = saver.get(vid);
-    int r = IX_BTKEY::search(_hot.key, e) + 1;
+    int r = IX_BTKEY::search(_hot.key, e);
     if (v.child[0].isValid()) { // not leaf
         IX_BTNode u = saver.get(v.child[r+1]);
         while (u.child[0].isValid()) {
@@ -251,7 +251,7 @@ void IX_BTree::solveOverflow(IX_BTNode& v) {
         _root = p.pos;
         p.child[0] = v.pos;
         v.parent = p.pos; 
-        saver.setRoot(p.pos);
+        saver.setRoot(_root);
     }
 
     int r = IX_BTKEY::search(p.key, v.key[0]) + 1;
@@ -272,11 +272,21 @@ void IX_BTree::solveUnderflow(IX_BTNode& v) {
         return;
     IX_BTNode p = v.parent.isValid() ? saver.get(v.parent) : IX_BTNode(saver);
     if (!v.parent.isValid()) {
-        // TODO
+        if (!v.key.size() && v.child[0].isValid()) {
+            _root = v.child[0];
+            IX_BTNode newRoot = saver.get(_root);
+            newRoot.parent = RID();
+            // v.child[0] = RID();
+            // saver.update(v);
+            saver.deleteNode(v);
+            saver.update(newRoot);
+            saver.setRoot(_root);
+        }
     }
     int r = 0;
-    while (!(p.child[r] == v.pos))
+    while (!(p.child[r] == v.pos)) {
         r++;
+    }
     if (0 < r) {
         IX_BTNode ls = saver.get(p.child[r-1]);
         if ((_order + 1)/2 < ls.child.size()) {
@@ -297,29 +307,28 @@ void IX_BTree::solveUnderflow(IX_BTNode& v) {
         }
     }
     if (p.child.size() > r + 1) {
-        // SOS NOT FLIP NOW
-        IX_BTNode ls = saver.get(p.child[r-1]);
-        if ((_order + 1)/2 < ls.child.size()) {
-            v.key.insert(v.key.begin(), p.key[r-1]);
-            p.key[r-1] = *--ls.key.end();
-            ls.key.pop_back();
-            v.child.insert(v.child.begin(), *--ls.child.end());
-            ls.child.pop_back();
-            if (v.child[0].isValid()) {
-                IX_BTNode s = saver.get(v.child[0]);
+        IX_BTNode rs = saver.get(p.child[r+1]);
+        if ((_order + 1)/2 < rs.child.size()) {
+            v.key.push_back(p.key[r]);
+            p.key[r] = rs.key[0];
+            rs.key.erase(rs.key.begin());
+            v.child.push_back(rs.child[0]);
+            rs.child.erase(rs.child.begin());
+            if ((*--v.child.end()).isValid()) {
+                IX_BTNode s = saver.get(*--v.child.end());
                 s.parent = v.pos;
                 saver.update(s);
             }
             saver.update(p);
             saver.update(v);
-            saver.update(ls);
+            saver.update(rs);
             return;
         }
     }
     if (0 < r) {
         IX_BTNode ls = saver.get(p.child[r-1]);
-        ls.key.push_back(*--p.key.end());
-        p.key.pop_back();
+        ls.key.push_back(p.key[r-1]);
+        p.key.erase(p.key.begin() + r - 1);
         p.child.erase(p.child.begin() + r);
         ls.child.push_back(v.child[0]);
         v.child.erase(v.child.begin());
@@ -330,7 +339,7 @@ void IX_BTree::solveUnderflow(IX_BTNode& v) {
         }
         ls.key.insert(ls.key.end(), v.key.begin(), v.key.end());
         ls.child.insert(ls.child.end(), v.child.begin(), --v.child.end());
-        for (RID pos: v.child) {
+        for (RID pos: ls.child) { // can be [v.child.begin(), --v.child.end())
             if (pos.isValid()) {
                 IX_BTNode x = saver.get(pos);
                 x.parent = ls.pos;
@@ -338,33 +347,32 @@ void IX_BTree::solveUnderflow(IX_BTNode& v) {
             }
         }
         saver.update(p);
-        saver.update(v);
+        saver.deleteNode(v);
         saver.update(ls);
     } else {
-        // SOS NOT FLIP
-        IX_BTNode ls = saver.get(p.child[r-1]);
-        ls.key.push_back(*--p.key.end());
-        p.key.pop_back();
+        IX_BTNode rs = saver.get(p.child[r+1]);
+        rs.key.insert(rs.key.begin(), p.key[r]);
+        p.key.erase(p.key.begin() + r);
         p.child.erase(p.child.begin() + r);
-        ls.child.push_back(v.child[0]);
-        v.child.erase(v.child.begin());
-        if ((*--ls.child.end()).isValid()) {
-            IX_BTNode x = saver.get(*--ls.child.end());
-            x.parent = ls.pos;
+        rs.child.insert(rs.child.begin(), v.child[0]);
+        v.child.pop_back();
+        if (rs.child[0].isValid()) {
+            IX_BTNode x = saver.get(rs.child[0]);
+            x.parent = rs.pos;
             saver.update(x);
         }
-        ls.key.insert(ls.key.end(), v.key.begin(), v.key.end());
-        ls.child.insert(ls.child.end(), v.child.begin(), --v.child.end());
-        for (RID pos: v.child) {
+        rs.key.insert(rs.key.begin(), v.key.begin(), v.key.end());
+        rs.child.insert(rs.child.begin(), ++v.child.begin(), v.child.end());
+        for (RID pos: rs.child) { // can be [v.child.begin(), --v.child.end())
             if (pos.isValid()) {
                 IX_BTNode x = saver.get(pos);
-                x.parent = ls.pos;
+                x.parent = rs.pos;
                 saver.update(x);
             }
         }
         saver.update(p);
-        saver.update(v);
-        saver.update(ls);
+        saver.deleteNode(v);
+        saver.update(rs);
     }
     solveUnderflow(p);
 }
