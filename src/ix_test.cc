@@ -34,7 +34,7 @@ using namespace std;
 #define FILENAME     "testrel"        // test file name
 #define BADFILE      "/abc/def/xyz"   // bad file name
 #define STRLEN       39               // length of strings to index
-#define FEW_ENTRIES  20
+#define FEW_ENTRIES  1000
 #define MANY_ENTRIES 1000
 #define NENTRIES     50000            // Size of values array
 #define PROG_UNIT    200              // how frequently to give progress
@@ -75,15 +75,16 @@ RC DeleteIntEntries(IX_IndexHandle &ih, int nEntries);
 RC DeleteFloatEntries(IX_IndexHandle &ih, int nEntries);
 RC DeleteStringEntries(IX_IndexHandle &ih, int nEntries);
 RC VerifyIntIndex(IX_IndexHandle &ih, int nStart, int nEntries, int bExists);
+RC VerifyIntEntries(IX_IndexHandle &ih, int nStart, int nEntries, bool bExists);
 RC PrintIndex(IX_IndexHandle &ih);
 
 //
 // Array of pointers to the test functions
 //
-#define NUM_TESTS       3               // number of tests
+#define NUM_TESTS       1               // number of tests
 int (*tests[])() =                      // RC doesn't work on some compilers
 {
-   Test0
+   Test3
    , Test1
    , Test2
    , Test3
@@ -246,25 +247,31 @@ RC InsertIntEntries(IX_IndexHandle &ih, int nEntries)
    return (0);
 }
 
-RC VerifyInsertIntEntries(IX_IndexHandle &ih, int nEntries) {
+RC VerifyIntEntries(IX_IndexHandle &ih, int nStart, int nEntries, bool bExists) {
    RC rc;
    int i;
    int value;
 
-   printf("             Verify inserting by insert %d int entries again\n", nEntries);
-   for(i = 0; i < nEntries; i++) {
+   printf("             Verify inserting by insert/delete %d int entries again\n", nEntries);
+   for(i = nStart; i < nStart + nEntries; i++) {
+      printf("%d: \n", i);
       value = values[i] + 1;
       RID rid(value, value*2);
-      rc = ih.InsertEntry((void *)&value, rid);
-      assert(rc == IX_ENTRYEXISTS);
+      if (bExists) {
+         rc = ih.InsertEntry((void *)&value, rid);
+         assert(rc == IX_ENTRYEXISTS);
+      } else {
+         rc = ih.DeleteEntry((void*)&value, rid);
+         assert(rc == IX_KEYNOTFOUND);
+      }
 
       if((i + 1) % PROG_UNIT == 0){
          // cast to long for PC's
-         printf("\r\t%d%%    ", (int)((i+1)*100L/nEntries));
+         printf("\r\t%d%%    ", (int)((i+1-nStart)*100L/nEntries));
          fflush(stdout);
       }
    }
-   printf("\r\t%d%%      \n", (int)(i*100L/nEntries));
+   printf("\r\t%d%%      \n", (int)((i-nStart)*100L/nEntries));
    return OK_RC;
 }
 
@@ -372,6 +379,7 @@ RC DeleteIntEntries(IX_IndexHandle &ih, int nEntries)
    printf("        Deleting %d int entries\n", nEntries);
    ran(nEntries);
    for (i = 0; i < nEntries; i++) {
+      printf("%d: \n", i);
       value = values[i] + 1;
       RID rid(value, value*2);
       if ((rc = ih.DeleteEntry((void *)&value, rid)))
@@ -528,26 +536,28 @@ RC Test0(void)
 
    printf("Test0: a Simple Script\n");
 
-   if ((rc = ixm.CreateIndex(FILENAME, index, STRING, 4)) ||
+   if ((rc = ixm.CreateIndex(FILENAME, index, INT, 4)) ||
          (rc = ixm.OpenIndex(FILENAME, index, ih)))
          return (rc);
-   char a[] = "aaaa";
-   char b[] = "bbbb";
-   char c[] = "cccc";
-   char d[] = "dddd";
-   if ((rc = ih.InsertEntry(a, RID(10, 10))) ||
-       (rc = ih.InsertEntry(b, RID(10, 20))) ||
-       (rc = ih.InsertEntry(c, RID(10, 30))) ||
-       (rc = ih.InsertEntry(d, RID(10, 40))))
+   int a = 11, b = 22, c = 33, d = 44;
+   if ((rc = ih.InsertEntry(&a, RID(10, 10))) ||
+       (rc = ih.InsertEntry(&b, RID(10, 20))) ||
+       (rc = ih.InsertEntry(&c, RID(10, 30))) ||
+       (rc = ih.InsertEntry(&d, RID(10, 40))) ||
+       (rc = ih.DeleteEntry(&a, RID(10, 10))) ||
+       (rc = ih.DeleteEntry(&b, RID(10, 20))) ||
+       (rc = ih.DeleteEntry(&c, RID(10, 30))) ||
+       (rc = ih.DeleteEntry(&d, RID(10, 40))))
        return (rc);
-   rc = ih.InsertEntry(a, RID(10, 10));
-   assert(rc == IX_ENTRYEXISTS);
-   rc = ih.InsertEntry(b, RID(10, 20));
-   assert(rc == IX_ENTRYEXISTS);
-   rc = ih.InsertEntry(c, RID(10, 30));
-   assert(rc == IX_ENTRYEXISTS);
-   rc = ih.InsertEntry(d, RID(10, 40));
-   assert(rc == IX_ENTRYEXISTS);
+   rc = ih.DeleteEntry(&a, RID(10, 10));
+   assert(rc == IX_KEYNOTFOUND);
+   rc = ih.DeleteEntry(&b, RID(10, 20));
+   assert(rc == IX_KEYNOTFOUND);
+   rc = ih.DeleteEntry(&c, RID(10, 30));
+   assert(rc == IX_KEYNOTFOUND);
+   rc = ih.DeleteEntry(&d, RID(10, 40));
+   assert(rc == IX_KEYNOTFOUND);
+
    if ((rc = ixm.CloseIndex(ih)))
       return (rc);
 
@@ -596,12 +606,12 @@ RC Test2(void)
    if ((rc = ixm.CreateIndex(FILENAME, index, INT, sizeof(int))) ||
          (rc = ixm.OpenIndex(FILENAME, index, ih)) ||
          (rc = InsertIntEntries(ih, FEW_ENTRIES)) ||
-         (rc = VerifyInsertIntEntries(ih, FEW_ENTRIES)) ||
+         (rc = VerifyIntEntries(ih, 0, FEW_ENTRIES, 1)) ||
          (rc = ixm.CloseIndex(ih)) ||
          (rc = ixm.OpenIndex(FILENAME, index, ih)) ||
 
          // ensure inserted entries are all there
-         (rc = VerifyInsertIntEntries(ih, FEW_ENTRIES)) ||
+         (rc = VerifyIntEntries(ih, 0, FEW_ENTRIES, 1)) ||
          (rc = ixm.CloseIndex(ih)))
       return (rc);
 
@@ -633,9 +643,9 @@ RC Test3(void)
          (rc = ixm.CloseIndex(ih)) ||
          (rc = ixm.OpenIndex(FILENAME, index, ih)) ||
          // ensure deleted entries are gone
-         (rc = VerifyIntIndex(ih, 0, nDelete, FALSE)) ||
+         (rc = VerifyIntEntries(ih, 0, nDelete, 0)) ||
          // ensure non-deleted entries still exist
-         (rc = VerifyIntIndex(ih, nDelete, FEW_ENTRIES - nDelete, TRUE)) ||
+         (rc = VerifyIntEntries(ih, nDelete, FEW_ENTRIES - nDelete, 1)) ||
          (rc = ixm.CloseIndex(ih)))
       return (rc);
 

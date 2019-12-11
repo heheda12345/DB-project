@@ -55,6 +55,7 @@ int IX_BTKEY::getSize(int attrLen) {
 
 int IX_BTKEY::search(const std::vector<IX_BTKEY> vec, IX_BTKEY e) {
     // printf("search size %d\n", vec.size());
+    // for (auto x: vec) { printf("(%d: %lld %d) ", *reinterpret_cast<const int*>(x.attr.c_str()), x.rid.GetPageNum(), x.rid.GetSlotNum()); } printf("\n");
     for (int i=0; i<vec.size(); i++)
         if (e < vec[i])
             return i-1;
@@ -111,6 +112,8 @@ void IX_BTNode::dump(char* pData, int attrLen, int m) {
 
 void IX_BTNode::load(char* pData, int attrLen, int m) {
     int n = *reinterpret_cast<int*>(pData);
+    // printf("load(%d) size %d\n", m, n);
+    assert(n <= m+1);
     parent.loadFrom(pData + sizeof(int));
     pos.loadFrom(pData + sizeof(int) + RID::getSize());
     key.clear(); child.clear();
@@ -162,7 +165,7 @@ RC IX_BTree::search(IX_BTKEY& e, RID& ret) {
 }
 
 RC IX_BTree::insert(IX_BTKEY& e) {
-    printf("[insert] %d %lld %d\n", *e.attr.c_str(), e.rid.GetPageNum(), e.rid.GetSlotNum());
+    printf("[[[[[[insert]]]]]] %d %lld %d\n", *reinterpret_cast<const int*>(e.attr.c_str()), e.rid.GetPageNum(), e.rid.GetSlotNum());
     RID v;
     RC rc = search(e, v);
     if (rc == IX_ENTRYEXISTS) {
@@ -188,6 +191,7 @@ RC IX_BTree::insert(IX_BTKEY& e) {
 }
 
 RC IX_BTree::remove(IX_BTKEY& e) {
+    printf("[[[[[[remove]]]]]] %d %lld %d\n", *reinterpret_cast<const int*>(e.attr.c_str()), e.rid.GetPageNum(), e.rid.GetSlotNum());
     RID vid;
     RC rc = search(e, vid);
     if (rc == IX_KEYNOTFOUND) {
@@ -196,20 +200,24 @@ RC IX_BTree::remove(IX_BTKEY& e) {
     if (rc != IX_ENTRYEXISTS) {
         IXRC(rc, IX_BTREE);
     }
+    printf("found entry, hot (%lld %d) v (%lld %d) start delete\n", _hot.pos.GetPageNum(), _hot.pos.GetSlotNum(), vid.GetPageNum(), vid.GetSlotNum());
     assert(vid.isValid());
-    assert(_hot.pos.isValid());
+    assert(_hot.pos.isValid()); // hot is not used in remove
     IX_BTNode v = saver.get(vid);
-    int r = IX_BTKEY::search(_hot.key, e);
+    int r = IX_BTKEY::search(v.key, e);
     if (v.child[0].isValid()) { // not leaf
         IX_BTNode u = saver.get(v.child[r+1]);
         while (u.child[0].isValid()) {
-            u = saver.get(v.child[0]);
+            u = saver.get(u.child[0]);
         }
-        v.key[r] = u.key[0]; v = u; r = 0;
+        v.key[r] = u.key[0];
+        saver.update(v);
+        v = u; r = 0;
     }
     v.key.erase(v.key.begin() + r); v.child.erase(v.child.begin() + r + 1);
     // _size--;
     saver.update(v);
+    printf("remove end, try underflow\n");
     solveUnderflow(v);
     return OK_RC;
 }
@@ -270,6 +278,7 @@ void IX_BTree::solveOverflow(IX_BTNode& v) {
 void IX_BTree::solveUnderflow(IX_BTNode& v) {
     if ((_order+1) / 2 <= v.child.size())
         return;
+    printf("solve underflow\n");
     IX_BTNode p = v.parent.isValid() ? saver.get(v.parent) : IX_BTNode(saver);
     if (!v.parent.isValid()) {
         if (!v.key.size() && v.child[0].isValid()) {
@@ -282,11 +291,14 @@ void IX_BTree::solveUnderflow(IX_BTNode& v) {
             saver.update(newRoot);
             saver.setRoot(_root);
         }
+        printf("solve underflow end, root\n");
+        return;
     }
     int r = 0;
     while (!(p.child[r] == v.pos)) {
         r++;
     }
+    // printf("r %d\n", r);
     if (0 < r) {
         IX_BTNode ls = saver.get(p.child[r-1]);
         if ((_order + 1)/2 < ls.child.size()) {
@@ -303,6 +315,7 @@ void IX_BTree::solveUnderflow(IX_BTNode& v) {
             saver.update(p);
             saver.update(v);
             saver.update(ls);
+            printf("solve underflow finish, left\n");
             return;
         }
     }
@@ -322,6 +335,7 @@ void IX_BTree::solveUnderflow(IX_BTNode& v) {
             saver.update(p);
             saver.update(v);
             saver.update(rs);
+            printf("solve underflow finish, right\n");
             return;
         }
     }
@@ -338,8 +352,8 @@ void IX_BTree::solveUnderflow(IX_BTNode& v) {
             saver.update(x);
         }
         ls.key.insert(ls.key.end(), v.key.begin(), v.key.end());
-        ls.child.insert(ls.child.end(), v.child.begin(), --v.child.end());
-        for (RID pos: ls.child) { // can be [v.child.begin(), --v.child.end())
+        ls.child.insert(ls.child.end(), v.child.begin(), v.child.end());
+        for (RID pos: v.child) {
             if (pos.isValid()) {
                 IX_BTNode x = saver.get(pos);
                 x.parent = ls.pos;
@@ -354,7 +368,7 @@ void IX_BTree::solveUnderflow(IX_BTNode& v) {
         rs.key.insert(rs.key.begin(), p.key[r]);
         p.key.erase(p.key.begin() + r);
         p.child.erase(p.child.begin() + r);
-        rs.child.insert(rs.child.begin(), v.child[0]);
+        rs.child.insert(rs.child.begin(), *--v.child.end());
         v.child.pop_back();
         if (rs.child[0].isValid()) {
             IX_BTNode x = saver.get(rs.child[0]);
@@ -362,8 +376,8 @@ void IX_BTree::solveUnderflow(IX_BTNode& v) {
             saver.update(x);
         }
         rs.key.insert(rs.key.begin(), v.key.begin(), v.key.end());
-        rs.child.insert(rs.child.begin(), ++v.child.begin(), v.child.end());
-        for (RID pos: rs.child) { // can be [v.child.begin(), --v.child.end())
+        rs.child.insert(rs.child.begin(), v.child.begin(), v.child.end());
+        for (RID pos: v.child) {
             if (pos.isValid()) {
                 IX_BTNode x = saver.get(pos);
                 x.parent = rs.pos;
@@ -375,4 +389,5 @@ void IX_BTree::solveUnderflow(IX_BTNode& v) {
         saver.update(rs);
     }
     solveUnderflow(p);
+    printf("solve underflow end\n");
 }

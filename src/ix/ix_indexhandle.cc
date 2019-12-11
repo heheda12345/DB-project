@@ -41,6 +41,7 @@ IX_BTNode IX_IndexHandle::loadRoot() {
 }
 
 void IX_IndexHandle::setRoot(const RID& rid) {
+    printf("[SetRoot] (%lld %d)\n", rid.GetPageNum(), rid.GetSlotNum());
     header.rootPage = rid.GetPageNum();
     header.rootSlot = rid.GetSlotNum();
     RC rc = fh.SetMeta(reinterpret_cast<char*>(&header), sizeof(IX_IndexHandle::Header));
