@@ -1,0 +1,14 @@
+create database test;
+create database test;
+create database test1;
+create database test2;
+show databases;
+use database test;
+show databases;
+use database test;
+use database test1;
+use database xxx;
+drop database test;
+drop database test1;
+drop database test2;
+exit;

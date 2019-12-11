@@ -110,6 +110,7 @@ sysStmt: SHOW DATABASES
     }
     | EXIT
     {
+        printf("DB end!\n");
         YYACCEPT;
     }
 
@@ -121,9 +122,9 @@ dbStmt: CREATE DATABASE dbName
     {
         $$ = new DropDatabase($3);
     }
-    | USE dbName
+    | USE DATABASE dbName
     {
-        $$ = new UseDatabase($2);
+        $$ = new UseDatabase($3);
     }
     | SHOW TABLES
     {

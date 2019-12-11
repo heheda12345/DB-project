@@ -6,6 +6,8 @@
 namespace Parser {
 
 class TreeNode {
+protected:
+    static std::string curTable;
 };
 
 class Type {
@@ -283,7 +285,7 @@ public:
 
 class UseDatabase: public Stmt {
 public:
-    UseDatabase(std::string* _dbName): dbName(dbName) {}
+    UseDatabase(std::string* _dbName): dbName(_dbName) {}
     ~UseDatabase() {
         delete[] dbName;
     }

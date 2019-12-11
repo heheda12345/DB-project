@@ -51,3 +51,4 @@ _deps
 # generated
 testrel.*
 output
+data
