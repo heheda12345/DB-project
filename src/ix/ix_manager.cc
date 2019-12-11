@@ -45,6 +45,7 @@ RC IX_Manager::DestroyIndex(const char *fileName, int indexNo) {
 RC IX_Manager::OpenIndex(const char *fileName, int indexNo,
             IX_IndexHandle &indexHandle) {
     string name = string(fileName) + "." + to_string(indexNo);
+    printf("[OpenIndex] %s\n", name.c_str());
     RC rc = rmm.OpenFile(name.c_str(), indexHandle.fh);
     RMRC(rc, IX_PF);
     indexHandle.init();
@@ -53,6 +54,7 @@ RC IX_Manager::OpenIndex(const char *fileName, int indexNo,
 
 // Close an Index
 RC IX_Manager::CloseIndex(IX_IndexHandle &indexHandle) {
+    printf("[CloseIndex]\n");
     RC rc = rmm.CloseFile(indexHandle.fh);
     RMRC(rc, IX_PF);
     return OK_RC;

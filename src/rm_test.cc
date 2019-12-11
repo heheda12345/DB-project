@@ -522,7 +522,7 @@ RC ChangeRecs(RM_FileHandle fh) {
         // assert (rec->r == rec1[i].r);
         // assert(strcmp(rec->str, rec1[i].str) == 0);
 
-        RM_Record newRecord = RM_Record(reinterpret_cast<char*>(&rec2[i]), sizeof(TestRec), rid[i]);
+        RM_Record newRecord(reinterpret_cast<char*>(&rec2[i]), sizeof(TestRec), rid[i]);
         rc = fh.UpdateRec(newRecord);
         RMRC(rc, rc);
     }

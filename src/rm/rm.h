@@ -87,6 +87,14 @@ public:
         return OK_RC;
     }
 
+    RC MoveData(char* &pData) {
+        if (!valid)
+            return RM_WARN_EMPTY_RECORD;
+        pData = data;
+        valid = 0;
+        return OK_RC;
+    }
+
     // Return the RID associated with the record
     RC GetRid (RID &rid) const {
         if (!valid)
@@ -110,13 +118,15 @@ public:
         rec.SetValue(data, len, rid);
     }
 
+    RM_Record(const RM_Record&) = delete;
+    RM_Record& operator=(const RM_Record&) = delete;
+
 
 private:
     char* data;
     int len;
     RID rid;
     bool valid;
-    const RM_Record& operator=(const RM_Record&);
 };
 
 //

@@ -22,6 +22,7 @@ RC IX_IndexHandle::ForcePages() {
 }
 
 IX_BTNode IX_IndexHandle::get(RID pos) {
+    // printf("getting %lld %d\n", pos.GetPageNum(), pos.GetSlotNum());
     RM_Record record;
     RC rc = fh.GetRec(pos, record);
     if (rc) {
@@ -92,5 +93,8 @@ void IX_IndexHandle::init(){
     fh.GetMeta(reinterpret_cast<char*>(&header), loaded);
     // printf("load header(%d) %lld %d %d\n", loaded, header.rootPage, header.rootSlot, header.nodeSize);
     assert(loaded == sizeof(Header));
+    if (hasInit)
+        delete bTree;
     bTree = new IX_BTree(*this);
+    hasInit = true;
 }

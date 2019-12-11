@@ -28,11 +28,14 @@ class IX_IndexHandle {
     friend class IX_Manager;
     friend class IX_IndexScan;
 public:
-	IX_IndexHandle  () = default;                           // Constructor
+	IX_IndexHandle  () : hasInit(false) {}           // Constructor
 	~IX_IndexHandle () {                             // Destructor
-        delete bTree;
+        if (hasInit)
+            delete bTree;
     }
     IX_IndexHandle(const IX_IndexHandle&) = delete;
+    IX_IndexHandle& operator = (const IX_IndexHandle&) = delete;
+
 	RC InsertEntry     (void *pData, const RID &rid);  // Insert new index entry
 	RC DeleteEntry     (void *pData, const RID &rid);  // Delete index entry
 	RC ForcePages      ();                             // Copy index to disk
@@ -52,7 +55,6 @@ public:
     int getAttrLen() const {
         return header.attrLength;
     }
-    IX_IndexHandle& operator = (const IX_IndexHandle&) = delete;
 
     struct Header {
         AttrType attrType;
@@ -73,6 +75,7 @@ private:
     RM_FileHandle fh;
     Header header;
     IX_BTree* bTree;
+    bool hasInit;
 };
 
 //
@@ -102,7 +105,7 @@ private:
 //
 class IX_Manager {
 public:
-    ~IX_Manager() {}
+    ~IX_Manager() = default;
 
     // Create a new Index
     RC CreateIndex(const char *fileName, int indexNo,

@@ -29,6 +29,8 @@ public:
 
     bool Satisfy(CompOp op, const char* data) const;
 
+    RM_Attr& operator = (const RM_Attr&) = delete;
+    RM_Attr(const RM_Attr&) = delete;
 private:
     AttrType ty;
     int len, offset;
@@ -38,5 +40,4 @@ private:
         float floatValue;
         char* strValue;
     } val;
-    const RM_Attr& operator = (const RM_Attr&);
 };

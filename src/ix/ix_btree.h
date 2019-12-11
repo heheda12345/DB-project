@@ -55,7 +55,6 @@ struct IX_BTNode {
     void outit();
 };
 
-// T is IX_BTKEY, Node is IX_BTNode, Saver is ix_indexhandle
 class IX_BTree{
 protected:
     int _order;

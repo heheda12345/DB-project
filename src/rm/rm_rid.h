@@ -31,10 +31,23 @@ typedef int SlotNum;
 //
 class RID {
 public:
-    RID(): valid(false) {};                                     // Default constructor
+    RID(): pageNum(-1), slotNum(-1), valid(false) {};                                     // Default constructor
     RID(PageNum _pageNum, SlotNum _slotNum):
         pageNum(_pageNum), slotNum(_slotNum), valid(true) {};
-    ~RID() {};                                        // Destructor
+    RID(char* pData) { this->loadFrom(pData); }
+    static int getSize() { return sizeof(PageNum) + sizeof(SlotNum) + sizeof(bool); }
+
+    void loadFrom(char* pData) {
+        pageNum = *reinterpret_cast<PageNum*>(pData);
+        slotNum = *reinterpret_cast<SlotNum*>(pData + sizeof(PageNum));
+        valid = *reinterpret_cast<bool*>(pData + sizeof(PageNum) + sizeof(SlotNum));
+    }
+
+    void dumpTo(char* pData) {
+        *reinterpret_cast<PageNum*>(pData) = pageNum;
+        *reinterpret_cast<SlotNum*>(pData + sizeof(PageNum)) = slotNum;
+        *reinterpret_cast<bool*>(pData + sizeof(PageNum) + sizeof(SlotNum)) = valid;
+    }
 
     RC GetPageNum(PageNum &_pageNum) const {
         if (!valid)
@@ -49,7 +62,6 @@ public:
         return OK_RC;
     };         // Return slot number
 
-    // SOS
     PageNum GetPageNum() const {
         assert(valid);
         return pageNum;

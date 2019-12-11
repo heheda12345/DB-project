@@ -2,35 +2,34 @@
 #include "ix.h"
 
 IX_BTKEY::IX_BTKEY(char* pData, int attrLen) { // from saver
-        rid = *reinterpret_cast<RID*>(pData);
-        ty = *reinterpret_cast<AttrType*>(pData + sizeof(RID));
-        attr = std::string(pData + sizeof(RID) + sizeof(AttrType), attrLen);
+        rid.loadFrom(pData);
+        ty = *reinterpret_cast<AttrType*>(pData + RID::getSize());
+        attr = std::string(pData + RID::getSize() + sizeof(AttrType), attrLen);
     }
 
 IX_BTKEY::IX_BTKEY(char* pData, int attrLen, AttrType ty, const RID& rid): rid(rid), ty(ty), attr(pData, attrLen) {}
 
 void IX_BTKEY::toCharArray(char* pData) {
-    *reinterpret_cast<RID*>(pData) = rid;
-    *reinterpret_cast<AttrType*>(pData + sizeof(RID)) = ty;
-    memcpy(pData + sizeof(RID) + sizeof(AttrType), attr.c_str(), attr.length());
+    rid.dumpTo(pData);
+    *reinterpret_cast<AttrType*>(pData + RID::getSize()) = ty;
+    memcpy(pData + RID::getSize() + sizeof(AttrType), attr.c_str(), attr.length());
 }
 
 int IX_BTKEY::cmp(const IX_BTKEY &that) const {
-    printf("cmp %d %d\n", ty, that.ty);
+    // printf("cmp %d %d\n", ty, that.ty);
     assert(ty == that.ty);
     assert(attr.length() == that.attr.length());
     switch (ty) {
         case INT: {
-            int l = stoi(attr), r = stoi(that.attr);
+            int l = *reinterpret_cast<const int*>(attr.c_str()),
+                r = *reinterpret_cast<const int*>(that.attr.c_str());
+            // printf("l %d r %d\n", l, r);
             if (l != r)
                 return l < r ? -1 : 1;
         }
         case FLOAT: {
-            char l[attr.length()], r[that.attr.length()];
-            memcpy(l, attr.c_str(), attr.length());
-            memcpy(r, that.attr.c_str(), that.attr.length());
-
-            float fl = *reinterpret_cast<float*>(l), fr = *reinterpret_cast<float*>(r);
+            float fl = *reinterpret_cast<const float*>(attr.c_str()),
+                  fr = *reinterpret_cast<const float*>(that.attr.c_str());
             if (fl != fr)
                 return fl < fr ? -1 : 1;
         }
@@ -51,11 +50,11 @@ int IX_BTKEY::cmp(const IX_BTKEY &that) const {
 }
 
 int IX_BTKEY::getSize(int attrLen) {
-    return sizeof(RID) + sizeof(AttrType) + attrLen;
+    return RID::getSize() + sizeof(AttrType) + attrLen;
 }
 
 int IX_BTKEY::search(const std::vector<IX_BTKEY> vec, IX_BTKEY e) {
-    printf("search size %d\n", vec.size());
+    // printf("search size %d\n", vec.size());
     for (int i=0; i<vec.size(); i++)
         if (e < vec[i])
             return i-1;
@@ -91,41 +90,45 @@ IX_BTNode::IX_BTNode(IX_IndexHandle &saver, IX_BTKEY e, RID lc, RID rc): parent(
 IX_BTNode::IX_BTNode(IX_IndexHandle &saver, RID pos): IX_BTNode(saver.get(pos)) {}
 
 RC IX_BTNode::getSize(int attrLen, int m) {
-    return sizeof(int) + sizeof(RID) + sizeof(RID) + (m-1) * IX_BTKEY::getSize(attrLen) + m * sizeof(RID);
+    return sizeof(int) + RID::getSize() + RID::getSize() + m * IX_BTKEY::getSize(attrLen) + (m+1) * RID::getSize();
     // int is child.size()
 }
 
 void IX_BTNode::dump(char* pData, int attrLen, int m) {
-    printf("dump(%d) size %d\n", m, child.size());
+    // printf("dump(%d) size %d\n", m, (int)child.size());
+    assert(key.size() <= m);
+    assert(child.size() == key.size() + 1);
     *reinterpret_cast<int*>(pData) = child.size();
-    *reinterpret_cast<RID*>(pData + sizeof(int)) = parent;
-    *reinterpret_cast<RID*>(pData + sizeof(int) + sizeof(RID)) = pos;
-    for (int i = 0, start = sizeof(int) + sizeof(RID) + sizeof(RID); i < key.size(); i++, start += IX_BTKEY::getSize(attrLen)) {
+    parent.dumpTo(pData + sizeof(int));
+    pos.dumpTo(pData + sizeof(int) + RID::getSize());
+    for (int i = 0, start = sizeof(int) + RID::getSize() + RID::getSize(); i < key.size(); i++, start += IX_BTKEY::getSize(attrLen)) {
         key[i].toCharArray(pData + start);
     }
-    for (int i=0, start = sizeof(int) + sizeof(RID) + sizeof(RID) + (m-1) * IX_BTKEY::getSize(attrLen); i < child.size(); i++, start += sizeof(RID)) {
-        *reinterpret_cast<RID*>(pData + start) = child[i];
+    for (int i=0, start = sizeof(int) + RID::getSize() + RID::getSize() + m * IX_BTKEY::getSize(attrLen); i < child.size(); i++, start += RID::getSize()) {
+        child[i].dumpTo(pData + start);
     }
 }
 
 void IX_BTNode::load(char* pData, int attrLen, int m) {
     int n = *reinterpret_cast<int*>(pData);
-    parent = *reinterpret_cast<RID*>(pData + sizeof(int));
-    pos = *reinterpret_cast<RID*>(pData + sizeof(int) + sizeof(RID));
+    parent.loadFrom(pData + sizeof(int));
+    pos.loadFrom(pData + sizeof(int) + RID::getSize());
     key.clear(); child.clear();
-    for (int i = 0, start = sizeof(int) + sizeof(RID) + sizeof(RID); i < n-1; i++, start += IX_BTKEY::getSize(attrLen)) {
+    for (int i = 0, start = sizeof(int) + RID::getSize() + RID::getSize(); i < n-1; i++, start += IX_BTKEY::getSize(attrLen)) {
         key.push_back(IX_BTKEY(pData + start, attrLen));
     }
-    for (int i=0, start = sizeof(int) + sizeof(RID) + sizeof(RID) + (m-1) * IX_BTKEY::getSize(attrLen); i < n; i++, start += sizeof(RID)) {
-        child.push_back(*reinterpret_cast<RID*>(pData + start));
+    for (int i=0, start = sizeof(int) + RID::getSize() + RID::getSize() + m * IX_BTKEY::getSize(attrLen); i < n; i++, start += RID::getSize()) {
+        RID rid(pData + start);
+        child.push_back(RID());
+        *--child.end() = rid;
     }
-    printf("load(%d) size %d: %d %d\n", m, n, key.size(), child.size());
+    // printf("load(%d) size %d: %d %d\n", m, n, (int)key.size(), (int)child.size());
 }
 
 void IX_BTNode::outit() {
-    printf("(%lld %d)\n", this->pos.GetPageNum(), this->pos.GetSlotNum());
+    printf("(%lld %d): %d %d\n", this->pos.GetPageNum(), this->pos.GetSlotNum(), this->key.size(), this->child.size());
     for (auto key: this->key) {
-        printf("%s ",key.attr.c_str());
+        printf("%d ", *reinterpret_cast<const int*>(key.attr.c_str()));
     }
     printf("\n");
     for (auto child: this->child) {
@@ -137,14 +140,16 @@ void IX_BTNode::outit() {
     printf("\n");
 }
 
-IX_BTree::IX_BTree(IX_IndexHandle& saver): _order(saver.getHeader().btm), _root(saver.loadRoot().pos), _hot(), saver(saver) { }
+IX_BTree::IX_BTree(IX_IndexHandle& saver): _order(saver.getHeader().btm), _root(saver.loadRoot().pos), _hot(), saver(saver) {
+    printf("BTree info %d %d %d\n", _order, _root.GetPageNum(), _root.GetSlotNum());
+}
 
 RC IX_BTree::search(IX_BTKEY& e, RID& ret) {
-    printf("start search\n");
+    // printf("start search\n");
     ret = RID();
     RID cur = _root;
     while (cur.isValid()) {
-        printf("cur %lld %d\n", cur.GetPageNum(), cur.GetSlotNum());
+        // printf("cur %lld %d\n", cur.GetPageNum(), cur.GetSlotNum());
         IX_BTNode v = saver.get(cur);
         int r = IX_BTKEY::search(v.key, e);
         if (0 <= r && e == v.key[r]) {
@@ -157,24 +162,25 @@ RC IX_BTree::search(IX_BTKEY& e, RID& ret) {
 }
 
 RC IX_BTree::insert(IX_BTKEY& e) {
-    printf("[insert] %s %lld %d\n", e.attr.c_str(), e.rid.GetPageNum(), e.rid.GetSlotNum());
+    printf("[insert] %d %lld %d\n", *e.attr.c_str(), e.rid.GetPageNum(), e.rid.GetSlotNum());
     RID v;
     RC rc = search(e, v);
     if (rc == IX_ENTRYEXISTS) {
-        printf("%s found\n", e.attr.c_str());
+        // printf("%d found\n", *e.attr.c_str());
         return IX_ENTRYEXISTS;
     }
     if (rc != IX_KEYNOTFOUND) {
         IXRC(rc, IX_BTREE);
     }
     assert(_hot.pos.isValid());
-    printf("%s not found, start insert\n", e.attr.c_str());
+    // printf("%d not found, start insert\n", *e.attr.c_str());
     int r = IX_BTKEY::search(_hot.key, e);
-    printf("r %d\n", r);
-    printf("_hot %d %d: %d %d\n", _hot.pos.GetPageNum(), _hot.pos.GetSlotNum(), _hot.key.size(), _hot.child.size());    _hot.key.insert(_hot.key.begin() + r + 1, e);
+    // printf("r %d\n", r);
+    // printf("_hot %d %d: %d %d\n", _hot.pos.GetPageNum(), _hot.pos.GetSlotNum(), _hot.key.size(), _hot.child.size());
+    _hot.key.insert(_hot.key.begin() + r + 1, e);
     _hot.child.insert(_hot.child.begin() + r + 2, RID());
     // _size ++;
-    printf("_hot %d %d: %d %d\n", _hot.pos.GetPageNum(), _hot.pos.GetSlotNum(), _hot.key.size(), _hot.child.size());
+    // printf("_hot %d %d: %d %d\n", _hot.pos.GetPageNum(), _hot.pos.GetSlotNum(), _hot.key.size(), _hot.child.size());
     saver.update(_hot);
     printf("insert end, try overflow\n");
     solveOverflow(_hot);
@@ -235,7 +241,12 @@ void IX_BTree::solveOverflow(IX_BTNode& v) {
         }
     }
 
-    IX_BTNode p = v.parent.isValid() ? saver.get(v.parent) : IX_BTNode(saver);
+    IX_BTNode p;
+    if (v.parent.isValid())
+        p = saver.get(v.parent);
+    else
+        p = IX_BTNode(saver);
+        
     if (!v.parent.isValid()) {
         _root = p.pos;
         p.child[0] = v.pos;
@@ -285,7 +296,7 @@ void IX_BTree::solveUnderflow(IX_BTNode& v) {
             return;
         }
     }
-    if (p.child.size() - 1 > r) {
+    if (p.child.size() > r + 1) {
         // SOS NOT FLIP NOW
         IX_BTNode ls = saver.get(p.child[r-1]);
         if ((_order + 1)/2 < ls.child.size()) {
