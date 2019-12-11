@@ -22,7 +22,6 @@ void IX_PrintError(RC rc) {
         case IX_BTREE: { printf("ix error IX_BTREE\n"); break;}
         case IX_SCAN_OPENED: { printf("ix error IX_SCAN_OPENED\n"); break;}
         case IX_SCAN_CLOSED: { printf("ix error IX_SCAN_CLOSED\n"); break;}
-        case IX_SCAN_END: { printf("ix error IX_SCAN_END\n"); break;}
         case IX_INVALIDCOMP: { printf("ix error IX_INVALIDCOMP\n"); break;}
         default: { printf("ix error %d\n", rc); }
     }

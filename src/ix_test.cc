@@ -34,7 +34,7 @@ using namespace std;
 #define FILENAME     "testrel"        // test file name
 #define BADFILE      "/abc/def/xyz"   // bad file name
 #define STRLEN       39               // length of strings to index
-#define FEW_ENTRIES  1000
+#define FEW_ENTRIES  10
 #define MANY_ENTRIES 1000
 #define NENTRIES     50000            // Size of values array
 #define PROG_UNIT    200              // how frequently to give progress
@@ -84,7 +84,7 @@ RC PrintIndex(IX_IndexHandle &ih);
 #define NUM_TESTS       1               // number of tests
 int (*tests[])() =                      // RC doesn't work on some compilers
 {
-   Test3
+   Test4
    , Test1
    , Test2
    , Test3
@@ -113,10 +113,8 @@ int main(int argc, char *argv[])
    // Don't check the return codes, since we expect to get an error
    // if the files are not found.
    rmm.DestroyFile(FILENAME);
-   ixm.DestroyIndex(FILENAME, 0);
-   ixm.DestroyIndex(FILENAME, 1);
-   ixm.DestroyIndex(FILENAME, 2);
-   ixm.DestroyIndex(FILENAME, 3);
+   for (int i=0; i<10; i++)
+      ixm.DestroyIndex(FILENAME, i);
 
    // If no argument given, do all tests
    if (argc == 1) {
@@ -666,7 +664,7 @@ RC Test4(void)
 {
    RC             rc;
    IX_IndexHandle ih;
-   int            index=0;
+   int            index=4;
    int            i;
    int            value=FEW_ENTRIES/2;
    RID            rid;
@@ -678,70 +676,117 @@ RC Test4(void)
          (rc = InsertIntEntries(ih, FEW_ENTRIES)))
       return (rc);
 
+   // Scan NO_OP
+   printf("===============Start NOP Scan===============\n");
+   IX_IndexScan scannop;
+   if ((rc = scannop.OpenScan(ih, NO_OP, &value))) {
+     printf("Scan error: opening scan\n");
+     return (rc);
+   }
+   i = 0;
+   while (!(rc = scannop.GetNextEntry(rid))) {
+      i++;
+   }
+   if (rc != IX_EOF)
+      return (rc);
+   printf("Found %d entries in <-scan.\n", i);
+   assert(i == FEW_ENTRIES);
+
    // Scan <
+   printf("===============Start < Scan===============\n");
    IX_IndexScan scanlt;
    if ((rc = scanlt.OpenScan(ih, LT_OP, &value))) {
      printf("Scan error: opening scan\n");
      return (rc);
    }
-
    i = 0;
    while (!(rc = scanlt.GetNextEntry(rid))) {
       i++;
    }
-
    if (rc != IX_EOF)
       return (rc);
-
    printf("Found %d entries in <-scan.\n", i);
+   assert(i == value - 1);
 
    // Scan <=
+   printf("===============Start <= Scan===============\n");
    IX_IndexScan scanle;
    if ((rc = scanle.OpenScan(ih, LE_OP, &value))) {
      printf("Scan error: opening scan\n");
      return (rc);
    }
-
    i = 0;
    while (!(rc = scanle.GetNextEntry(rid))) {
       i++;
    }
    if (rc != IX_EOF)
       return (rc);
-
    printf("Found %d entries in <=-scan.\n", i);
+   assert(i == value);
 
    // Scan >
+   printf("===============Start > Scan===============\n");
    IX_IndexScan scangt;
    if ((rc = scangt.OpenScan(ih, GT_OP, &value))) {
      printf("Scan error: opening scan\n");
      return (rc);
    }
-
    i = 0;
    while (!(rc = scangt.GetNextEntry(rid))) {
       i++;
    }
    if (rc != IX_EOF)
       return (rc);
-
    printf("Found %d entries in >-scan.\n", i);
+   assert(i == FEW_ENTRIES - value);
 
    // Scan >=
+   printf("===============Start >= Scan===============\n");
    IX_IndexScan scange;
    if ((rc = scange.OpenScan(ih, GE_OP, &value))) {
      printf("Scan error: opening scan\n");
      return (rc);
    }
-
    i = 0;
    while (!(rc = scange.GetNextEntry(rid))) {
       i++;
    }
    if (rc != IX_EOF)
       return (rc);
-
    printf("Found %d entries in >=-scan.\n", i);
+   assert(i == FEW_ENTRIES - value + 1);
+
+   // Scan !=
+   printf("===============Start != Scan===============\n");
+   IX_IndexScan scanne;
+   if ((rc = scanne.OpenScan(ih, NE_OP, &value))) {
+     printf("Scan error: opening scan\n");
+     return (rc);
+   }
+   i = 0;
+   while (!(rc = scanne.GetNextEntry(rid))) {
+      i++;
+   }
+   if (rc != IX_EOF)
+      return (rc);
+   printf("Found %d entries in !=-scan.\n", i);
+   assert(i == FEW_ENTRIES - 1);
+
+   // Scan ==
+   printf("===============Start == Scan===============\n");
+   IX_IndexScan scaneq;
+   if ((rc = scaneq.OpenScan(ih, EQ_OP, &value))) {
+     printf("Scan error: opening scan\n");
+     return (rc);
+   }
+   i = 0;
+   while (!(rc = scaneq.GetNextEntry(rid))) {
+      i++;
+   }
+   if (rc != IX_EOF)
+      return (rc);
+   printf("Found %d entries in ==-scan.\n", i);
+   assert(i == 1);
 
    if ((rc = ixm.CloseIndex(ih)))
       return (rc);

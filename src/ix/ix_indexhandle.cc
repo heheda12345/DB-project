@@ -52,7 +52,7 @@ void IX_IndexHandle::setRoot(const RID& rid) {
 }
 
 void IX_IndexHandle::update(IX_BTNode& node) {
-    // printf("[update]"); node.outit();
+    printf("[update]"); node.outit();
     RM_Record record;
     RC rc = fh.GetRec(node.pos, record);
     if (rc) {

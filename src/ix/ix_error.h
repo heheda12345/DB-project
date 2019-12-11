@@ -23,8 +23,7 @@
 #define IX_BTREE           (START_IX_ERR - 11)
 #define IX_SCAN_OPENED     (START_IX_ERR - 12)
 #define IX_SCAN_CLOSED     (START_IX_ERR - 13)
-#define IX_SCAN_END        (START_IX_ERR - 14)
-#define IX_INVALIDCOMP     (START_IX_ERR - 15)
+#define IX_INVALIDCOMP     (START_IX_ERR - 14)
 #define IX_LASTERROR IX_EOF
 
 void IX_PrintError(RC rc);

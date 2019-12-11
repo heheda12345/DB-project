@@ -40,13 +40,15 @@ int IX_BTKEY::cmp(const IX_BTKEY &that) const {
                     return l[i] < r[i] ? -1 : 1;
         }
     }
-    assert(rid.isValid());
-    assert(that.rid.isValid());
-    if (rid < that.rid)
-        return -1;
-    if (rid == that.rid)
+    if (rid.isValid() && that.rid.isValid()) {
+        if (rid < that.rid)
+            return -1;
+        if (rid == that.rid)
+            return 0;
+        return 1;
+    } else {
         return 0;
-    return 1;
+    }
 }
 
 int IX_BTKEY::getSize(int attrLen) {
