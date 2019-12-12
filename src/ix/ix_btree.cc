@@ -131,7 +131,7 @@ void IX_BTNode::load(char* pData, int attrLen, int m) {
 }
 
 void IX_BTNode::outit() {
-    printf("(%lld %d): %d %d\n", this->pos.GetPageNum(), this->pos.GetSlotNum(), this->key.size(), this->child.size());
+    printf("(%lld %d): %d %d\n", this->pos.GetPageNum(), this->pos.GetSlotNum(), (int)this->key.size(), (int)this->child.size());
     for (auto key: this->key) {
         printf("%d ", *reinterpret_cast<const int*>(key.attr.c_str()));
     }
@@ -146,7 +146,7 @@ void IX_BTNode::outit() {
 }
 
 IX_BTree::IX_BTree(IX_IndexHandle& saver): _order(saver.getHeader().btm), _root(saver.loadRoot().pos), _hot(), saver(saver) {
-    printf("BTree info %d %d %d\n", _order, _root.GetPageNum(), _root.GetSlotNum());
+    printf("BTree info %d %lld %d\n", _order, _root.GetPageNum(), _root.GetSlotNum());
 }
 
 RC IX_BTree::search(IX_BTKEY& e, RID& ret) {

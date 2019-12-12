@@ -10,34 +10,43 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <string>
 #include "../redbase.h"  // Please don't change these lines
-#include "parser.h"
 #include "../rm/rm.h"
 #include "../ix/ix.h"
-#include "printer.h"
 #include "../rm/rm_rid.h"
+#include "../utils/utils.h"
 
 #define MAX_DB_NAME 255
 
-typedef struct RelCatEntry{
-  char relName[MAXNAME + 1];
-  int tupleLength;
-  int attrCount;
-  int indexCount;
-  PageNum attrPage;
-  SlotNum attrSlot;
-} RelCatEntry;
+struct AttrInfo {
+    AttrType type;
+    unsigned char flag;
+    unsigned short mxLen;
+    std::string attrName;
+    std::string refTable;
+    std::string refAttr;
 
-typedef struct AttrCatEntry{
-  char relName[MAXNAME + 1];
-  char attrName[MAXNAME +1];
-  int offset;
-  AttrType attrType;
-  int attrLength;
-  int indexNo;
-  PageNum nextPage;
-  SlotNum nextSlot;
-} AttrCatEntry;
+    AttrInfo(const AttrType& _type, unsigned short _mxLen, const std::string& _attrName, bool notNull, bool isPrimary);
+
+    AttrInfo(const AttrType& _type, unsigned short _mxLen, const std::string& _attrName, bool notNull, const std::string &_refTable, const std::string& _refAttr);
+
+    void setNotNull(bool b);
+    bool isNotNull() const;
+
+    void setPrimary(bool b);
+    bool isPrimary() const;
+
+    void setForeign(bool b);
+    bool isForeign() const;
+
+    void load(const char* pData);
+    void dump(char* pData);
+
+    static int getSize() {
+        return MAXNAME * 3 + sizeof(unsigned char)*2 + sizeof(short);
+    }
+};
 
 //
 // SM_Manager: provides data management
