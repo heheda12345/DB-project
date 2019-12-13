@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include "../redbase.h"
+#include "../sm/sm.h"
 
 namespace Parser {
 
@@ -10,7 +11,7 @@ class TreeNode {
 
 class Type {
 public:
-    Type(AttrType _ty): ty(_ty), withi(false) {}
+    Type(AttrType _ty): ty(_ty), withi(false), vi(0) {}
     Type(AttrType _ty, int _vi): ty(_ty), withi(true), vi(_vi) {}
     // do not need dtor
 
@@ -50,6 +51,26 @@ public:
             delete dt.vs;
     }
 
+    std::string dump() {
+        switch (ty) {
+            case INT: {
+                return std::string(reinterpret_cast<char*>(&dt.vi), sizeof(int));
+            }
+            case DATE: {
+                return std::string(reinterpret_cast<char*>(&dt.vi), sizeof(int));
+            }
+            case FLOAT: {
+                return std::string(reinterpret_cast<char*>(&dt.vf), sizeof(float));
+            }
+            case STRING: {
+                return std::string(*dt.vs);
+            }
+            case NO_TYPE: {
+                return std::string();
+            }
+        }
+    }
+
     AttrType ty;
     union DT
     {
@@ -76,7 +97,7 @@ public:
     ~Column() {
         delete colName;
     }
-
+    
     std::string* colName;
 };
 
@@ -138,7 +159,7 @@ public:
         bool _hasDefault, Value* _dVal, bool _notNull):
         colName(_colName), type(_type), 
         hasDefault(_hasDefault), dVal(_dVal), notNull(false),
-        ty(Simple) {}
+        ty(Simple), attr(_type->ty,  _type->vi, *_colName, _notNull, false, _hasDefault, _hasDefault ? _dVal->dump() : std::string()) {}
 
     Field(std::vector<Column*>* _columns): columns(_columns), ty(Primary) {}
 
@@ -181,6 +202,7 @@ public:
     bool hasDefault;
     bool notNull;
     FieldType ty;
+    AttrInfo attr;
 };
 
 class WhereClause {

@@ -14,6 +14,7 @@ void RM_PrintError(RC rc) {
         case RM_FILEHANDLE_CHECKRID: { printf("rm error RM_FILEHANDLE_CHECKRID\n"); break;}
         case RM_FILEHANDLE_GETFIRSTREC: { printf("rm error RM_FILEHANDLE_GETFIRSTREC\n"); break;}
         case RM_FILEHANDLE_GETNEXTREC: { printf("rm error RM_FILEHANDLE_GETNEXTREC\n"); break;}
+        case RM_FILEHANDLE_GETMETASIZE: { printf("rm error RM_FILEHANDLE_GETMETASIZE\n"); break;}
         case RM_FILEHANDLE_SETMETA: { printf("rm error RM_FILEHANDLE_SETMETA\n"); break;}
         case RM_FILEHANDLE_GETMETA: { printf("rm error RM_FILEHANDLE_GETMETA\n"); break;}
         case RM_MANAGER_CREATEFILE: { printf("rm error RM_MANAGER_CREATEFILE\n"); break;}

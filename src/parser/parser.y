@@ -219,11 +219,11 @@ field: colName type
     }
     | colName type DEFAULT value
     {
-        $$ = new Field($1, $2, true, nullptr, false);
+        $$ = new Field($1, $2, true, $4, false);
     }
     | colName type NOT VALUE_NULL DEFAULT value
     {
-        $$ = new Field($1, $2, true, nullptr, true);
+        $$ = new Field($1, $2, true, $6, true);
     }
     | PRIMARY KEY '(' columnList ')'
     {

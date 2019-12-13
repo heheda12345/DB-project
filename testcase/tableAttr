@@ -1,0 +1,4 @@
+create database test;
+use database test;
+create table tbtest(int id not null, varchar name, int class, float score not null, date birthday, primary key(id), foreign key(class) reference tbclass(class));
+show table tbtest;

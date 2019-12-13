@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <string>
+#include <vector>
 #include "../redbase.h"  // Please don't change these lines
 #include "../rm/rm.h"
 #include "../ix/ix.h"
@@ -26,27 +27,61 @@ struct AttrInfo {
     std::string attrName;
     std::string refTable;
     std::string refAttr;
+    std::string dVal;
 
-    AttrInfo(const AttrType& _type, unsigned short _mxLen, const std::string& _attrName, bool notNull, bool isPrimary);
+    AttrInfo(const AttrType& _type, unsigned short _mxLen, const std::string& _attrName, bool notNull, bool isPrimary, bool hasDefault, const std::string& _dVal);
 
-    AttrInfo(const AttrType& _type, unsigned short _mxLen, const std::string& _attrName, bool notNull, const std::string &_refTable, const std::string& _refAttr);
+    AttrInfo(const AttrType& _type, unsigned short _mxLen, const std::string& _attrName, bool notNull, bool hasDefault, const std::string& _dVal, const std::string &_refTable, const std::string& _refAttr);
 
-    void setNotNull(bool b);
+    AttrInfo(): type(NO_TYPE), flag(0), mxLen(0) {}
+
+    void setNotNullFlag(bool b);
     bool isNotNull() const;
 
-    void setPrimary(bool b);
+    void setPrimaryFlag(bool b);
     bool isPrimary() const;
 
-    void setForeign(bool b);
+    void setForeignFlag(bool b);
+    RC setForeign(const std::string& _refTable, const std::string& _refAttr);
     bool isForeign() const;
 
-    void load(const char* pData);
-    void dump(char* pData);
+    void setDefaultFlag(bool b);
+    bool hasDefault() const;
 
-    static int getSize() {
-        return MAXNAME * 3 + sizeof(unsigned char)*2 + sizeof(short);
+    int load(const char* pData);
+    int dump(char* pData) const;
+
+    static std::vector<AttrInfo> loadAttrs(const char* pData);
+    static void dumpAttrs(char* pData, const std::vector<AttrInfo>& attrs);
+    
+    int getMaxLen() const;
+    int getAttrSize() const;
+    
+    static int getAttrsSize(const std::vector<AttrInfo>& attrs) {
+        int ret = sizeof(int);
+        for (auto& attr: attrs) {
+            ret += attr.getAttrSize();
+        }
+        return ret;
+    }
+    static int getRecordSize(const std::vector<AttrInfo>& attrs) {
+        int ret = 0;
+        for (auto& attr: attrs) {
+            ret += attr.mxLen;
+        }
+        return ret;
+    }
+
+    static int getIndex(const std::vector<AttrInfo>& attrs, std::string attrName) {
+        for (int i=0; i<(int)attrs.size(); i++) {
+            if (attrs[i].attrName == attrName)
+                return i;
+        }
+        return -1;
     }
 };
+
+std::ostream& operator << (std::ostream& os, const std::vector<AttrInfo>& attrs);
 
 //
 // SM_Manager: provides data management
@@ -59,10 +94,15 @@ public:
     RC CreateDb   (const std::string& dbName);    // Create the database
     RC DropDb     (const std::string& dbName);    // Drop the database
     RC ShowAllDb  ();
+    bool usingDb() const;
 
-    // RC CreateTable(const char *relName,           // create relation relName
-    //                int        attrCount,          //   number of attributes
-    //                AttrInfo   *attributes);       //   attribute data
+    RC CreateTable(const std::string& relName, const std::vector<AttrInfo>& attributes);
+    RC DropTable(const std::string& relName);
+    RC ShowTable(const std::string& relName);
+    RC ShowTables();
+
+    RC GetAttrs(const std::string& relName, std::vector<AttrInfo>& attributes);
+    bool ExistAttr(const std::string& relName, const std::string& attrName) { return true; } // SOS
     // RC CreateIndex(const char *relName,           // create an index for
     //                const char *attrName);         //   relName.attrName
     // RC DropTable  (const char *relName);          // destroy a relation
@@ -121,6 +161,8 @@ void SM_PrintError(RC rc);
 
 #define SM_INVALIDDB            (START_SM_ERR - 0)
 #define SM_ERROR                (START_SM_ERR - 1) // error
+#define SM_DB_NOT_OPEN          (START_SM_ERR - 2)
+#define SM_NO_SUCH_ATTR         (START_SM_ERR - 3)
 #define SM_LASTERROR            SM_ERROR
 
 

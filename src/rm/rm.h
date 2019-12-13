@@ -38,8 +38,9 @@
 #define RM_FILEHANDLE_CHECKRID (START_RM_WARN + 18)
 #define RM_FILEHANDLE_GETFIRSTREC (START_RM_WARN + 19)
 #define RM_FILEHANDLE_GETNEXTREC (START_RM_WARN + 20)
-#define RM_FILEHANDLE_SETMETA (START_RM_WARN + 21)
-#define RM_FILEHANDLE_GETMETA (START_RM_WARN + 22)
+#define RM_FILEHANDLE_GETMETASIZE (START_RM_WARN + 21)
+#define RM_FILEHANDLE_SETMETA (START_RM_WARN + 22)
+#define RM_FILEHANDLE_GETMETA (START_RM_WARN + 23)
 #define RM_MANAGER_CREATEFILE (START_RM_WARN + 31)
 #define RM_MANAGER_DESTROYFILE (START_RM_WARN + 32)
 #define RM_MANAGER_OPENFILE (START_RM_WARN + 33)
@@ -146,6 +147,7 @@ public:
     RC DeleteRec  (const RID &rid);                    // Delete a record
     RC UpdateRec  (const RM_Record &rec);              // Update a record
 
+    RC GetMetaSize(int& size);
     RC GetMeta(char* pData, int& size);
     RC SetMeta(const char* pData, int size);
 

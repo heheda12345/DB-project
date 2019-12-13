@@ -3,6 +3,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <assert.h>
+#include <unistd.h>
+#include <dirent.h>
 using namespace std;
 
 bool DirExist(const char* dir) {
@@ -49,4 +51,81 @@ int getBit(unsigned char x, int pos) {
 
 void dumpString(char* pData, const string& st) {
     strcpy(pData, st.c_str());
+}
+
+std::string getName(AttrType ty) {
+     switch (ty) {
+        case INT: {
+            return "INT";
+        }
+        case FLOAT: {
+            return "FLOAT";
+        }
+        case STRING: {
+            return "STRING";
+        }
+        case DATE: {
+            return "DATE";
+        }
+        case NO_TYPE: {
+            return "NO TYPE"; 
+        }
+    }
+}
+
+vector<string> getFiles(const char* path) {
+    DIR *dir;
+	struct dirent *ptr;
+	char base[1000];
+    vector<string> ret;
+
+	if ((dir=opendir(path)) == NULL) {
+		printf("[ERROR] dir %s not found!\n", path);
+        return ret;
+    }
+ 
+	while ((ptr=readdir(dir)) != NULL)
+	{
+		if(strcmp(ptr->d_name,".")==0 || strcmp(ptr->d_name,"..")==0) // current dir OR parrent dir
+		    continue;
+		else if(ptr->d_type == 8) {    // file
+			//printf("d_name:%s/%s\n",basePath,ptr->d_name);
+			ret.push_back(string(ptr->d_name));
+        } else {
+			printf("[ERROR] %s/%s is not a file!\n", path, ptr->d_name);
+			continue;
+        }
+	}
+	closedir(dir);
+}
+
+vector<string> getAllTable(const char* path) {
+    auto files = getFiles(path);
+    vector<string> ret;
+    for (auto s: files) {
+        if (s.find('.') == std::string::npos)
+            ret.push_back(s);
+    }
+    return ret;
+}
+
+int getDefaultLen(AttrType ty) {
+    switch (ty) {
+        case INT: {
+            return sizeof(int);
+        }
+        case FLOAT: {
+            return sizeof(int);
+        }
+        case DATE: {
+            return sizeof(int);
+        }
+        case STRING: {
+            return MAXSTRINGLEN;
+        }
+        case NO_TYPE: {
+            return 0;
+        }
+    }
+    return 0;
 }

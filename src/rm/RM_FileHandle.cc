@@ -309,6 +309,23 @@ RC RM_FileHandle::GetNextRec(PageNum& pageNum, SlotNum& slotNum, RM_Record &rec)
     return rc_ret;
 }
 
+RC RM_FileHandle::GetMetaSize(int& size) {
+    const int rc_ret = RM_FILEHANDLE_GETMETASIZE;
+    if (!isOpen) {
+        RMRC(RM_FILE_NOT_OPEN, rc_ret);
+    }
+    PF_PageHandle pfPageHandle;
+    int rc = pfFileHandle.GetFirstPage(pfPageHandle);
+    PFRC(rc, rc_ret)
+    char* data;
+    rc = pfPageHandle.GetData(data);
+    PFRC(rc, rc_ret)
+    fileHeader = *reinterpret_cast<FileHeader*> (data);
+    // printf("[GetMeta] fileHeader %d %d %d\n", fileHeader.recordSize, fileHeader.recordPerPage, fileHeader.metaSize);
+    size = fileHeader.metaSize;
+    return OK_RC;
+}
+
 RC RM_FileHandle::GetMeta(char* pData, int &size) {
     const int rc_ret = RM_FILEHANDLE_GETMETA;
     if (!isOpen) {
