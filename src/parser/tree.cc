@@ -93,6 +93,11 @@ void Parser::CreateTable::visit() {
         }
         if (!SM_Manager::instance().ExistAttr(refTables[i], refAttrs[i])) {
             printf("[Fail] No attribute %s.%s", refTables[i].c_str(), refAttrs[i].c_str());
+            return;
+        }
+        if (attrs[idx].isForeign()) {
+            printf("[Fail] Attr %s can have at most one foreign key\n", fCols[i]);
+            return;
         }
         attrs[idx].setForeign(refTables[i], refAttrs[i]);
     }

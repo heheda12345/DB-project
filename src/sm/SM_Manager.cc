@@ -83,6 +83,12 @@ RC SM_Manager::CreateTable(const std::string& relName, const std::vector<AttrInf
     RC rc = rmm.CreateFile(relName.c_str(), AttrInfo::getRecordSize(attributes),
         header, AttrInfo::getAttrsSize(attributes));
     RMRC(rc, SM_ERROR);
+    for (auto& attr: attributes) {
+        if (attr.isForeign()) {
+            rc = LinkForeign(relName, attr.attrName, attr.refTable, attr.refAttr);
+            SMRC(rc, SM_ERROR);
+        }
+    }
     return OK_RC;
 }
 
@@ -132,5 +138,41 @@ RC SM_Manager::GetAttrs(const std::string& relName, std::vector<AttrInfo>& attri
     char header[size];
     rc = handle.GetMeta(header, size);
     attributes = AttrInfo::loadAttrs(header);
+    rc = rmm.CloseFile(handle);
+    RMRC(rc, SM_ERROR);
     return OK_RC;
+}
+
+bool SM_Manager::ExistAttr(const std::string& relName, const std::string& attrName) {
+    std::vector<AttrInfo> attrs;
+    RC rc = GetAttrs(relName, attrs);
+    RMRC(rc, 0);
+    int idx = AttrInfo::getIndex(attrs, attrName);
+    return idx != -1;
+}
+
+bool SM_Manager::LinkForeign(const std::string& reqTb, const std::string& reqAttr, const std::string& dstTb, const std::string& dstAttr) {
+    RM_FileHandle handle;
+    RC rc = rmm.OpenFile(dstTb.c_str(), handle);
+    assert(rc == OK_RC);
+    SMRC(rc, SM_ERROR);
+    int size;
+    rc = handle.GetMetaSize(size);
+    assert(rc == OK_RC);
+    SMRC(rc, SM_ERROR);
+    char header[size];
+    rc = handle.GetMeta(header, size);
+    std::vector<AttrInfo> attrs;
+    attrs = AttrInfo::loadAttrs(header);
+    int idx = AttrInfo::getIndex(attrs, dstAttr);
+    attrs[idx].linkedForeign.push_back(make_pair(reqTb, reqAttr));
+    char headerNew[AttrInfo::getAttrsSize(attrs)];
+    size = AttrInfo::dumpAttrs(headerNew, attrs);
+    rc = handle.SetMeta(headerNew, size);
+    assert(rc == OK_RC);
+    SMRC(rc, SM_ERROR);
+    rc = rmm.CloseFile(handle);
+    assert(rc == OK_RC);
+    SMRC(rc, SM_ERROR);
+    return 0;
 }

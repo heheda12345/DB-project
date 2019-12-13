@@ -55,6 +55,7 @@ int AttrInfo::load(const char* pData) {
     type = (AttrType)*reinterpret_cast<const unsigned char*>(pData); cur += sizeof(char);
     flag = *reinterpret_cast<const unsigned char*>(pData + cur); cur += sizeof(char);
     mxLen = *reinterpret_cast<const unsigned short*>(pData + cur); cur += sizeof(short);
+    int linked = *reinterpret_cast<const int*>(pData + cur); cur += sizeof(int);
     attrName = std::string(pData + cur); cur += MAXNAME;
     if (isForeign()) {
         refTable = std::string(pData + cur); cur += MAXNAME;
@@ -64,6 +65,12 @@ int AttrInfo::load(const char* pData) {
         int len = *reinterpret_cast<const int*>(pData + cur); cur += sizeof(int);
         dVal = std::string(pData + cur, len); cur += mxLen;
     }
+    linkedForeign.clear();
+    for (int i=0; i<linked; i++) {
+        std::string tb(pData + cur); cur += MAXNAME;
+        std::string attr(pData + cur); cur += MAXNAME;
+        linkedForeign.push_back(make_pair(tb, attr));
+    }
     return cur;
 }
 
@@ -72,6 +79,7 @@ int AttrInfo::dump(char* pData) const {
     *reinterpret_cast<unsigned char*>(pData) = (unsigned char) type; cur += sizeof(char);
     *reinterpret_cast<unsigned char*>(pData + cur) = flag; cur += sizeof(char);
     *reinterpret_cast<unsigned short*>(pData + cur) = mxLen; cur += sizeof(char);
+    *reinterpret_cast<int*>(pData + cur) = (int)linkedForeign.size(); cur += sizeof(int);
     dumpString(pData + cur, attrName); cur += MAXNAME;
     if (isForeign()) {
         dumpString(pData + cur, refTable); cur += MAXNAME;
@@ -81,6 +89,10 @@ int AttrInfo::dump(char* pData) const {
         *reinterpret_cast<int*>(pData + cur) = (int)dVal.length(); cur += sizeof(int);
         memset(pData + cur, 0, mxLen);
         memcpy(pData + cur, dVal.c_str(), dVal.length()); cur += mxLen;
+    }
+    for (int i=0; i<(int)linkedForeign.size(); i++) {
+        dumpString(pData+cur, linkedForeign[i].first.c_str()); cur += MAXNAME;
+        dumpString(pData+cur, linkedForeign[i].second.c_str()); cur += MAXNAME;
     }
     return cur;
 }
@@ -93,6 +105,7 @@ int AttrInfo::getAttrSize() const {
     if (hasDefault()) {
         cur += sizeof(int) + mxLen;
     }
+    cur += linkedForeign.size() * MAXNAME * 2;
     return cur;
 }
 
@@ -109,13 +122,14 @@ vector<AttrInfo> AttrInfo::loadAttrs(const char* pData) {
     return ret;
 }
 
-void AttrInfo::dumpAttrs(char* pData, const std::vector<AttrInfo>& attrs) {
+int AttrInfo::dumpAttrs(char* pData, const std::vector<AttrInfo>& attrs) {
     *reinterpret_cast<int*>(pData) = (int)attrs.size();
     int cur = sizeof(int);
     for (const AttrInfo& attr: attrs) {
         int size = attr.dump(pData + cur);
         cur += size;
     }
+    return cur;
 }
 
 std::ostream& operator << (std::ostream& os, const std::vector<AttrInfo>& attrs) {
@@ -144,9 +158,14 @@ std::ostream& operator << (std::ostream& os, const std::vector<AttrInfo>& attrs)
             info.insert(0, "(");
             info.append(")");
         }
-        info.append(" ");
+        info.append(" [");
+        for (auto& x: attr.linkedForeign) {
+            info.append(x.first).append(".").append(x.second).append(" ");
+        }
+        info.append("]");
         os << attr.attrName << info;
     }
+    return os;
 }
 
 int AttrInfo::getMaxLen() const {

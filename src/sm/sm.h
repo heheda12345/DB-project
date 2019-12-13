@@ -28,6 +28,7 @@ struct AttrInfo {
     std::string refTable;
     std::string refAttr;
     std::string dVal;
+    std::vector<std::pair<std::string, std::string>> linkedForeign;
 
     AttrInfo(const AttrType& _type, unsigned short _mxLen, const std::string& _attrName, bool notNull, bool isPrimary, bool hasDefault, const std::string& _dVal);
 
@@ -50,12 +51,15 @@ struct AttrInfo {
 
     int load(const char* pData);
     int dump(char* pData) const;
+    int getAttrSize() const;
 
     static std::vector<AttrInfo> loadAttrs(const char* pData);
-    static void dumpAttrs(char* pData, const std::vector<AttrInfo>& attrs);
+    static int dumpAttrs(char* pData, const std::vector<AttrInfo>& attrs);
     
     int getMaxLen() const;
-    int getAttrSize() const;
+
+    void addLink(const std::string& table, const std::string& attr);
+    void removeLink(const std::string& table, const std::string& attr);
     
     static int getAttrsSize(const std::vector<AttrInfo>& attrs) {
         int ret = sizeof(int);
@@ -102,7 +106,9 @@ public:
     RC ShowTables();
 
     RC GetAttrs(const std::string& relName, std::vector<AttrInfo>& attributes);
-    bool ExistAttr(const std::string& relName, const std::string& attrName) { return true; } // SOS
+    bool ExistAttr(const std::string& relName, const std::string& attrName);
+    bool LinkForeign(const std::string& reqTb, const std::string& reqAttr, const std::string& dstTb, const std::string& dstAttr);
+
     // RC CreateIndex(const char *relName,           // create an index for
     //                const char *attrName);         //   relName.attrName
     // RC DropTable  (const char *relName);          // destroy a relation

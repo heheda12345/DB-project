@@ -1,1 +1,1 @@
-cd ../build &&  make -j6 && cd ../src && ../build/main.out < ../testcase/dbLevel
+cd ../build &&  make -j6 && cd ../src && ../build/main.out < ../testcase/tableAttr
