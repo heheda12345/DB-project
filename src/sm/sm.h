@@ -105,13 +105,16 @@ public:
     RC ShowTable(const std::string& relName);
     RC ShowTables();
 
+    RC AddPrimaryKey(const std::string& tbName, const std::vector<std::string>& attrNames);
+    RC DropPrimaryKey(const std::string& tbName);
+
     RC GetAttrs(const std::string& relName, std::vector<AttrInfo>& attributes);
+    RC UpdateAttrs(const std::string& tbName, const std::vector<AttrInfo>& attributes);
     bool ExistAttr(const std::string& relName, const std::string& attrName, AttrType type = NO_TYPE);
     bool LinkForeign(const std::string& reqTb, const std::string& reqAttr, const std::string& dstTb, const std::string& dstAttr);
 
     // RC CreateIndex(const char *relName,           // create an index for
     //                const char *attrName);         //   relName.attrName
-    // RC DropTable  (const char *relName);          // destroy a relation
 
     // RC DropIndex  (const char *relName,           // destroy index on
     //                const char *attrName);         //   relName.attrName

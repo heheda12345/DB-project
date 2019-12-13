@@ -128,72 +128,156 @@ void Parser::DropTable::visit() {
 }
 
 void Parser::Desc::visit() {
+    if (!SM_Manager::instance().usingDb()) {
+        printf("[Fail] Use a database first!\n");
+        return;
+    }
     printf("DropTable");
     assert(asst);
 }
 
 
 void Parser::DescTable::visit() {
+    if (!SM_Manager::instance().usingDb()) {
+        printf("[Fail] Use a database first!\n");
+        return;
+    }
     printf("DescTable");
     assert(asst);
 }
 
 void Parser::InsertValue::visit() {
+    if (!SM_Manager::instance().usingDb()) {
+        printf("[Fail] Use a database first!\n");
+        return;
+    }
     printf("InsertValue");
     assert(asst);
 }
 
 void Parser::DeleteValue::visit() {
+    if (!SM_Manager::instance().usingDb()) {
+        printf("[Fail] Use a database first!\n");
+        return;
+    }
     printf("DeleteValue");
     assert(asst);
 }
 
 void Parser::UpdateValue::visit() {
+    if (!SM_Manager::instance().usingDb()) {
+        printf("[Fail] Use a database first!\n");
+        return;
+    }
     printf("UpdateValue");
     assert(asst);
 }
 
 void Parser::SelectValue::visit() {
+    if (!SM_Manager::instance().usingDb()) {
+        printf("[Fail] Use a database first!\n");
+        return;
+    }
     printf("SelectValue");
     assert(asst);
 }
 
 void Parser::CreateIndex::visit() {
+    if (!SM_Manager::instance().usingDb()) {
+        printf("[Fail] Use a database first!\n");
+        return;
+    }
     printf("CreateIndex");
     assert(asst);
 }
 
 void Parser::DropIndex::visit() {
+    if (!SM_Manager::instance().usingDb()) {
+        printf("[Fail] Use a database first!\n");
+        return;
+    }
     printf("DropIndex");
     assert(asst);
 }
 
 void Parser::AddIndex::visit() {
+    if (!SM_Manager::instance().usingDb()) {
+        printf("[Fail] Use a database first!\n");
+        return;
+    }
     printf("AddIndex");
     assert(asst);
 }
 
 void Parser::AddField::visit() {
-    printf("AddField");
-    assert(asst);
+    if (!SM_Manager::instance().usingDb()) {
+        printf("[Fail] Use a database first!\n");
+        return;
+    }
+    switch (field->ty) {
+        case Field::Simple: {
+            printf("Add Field, simple\n");
+            assert(asst);
+            break;
+        }
+        case Field::Primary: {
+            vector<string> attrNames;
+            for (auto& col: *(field->columns)) {
+                attrNames.push_back(*(col->colName));
+            }
+            RC rc = SM_Manager::instance().AddPrimaryKey(*tbName, attrNames);
+            if (rc != OK_RC) {
+                printf("[Fail] Cannot add these primary keys to %s\n", tbName->c_str());
+            } else {
+                printf("[Succ] Primary keys added!\n");
+            }
+            break;
+        }
+        case Field::Foreign: {
+            printf("Add Field, foreign\n");
+            assert(asst);
+            break;
+        }
+    }
+    
 }
 
 void Parser::DropCol::visit() {
+    if (!SM_Manager::instance().usingDb()) {
+        printf("[Fail] Use a database first!\n");
+        return;
+    }
     printf("DropCol");
     assert(asst);
 }
 
 void Parser::ChangeCol::visit() {
+    if (!SM_Manager::instance().usingDb()) {
+        printf("[Fail] Use a database first!\n");
+        return;
+    }
     printf("ChangeCol");
     assert(asst);
 }
 
 void Parser::RenameTable::visit() {
+    if (!SM_Manager::instance().usingDb()) {
+        printf("[Fail] Use a database first!\n");
+        return;
+    }
     printf("RenameTable");
     assert(asst);
 }
 
 void Parser::DropPrimaryKey::visit() {
-    printf("DropPrimaryKey");
-    assert(asst);
+    if (!SM_Manager::instance().usingDb()) {
+        printf("[Fail] Use a database first!\n");
+        return;
+    }
+    RC rc = SM_Manager::instance().DropPrimaryKey(*tbName);
+    if (rc != OK_RC) {
+        printf("[Fail] Cannot drop primary key of %s\n", tbName->c_str());
+    } else {
+        printf("[Succ] Primary key in %s dropped!\n", tbName->c_str());
+    }
 }

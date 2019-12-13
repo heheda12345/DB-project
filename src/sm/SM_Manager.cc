@@ -124,6 +124,41 @@ RC SM_Manager::ShowTables() {
     return OK_RC;
 }
 
+
+RC SM_Manager::AddPrimaryKey(const std::string& tbName, const std::vector<std::string>& attrNames) {
+    if (!usingDb()) {
+        return SM_DB_NOT_OPEN;
+    }
+    vector<AttrInfo> attrs;
+    RC rc = GetAttrs(tbName, attrs);
+    SMRC(rc, SM_ERROR);
+    for (auto name: attrNames) {
+        int idx = AttrInfo::getIndex(attrs, name);
+        if (idx == -1) {
+            return SM_NO_SUCH_ATTR;
+        }
+        attrs[idx].setPrimaryFlag(1);
+    }
+    rc = UpdateAttrs(tbName, attrs);
+    SMRC(rc, SM_ERROR);
+    return OK_RC;
+}
+RC SM_Manager::DropPrimaryKey(const std::string& tbName) {
+    if (!usingDb()) {
+        return SM_DB_NOT_OPEN;
+    }
+    vector<AttrInfo> attrs;
+    RC rc = GetAttrs(tbName, attrs);
+    SMRC(rc, SM_ERROR);
+    for (auto& attr: attrs) {
+        attr.setPrimaryFlag(0);
+    }
+    rc = UpdateAttrs(tbName, attrs);
+    SMRC(rc, SM_ERROR);
+    return OK_RC;
+}
+
+
 RC SM_Manager::GetAttrs(const std::string& relName, std::vector<AttrInfo>& attributes) {
     if (!usingDb()) {
         return SM_DB_NOT_OPEN;
@@ -137,6 +172,22 @@ RC SM_Manager::GetAttrs(const std::string& relName, std::vector<AttrInfo>& attri
     char header[size];
     rc = handle.GetMeta(header, size);
     attributes = AttrInfo::loadAttrs(header);
+    rc = rmm.CloseFile(handle);
+    RMRC(rc, SM_ERROR);
+    return OK_RC;
+}
+
+RC SM_Manager::UpdateAttrs(const std::string& tbName, const std::vector<AttrInfo>& attributes) {
+    if (!usingDb()) {
+        return SM_DB_NOT_OPEN;
+    }
+    RM_FileHandle handle;
+    RC rc = rmm.OpenFile(tbName.c_str(), handle);
+    RMRC(rc, SM_ERROR);
+    char header[AttrInfo::getAttrsSize(attributes)];
+    AttrInfo::dumpAttrs(header, attributes);
+    rc = handle.SetMeta(header, AttrInfo::getAttrsSize(attributes));
+    RMRC(rc, SM_ERROR);
     rc = rmm.CloseFile(handle);
     RMRC(rc, SM_ERROR);
     return OK_RC;
