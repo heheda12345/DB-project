@@ -142,12 +142,12 @@ RC SM_Manager::GetAttrs(const std::string& relName, std::vector<AttrInfo>& attri
     return OK_RC;
 }
 
-bool SM_Manager::ExistAttr(const std::string& relName, const std::string& attrName) {
+bool SM_Manager::ExistAttr(const std::string& relName, const std::string& attrName, AttrType type) {
     std::vector<AttrInfo> attrs;
     RC rc = GetAttrs(relName, attrs);
     RMRC(rc, 0);
     int idx = AttrInfo::getIndex(attrs, attrName);
-    return idx != -1;
+    return idx != -1 && (type == NO_TYPE || attrs[idx].type == type);
 }
 
 bool SM_Manager::LinkForeign(const std::string& reqTb, const std::string& reqAttr, const std::string& dstTb, const std::string& dstAttr) {

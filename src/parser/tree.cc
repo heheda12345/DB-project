@@ -56,6 +56,10 @@ void Parser::CreateTable::visit() {
                 printf("[Fail] Attribute name %s is too long\n", f->attr.attrName.c_str());
                 return;
             }
+            if (f->hasError) {
+                printf("[Fail] Invalid Attr\n");
+                return;
+            }
             attrs.push_back(f->attr);
         }
     }
@@ -91,12 +95,12 @@ void Parser::CreateTable::visit() {
             printf("[Fail] No key named %s\n", fCols[i].c_str());
             return;
         }
-        if (!SM_Manager::instance().ExistAttr(refTables[i], refAttrs[i])) {
-            printf("[Fail] No attribute %s.%s", refTables[i].c_str(), refAttrs[i].c_str());
+        if (!SM_Manager::instance().ExistAttr(refTables[i], refAttrs[i], attrs[idx].type)) {
+            printf("[Fail] No attribute or type not match: %s.%s", refTables[i].c_str(), refAttrs[i].c_str());
             return;
         }
         if (attrs[idx].isForeign()) {
-            printf("[Fail] Attr %s can have at most one foreign key\n", fCols[i]);
+            printf("[Fail] Attr %s can have at most one foreign key\n", fCols[i].c_str());
             return;
         }
         attrs[idx].setForeign(refTables[i], refAttrs[i]);

@@ -71,8 +71,7 @@ EXIT { return EXIT; }
 {IDENTIFIER} { yylval.strval = new std::string(yytext, yyleng); return IDENTIFIER; }
 {FORMAT_INT} { sscanf(yytext, "%d", &yylval.intval); return VALUE_INT; }
 {FORMAT_FLOAT} { sscanf(yytext, "%f", &yylval.floatval); return VALUE_FLOAT; }
-{FORMAT_STRING} {
-    yylval.strval = new std::string(yytext, yyleng); return VALUE_STRING; }
+{FORMAT_STRING} { yylval.strval = new std::string(yytext + 1, yyleng-2); return VALUE_STRING; }
 {FORMAT_DATE} {
     int year, month, date;
     sscanf(yytext, "%d-%d-%d", &year, &month, &date);

@@ -63,7 +63,7 @@ public:
                 return std::string(reinterpret_cast<char*>(&dt.vf), sizeof(float));
             }
             case STRING: {
-                return std::string(*dt.vs);
+                return std::string(*(dt.vs));
             }
             case NO_TYPE: {
                 return std::string();
@@ -159,11 +159,27 @@ public:
         bool _hasDefault, Value* _dVal, bool _notNull):
         colName(_colName), type(_type), 
         hasDefault(_hasDefault), dVal(_dVal), notNull(false),
-        ty(Simple), attr(_type->ty,  _type->vi, *_colName, _notNull, false, _hasDefault, _hasDefault ? _dVal->dump() : std::string()) {}
+        ty(Simple), attr(_type->ty,  _type->vi, *_colName, _notNull, false, _hasDefault, _hasDefault ? _dVal->dump() : std::string()), hasError(0) {
+            if (hasDefault) {
+                if (dVal->ty != _type->ty) {
+                    hasError = 1;
+                    return;
+                }
+                if (dVal->ty == STRING) {
+                    if (_type->withi && dVal->dt.vs->length() > _type->vi) {
+                        hasError = 1;
+                        return;
+                    } else if (!_type->withi && dVal->dt.vs->length() > MAXSTRINGLEN) {
+                        hasError = 1;
+                        return;
+                    }
+                }
+            }
+        }
 
-    Field(std::vector<Column*>* _columns): columns(_columns), ty(Primary) {}
+    Field(std::vector<Column*>* _columns): columns(_columns), ty(Primary), hasError(0) {}
 
-    Field(std::string* _colName, std::string* _tbName, std::string* _othercol): colName(_colName), tbName(_tbName), othercol(_othercol), ty(Foreign) {}
+    Field(std::string* _colName, std::string* _tbName, std::string* _othercol): colName(_colName), tbName(_tbName), othercol(_othercol), ty(Foreign), hasError(0) {}
 
     ~Field() {
         switch (ty) {
@@ -203,6 +219,7 @@ public:
     bool notNull;
     FieldType ty;
     AttrInfo attr;
+    bool hasError;
 };
 
 class WhereClause {
@@ -341,7 +358,7 @@ public:
 
 class DropTable: public Stmt {
 public:
-    DropTable(std::string* _tbName): tbName(tbName) {}
+    DropTable(std::string* _tbName): tbName(_tbName) {}
     ~DropTable() {
         delete tbName;
     }
@@ -353,7 +370,7 @@ public:
 
 class Desc: public Stmt {
 public:
-    Desc(std::string* _tbName): tbName(tbName) {}
+    Desc(std::string* _tbName): tbName(_tbName) {}
     ~Desc() {
         delete tbName;
     }
@@ -365,7 +382,7 @@ public:
 
 class DescTable: public Stmt {
 public:
-    DescTable(std::string* _tbName): tbName(tbName) {}
+    DescTable(std::string* _tbName): tbName(_tbName) {}
     ~DescTable() {
         delete tbName;
     }

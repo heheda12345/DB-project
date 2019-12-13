@@ -106,7 +106,7 @@ public:
     RC ShowTables();
 
     RC GetAttrs(const std::string& relName, std::vector<AttrInfo>& attributes);
-    bool ExistAttr(const std::string& relName, const std::string& attrName);
+    bool ExistAttr(const std::string& relName, const std::string& attrName, AttrType type = NO_TYPE);
     bool LinkForeign(const std::string& reqTb, const std::string& reqAttr, const std::string& dstTb, const std::string& dstAttr);
 
     // RC CreateIndex(const char *relName,           // create an index for

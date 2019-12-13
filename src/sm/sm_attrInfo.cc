@@ -2,7 +2,6 @@
 using namespace std;
 
  AttrInfo::AttrInfo(const AttrType& _type, unsigned short _mxLen, const std::string& _attrName, bool notNull, bool isPrimary, bool hasDefault, const std::string& _dVal): type(_type), flag(0), mxLen(_mxLen), attrName(_attrName), refTable(""), refAttr(""), dVal(_dVal) {
-    assert(attrName.length() < MAXNAME);
     setNotNullFlag(notNull);
     setPrimaryFlag(isPrimary);
     setForeignFlag(0);
@@ -11,9 +10,6 @@ using namespace std;
 }
 
 AttrInfo::AttrInfo(const AttrType& _type, unsigned short _mxLen, const std::string& _attrName, bool notNull, bool hasDefault, const std::string& _dVal, const std::string &_refTable, const std::string& _refAttr): type(_type), flag(0), mxLen(_mxLen), attrName(_attrName), refTable(_refTable), refAttr(_refAttr), dVal(_dVal) {
-    assert(attrName.length() < MAXNAME);
-    assert(refTable.length() < MAXNAME);
-    assert(refAttr.length() < MAXNAME);
     setNotNullFlag(notNull);
     setPrimaryFlag(0);
     setForeignFlag(1);
@@ -56,6 +52,7 @@ int AttrInfo::load(const char* pData) {
     flag = *reinterpret_cast<const unsigned char*>(pData + cur); cur += sizeof(char);
     mxLen = *reinterpret_cast<const unsigned short*>(pData + cur); cur += sizeof(short);
     int linked = *reinterpret_cast<const int*>(pData + cur); cur += sizeof(int);
+    // printf("[load] %d %d %d %d\n", (int)type, (int)flag, (int)mxLen, (int) linked);
     attrName = std::string(pData + cur); cur += MAXNAME;
     if (isForeign()) {
         refTable = std::string(pData + cur); cur += MAXNAME;
@@ -80,13 +77,17 @@ int AttrInfo::dump(char* pData) const {
     *reinterpret_cast<unsigned char*>(pData + cur) = flag; cur += sizeof(char);
     *reinterpret_cast<unsigned short*>(pData + cur) = mxLen; cur += sizeof(short);
     *reinterpret_cast<int*>(pData + cur) = int(linkedForeign.size()); cur += sizeof(int);
+    // printf("[dump] %d %d %d %d\n", (int)type, (int)flag, (int)mxLen, (int) linkedForeign.size());
+    assert(attrName.length() < MAXNAME);
+    assert(refTable.length() < MAXNAME);
+    assert(refAttr.length() < MAXNAME);
     dumpString(pData + cur, attrName); cur += MAXNAME;
     if (isForeign()) {
         dumpString(pData + cur, refTable); cur += MAXNAME;
         dumpString(pData + cur, refAttr); cur += MAXNAME;
     }
     if (hasDefault()) {
-        *reinterpret_cast<int*>(pData + cur) = (int)dVal.length(); cur += sizeof(int);
+        *reinterpret_cast<int*>(pData + cur) = int(dVal.length()); cur += sizeof(int);
         memset(pData + cur, 0, mxLen);
         memcpy(pData + cur, dVal.c_str(), dVal.length()); cur += mxLen;
     }
@@ -98,7 +99,7 @@ int AttrInfo::dump(char* pData) const {
 }
 
 int AttrInfo::getAttrSize() const {
-    int cur = sizeof(char) + sizeof(char) + sizeof(short) + MAXNAME;
+    int cur = sizeof(char) + sizeof(char) + sizeof(short) + sizeof(int) + MAXNAME;
     if (isForeign()) {
         cur += MAXNAME * 2;
     }
