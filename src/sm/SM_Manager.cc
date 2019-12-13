@@ -113,8 +113,7 @@ RC SM_Manager::ShowTables() {
     if (!usingDb()) {
         return SM_DB_NOT_OPEN;
     }
-    std::string dir = usingDb() ? ".." : ".";
-    auto tables = getAllTable(dir.c_str());
+    auto tables = getAllTable(".");
     for (auto& tb: tables) {
         vector<AttrInfo> attrs;
         RC rc = GetAttrs(tb, attrs);

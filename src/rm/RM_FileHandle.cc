@@ -14,7 +14,7 @@ RC RM_FileHandle::Open(PF_FileHandle& handle) {
     rc = pfPageHandle.GetData(data);
     PFRC(rc, rc_ret)
     fileHeader = *reinterpret_cast<FileHeader*> (data);
-    printf("[Open]fileHeader %d %d %d\n", fileHeader.recordSize, fileHeader.recordPerPage, fileHeader.metaSize);
+    // printf("[Open]fileHeader %d %d %d\n", fileHeader.recordSize, fileHeader.recordPerPage, fileHeader.metaSize);
     isOpen = true;
 
     PageNum pageNum;
@@ -323,6 +323,11 @@ RC RM_FileHandle::GetMetaSize(int& size) {
     fileHeader = *reinterpret_cast<FileHeader*> (data);
     // printf("[GetMeta] fileHeader %d %d %d\n", fileHeader.recordSize, fileHeader.recordPerPage, fileHeader.metaSize);
     size = fileHeader.metaSize;
+    PageNum pageNum;
+    rc = pfPageHandle.GetPageNum(pageNum);
+    PFRC(rc, rc_ret)
+    rc = pfFileHandle.UnpinPage(pageNum);
+    PFRC(rc, rc_ret)
     return OK_RC;
 }
 

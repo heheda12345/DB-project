@@ -1,7 +1,7 @@
 create database test;
 use database test;
-create table tbclass(int id, varchar class);
+create table tbclass(id int, class varchar);
 show tables;
-create table tbtest(int id not null, varchar name, int class, float score not null, date birthday, primary key(id), foreign key(class) reference tbclass(class));
+create table tbtest(id int not null, name varchar, class int, score float not null, birthday date, primary key(id), foreign key(class) references tbclass(class));
 show tables;
 drop table tbtest;

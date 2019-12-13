@@ -78,8 +78,8 @@ int AttrInfo::dump(char* pData) const {
     int cur = 0;
     *reinterpret_cast<unsigned char*>(pData) = (unsigned char) type; cur += sizeof(char);
     *reinterpret_cast<unsigned char*>(pData + cur) = flag; cur += sizeof(char);
-    *reinterpret_cast<unsigned short*>(pData + cur) = mxLen; cur += sizeof(char);
-    *reinterpret_cast<int*>(pData + cur) = (int)linkedForeign.size(); cur += sizeof(int);
+    *reinterpret_cast<unsigned short*>(pData + cur) = mxLen; cur += sizeof(short);
+    *reinterpret_cast<int*>(pData + cur) = int(linkedForeign.size()); cur += sizeof(int);
     dumpString(pData + cur, attrName); cur += MAXNAME;
     if (isForeign()) {
         dumpString(pData + cur, refTable); cur += MAXNAME;
@@ -115,7 +115,7 @@ vector<AttrInfo> AttrInfo::loadAttrs(const char* pData) {
     int cur = sizeof(int);
     for (int i = 0; i < n; i++) {
         AttrInfo attr;
-        int size = attr.load(pData);
+        int size = attr.load(pData + cur);
         ret.push_back(attr);
         cur += size;
     }
@@ -158,12 +158,14 @@ std::ostream& operator << (std::ostream& os, const std::vector<AttrInfo>& attrs)
             info.insert(0, "(");
             info.append(")");
         }
-        info.append(" [");
+        info.append("[");
         for (auto& x: attr.linkedForeign) {
             info.append(x.first).append(".").append(x.second).append(" ");
         }
-        info.append("]");
-        os << attr.attrName << info;
+        if (info[info.size() - 1] == ' ')
+            info.pop_back();
+        info.append("]   ");
+        os << attr.attrName << std::string(" ") << st_ty << info;
     }
     return os;
 }
