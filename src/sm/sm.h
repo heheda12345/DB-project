@@ -172,6 +172,7 @@ void SM_PrintError(RC rc);
 #define SM_ERROR                (START_SM_ERR - 1) // error
 #define SM_DB_NOT_OPEN          (START_SM_ERR - 2)
 #define SM_NO_SUCH_ATTR         (START_SM_ERR - 3)
+#define SM_OTHERS_FOREIGN       (START_SM_ERR - 4)
 #define SM_LASTERROR            SM_ERROR
 
 

@@ -96,7 +96,15 @@ RC SM_Manager::DropTable(const std::string& relName) {
     if (!usingDb()) {
         return SM_DB_NOT_OPEN;
     }
-    RC rc = rmm.DestroyFile(relName.c_str());
+    vector<AttrInfo> attrs;
+    RC rc = GetAttrs(relName, attrs);
+    SMRC(rc, SM_ERROR);
+    for (auto& attr: attrs) {
+        if (!attr.linkedForeign.empty()) {
+            return SM_OTHERS_FOREIGN;
+        }
+    }
+    rc = rmm.DestroyFile(relName.c_str());
     RMRC(rc, SM_ERROR);
     return OK_RC;
 }
