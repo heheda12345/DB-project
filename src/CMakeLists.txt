@@ -21,4 +21,4 @@ add_compile_options("-ly")
 add_compile_options("-ll")
 
 add_executable(main.out main.cc)
-target_link_libraries(main.out parser ix rm pf utils)
+target_link_libraries(main.out parser sm ix rm pf utils)

@@ -1,66 +1,26 @@
 #include "tree.h"
 #include "../utils/utils.h"
+#include "../sm/sm.h"
 #include <assert.h>
 using namespace std;
 using namespace Parser;
 
 const int asst = true; // assert(ast) if unimplemented
-string TreeNode::curTable = "";
 
 void Parser::ShowDatabases::visit() {
-    if (curTable == "")
-        system("ls");
-    else
-        system("ls ..");
-    
+    SM_Manager::instance().ShowAllDb();
 }
 
 void Parser::CreateDatabase::visit() {
-    if (TryMkDir(dbName->c_str())) {
-        printf("[Fail] DB %s exists!\n", dbName->c_str());
-    } else {
-        printf("[Succ] Create db %s\n", dbName->c_str());
-    }
+    SM_Manager::instance().CreateDb(*dbName);
 }
 
 void Parser::UseDatabase::visit() {
-    char dir[1000]; 
-    if (curTable != "") {
-        sprintf(dir, "../%s", dbName->c_str());
-    } else {
-        sprintf(dir, "%s", dbName->c_str());
-    }
-    if (curTable == *dbName) {
-        printf("[Fail] Already in %s\n", dbName->c_str());
-    } else if (DirExist(dir)) {
-        chdir(dir);
-        printf("[Succ] Switch to %s\n", dbName->c_str());
-        curTable = *dbName;
-    } else {
-        printf("[Fail] No db named %s\n", dbName->c_str());
-    }
+    SM_Manager::instance().UseDb(*dbName);
 }
 
 void Parser::DropDatabase::visit() {
-    char dir[1000]; 
-    if (curTable != "") {
-        sprintf(dir, "../%s", dbName->c_str());
-    } else {
-        sprintf(dir, "%s", dbName->c_str());
-    }
-    if (!DirExist(dir)) {
-        printf("[Fail] No db named %s\n", dbName->c_str());
-    } else {
-        if (curTable == *dbName) {
-            chdir("..");
-            curTable = "";
-            sprintf(dir, "%s", dbName->c_str());
-            printf("[Info] Using db %s, exit first\n", dbName->c_str());
-        }
-        RmDir(dir);
-        printf("[Succ] Drop db %s\n", dbName->c_str());
-    }
-    assert(asst);
+    SM_Manager::instance().DropDb(*dbName);
 }
 
 void Parser::ShowTables::visit() {

@@ -1,53 +1,70 @@
 #include "sm.h"
 
-SM_Manager::SM_Manager(IX_Manager &ixm, RM_Manager &rmm) : rmm(rmm), ixm(ixm) {
+SM_Manager::SM_Manager() : rmm(RM_Manager::instance()), ixm(IX_Manager::instance()) {
 
 }
 
-SM_Manager::~SM_Manager() {
 
-}
-
-RC SM_Manager::OpenDb(const char *dbName) {
+RC SM_Manager::CreateDb(const std::string& dbName) {
+    char dir[1000]; 
+    if (curTable != "") {
+        sprintf(dir, "../%s", dbName.c_str());
+    } else {
+        sprintf(dir, "%s", dbName.c_str());
+    }
+    if (TryMkDir(dir)) {
+        printf("[Fail] DB %s exists!\n", dbName.c_str());
+    } else {
+        printf("[Succ] Create db %s\n", dbName.c_str());
+    }
     return OK_RC;
 }
 
-RC SM_Manager::CloseDb() {
+RC SM_Manager::UseDb(const std::string& dbName) {
+    char dir[1000]; 
+    if (curTable != "") {
+        sprintf(dir, "../%s", dbName.c_str());
+    } else {
+        sprintf(dir, "%s", dbName.c_str());
+    }
+    if (curTable == dbName) {
+        printf("[Fail] Already in %s\n", dbName.c_str());
+    } else if (DirExist(dir)) {
+        chdir(dir);
+        printf("[Succ] Switch to %s\n", dbName.c_str());
+        curTable = dbName;
+    } else {
+        printf("[Fail] No db named %s\n", dbName.c_str());
+    }
     return OK_RC;
 }
 
-RC CreateTable(const char *relName, int attrCount, AttrInfo   *attributes) {
+RC SM_Manager::DropDb(const std::string& dbName) {
+    char dir[1000]; 
+    if (curTable != "") {
+        sprintf(dir, "../%s", dbName.c_str());
+    } else {
+        sprintf(dir, "%s", dbName.c_str());
+    }
+    if (!DirExist(dir)) {
+        printf("[Fail] No db named %s\n", dbName.c_str());
+    } else {
+        if (curTable == dbName) {
+            chdir("..");
+            curTable = "";
+            sprintf(dir, "%s", dbName.c_str());
+            printf("[Info] Using db %s, exit first\n", dbName.c_str());
+        }
+        RmDir(dir);
+        printf("[Succ] Drop db %s\n", dbName.c_str());
+    }
     return OK_RC;
 }
 
-RC CreateIndex(const char *relName,  const char *attrName) {
-    return OK_RC;
-}
-
-RC DropTable(const char *relName) {
-    return OK_RC;
-}
-
-RC DropIndex (const char *relName, const char *attrName) {
-    return OK_RC;
-}
-
-RC Load(const char *relName, const char *fileName) {
-    return OK_RC;
-}
-
-RC Help() {
-    return OK_RC;
-}
-
-RC Help(const char *relName) {
-    return OK_RC;
-}
-
-RC Print(const char *relName) {
-    return OK_RC;
-}
-
-RC Set(const char *paramName, const char *value) {
+RC SM_Manager::ShowAllDb() {
+    if (curTable == "")
+        system("ls");
+    else
+        system("ls ..");
     return OK_RC;
 }

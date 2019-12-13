@@ -6,8 +6,6 @@
 namespace Parser {
 
 class TreeNode {
-protected:
-    static std::string curTable;
 };
 
 class Type {
