@@ -83,12 +83,11 @@ RC SM_Manager::CreateTable(const std::string& relName, const TableInfo& table) {
     RC rc = rmm.CreateFile(relName.c_str(), AttrInfo::getRecordSize(table.attrs),
         header, table.getSize());
     RMRC(rc, SM_ERROR);
-    // for (auto& attr: attributes) {
-    //     if (attr.isForeign()) {
-    //         rc = LinkForeign(relName, attr.attrName, attr.refTable, attr.refAttr);
-    //         SMRC(rc, SM_ERROR);
-    //     }
-    // }
+    for (auto& fKey: table.foreignGroups) {
+        rc = LinkForeign(relName, fKey);
+        assert(rc == OK_RC);
+        SMRC(rc, SM_ERROR);
+    }
     return OK_RC;
 }
 
@@ -99,11 +98,8 @@ RC SM_Manager::DropTable(const std::string& relName) {
     TableInfo table;
     RC rc = GetTable(relName, table);
     SMRC(rc, SM_ERROR);
-    // for (auto& attr: attrs) {
-    //     if (!attr.linkedForeign.empty()) {
-    //         return SM_OTHERS_FOREIGN;
-    //     }
-    // }
+    if (table.linkedByOthers())
+        return SM_OTHERS_FOREIGN;
     rc = rmm.DestroyFile(relName.c_str());
     RMRC(rc, SM_ERROR);
     return OK_RC;
@@ -142,6 +138,9 @@ RC SM_Manager::AddPrimaryKey(const std::string& tbName, const std::vector<std::s
     SMRC(rc, SM_ERROR);
     if (table.hasPrimary())
         return SM_HAS_PRIMARY;
+    if (isDumplicated(attrNames)) {
+        return SM_DUMPLICATED;
+    }
     for (auto name: attrNames) {
         int idx = AttrInfo::getPos(table.attrs, name);
         if (idx == -1) {
@@ -149,6 +148,7 @@ RC SM_Manager::AddPrimaryKey(const std::string& tbName, const std::vector<std::s
         }
     }
     table.primaryKeys = attrNames;
+    table.setPrimaryNotNull();
     rc = UpdateTable(tbName, table);
     SMRC(rc, SM_ERROR);
     return OK_RC;
@@ -171,39 +171,42 @@ RC SM_Manager::DropPrimaryKey(const std::string& tbName) {
     return OK_RC;
 }
 
-// RC SM_Manager::AddForeignKey(const std::string& reqTb, const std::string& reqAttr, const std::string& dstTb, const std::string& dstAttr) {
-//     if (!usingDb()) {
-//         return SM_DB_NOT_OPEN;
-//     }
-//     vector<AttrInfo> attrs;
-//     RC rc = GetAttrs(reqTb, attrs);
-//     SMRC(rc, SM_ERROR);
-//     int idx = AttrInfo::getPos(attrs, reqAttr);
-//     assert(idx >= 0);
-//     if (idx == -1)
-//         return SM_NO_SUCH_ATTR;
-//     attrs[idx].setForeign(dstTb, dstAttr);
-//     rc = UpdateAttrs(reqTb, attrs);
-//     SMRC(rc, SM_ERROR);
-//     return OK_RC;
-// }
+RC SM_Manager::AddForeignKey(const std::string& tbName, const ForeignKeyInfo& fKey) {
+    if (!usingDb()) {
+        return SM_DB_NOT_OPEN;
+    }
+    TableInfo table;
+    RC rc = GetTable(tbName, table);
+    SMRC(rc, SM_ERROR);
+    table.foreignGroups.push_back(fKey);
+    rc = UpdateTable(tbName, table);
+    assert(rc == OK_RC);
+    SMRC(rc, SM_ERROR);
+    rc = LinkForeign(tbName, fKey);
+    assert(rc == OK_RC);
+    SMRC(rc, SM_ERROR);
+    return OK_RC;
+}
 
-// RC SM_Manager::DropForeignKey(const std::string& reqTb, const std::string& reqAttr) {
-//     if (!usingDb()) {
-//         return SM_DB_NOT_OPEN;
-//     }
-//     vector<AttrInfo> attrs;
-//     RC rc = GetAttrs(reqTb, attrs);
-//     SMRC(rc, SM_ERROR);
-//     int idx = AttrInfo::getPos(attrs, reqAttr);
-//     assert(idx >= 0);
-//     if (idx == -1)
-//         return SM_NO_SUCH_ATTR;
-//     attrs[idx].setForeignFlag(0);
-//     rc = UpdateAttrs(reqTb, attrs);
-//     SMRC(rc, SM_ERROR);
-//     return OK_RC;
-// }
+RC SM_Manager::DropForeignKey(const std::string& reqTb, const std::string& fkName) {
+    if (!usingDb()) {
+        return SM_DB_NOT_OPEN;
+    }
+    TableInfo table;
+    RC rc = GetTable(reqTb, table);
+    SMRC(rc, SM_ERROR);
+    int idx = ForeignKeyInfo::getPos(table.foreignGroups, fkName);
+    if (idx == -1)
+        return SM_NO_SUCH_KEY;
+    std::string refTb = table.foreignGroups[idx].refTable;
+    table.foreignGroups.erase(table.foreignGroups.begin() + idx);
+    rc = UpdateTable(reqTb, table);
+    SMRC(rc, SM_ERROR);
+    rc = DropForeignLink(refTb, fkName);
+    assert(rc == OK_RC);
+    SMRC(rc, SM_ERROR);
+    return OK_RC;
+}
 
 // RC SM_Manager::GetForeignDst(const std::string& reqTb, std::string& reqAttr, std::string& dstTb, std::string& dstAttr) {
 //     if (!usingDb()) {
@@ -259,6 +262,48 @@ RC SM_Manager::UpdateTable(const std::string& tbName, const TableInfo& table) {
     return OK_RC;
 }
 
+RC SM_Manager::ShuffleForeign(const std::string& srcTbName, ForeignKeyInfo &key, const std::vector<std::string>& refAttrs) {
+    if (!usingDb()) {
+        return SM_DB_NOT_OPEN;
+    }
+    TableInfo table;
+    RC rc = GetTable(srcTbName, table);
+    SMRC(rc, SM_ERROR);
+    return ShuffleForeign(table, key, refAttrs);
+}
+
+RC SM_Manager::ShuffleForeign(const TableInfo& srcTable, ForeignKeyInfo &key, const std::vector<std::string>& refAttrs) {
+    if (!usingDb()) {
+        return SM_DB_NOT_OPEN;
+    }
+    TableInfo table;
+    RC rc = GetTable(key.refTable, table);
+    SMRC(rc, SM_ERROR);
+    std::vector<std::string> srcAttrs;
+    if (key.attrs.size() != refAttrs.size() || refAttrs.size() != table.primaryKeys.size())
+        return SM_FOREIGN_NOT_MATCH;
+    if (key.fkName != "@@" &&
+        (ForeignKeyInfo::getPos(srcTable.foreignGroups, key.fkName) != -1 ||
+         ForeignKeyInfo::getPos(table.linkedBy, key.fkName) != -1)) {
+        return SM_DUMPLICATED;
+    }
+    for (auto& x: table.primaryKeys) {
+        int idx = findName(refAttrs, x);
+        if (idx == -1) {
+            return SM_FOREIGN_NOT_MATCH;
+        }
+        int idxSrc = AttrInfo::getPos(srcTable.attrs, key.attrs[idx]);
+        int idxDst = AttrInfo::getPos(table.attrs, x);
+        assert(idxDst != -1);
+        if (idxSrc == -1 || idxDst == -1 || srcTable.attrs[idxSrc].type != table.attrs[idxDst].type) {
+            return SM_FOREIGN_NOT_MATCH;
+        }
+        srcAttrs.push_back(key.attrs[idx]);
+    }
+    key.attrs = srcAttrs;
+    return OK_RC;
+}
+
 // bool SM_Manager::ExistAttr(const std::string& relName, const std::string& attrName, AttrType type) {
 //     std::vector<AttrInfo> attrs;
 //     RC rc = GetAttrs(relName, attrs);
@@ -267,28 +312,33 @@ RC SM_Manager::UpdateTable(const std::string& tbName, const TableInfo& table) {
 //     return idx != -1 && (type == NO_TYPE || attrs[idx].type == type);
 // }
 
-// bool SM_Manager::LinkForeign(const std::string& reqTb, const std::string& reqAttr, const std::string& dstTb, const std::string& dstAttr) {
-//     RM_FileHandle handle;
-//     RC rc = rmm.OpenFile(dstTb.c_str(), handle);
-//     assert(rc == OK_RC);
-//     SMRC(rc, SM_ERROR);
-//     int size;
-//     rc = handle.GetMetaSize(size);
-//     assert(rc == OK_RC);
-//     SMRC(rc, SM_ERROR);
-//     char header[size];
-//     rc = handle.GetMeta(header, size);
-//     std::vector<AttrInfo> attrs;
-//     attrs = AttrInfo::loadAttrs(header);
-//     int idx = AttrInfo::getPos(attrs, dstAttr);
-//     attrs[idx].linkedForeign.push_back(make_pair(reqTb, reqAttr));
-//     char headerNew[AttrInfo::getAttrsSize(attrs)];
-//     size = AttrInfo::dumpAttrs(headerNew, attrs);
-//     rc = handle.SetMeta(headerNew, size);
-//     assert(rc == OK_RC);
-//     SMRC(rc, SM_ERROR);
-//     rc = rmm.CloseFile(handle);
-//     assert(rc == OK_RC);
-//     SMRC(rc, SM_ERROR);
-//     return 0;
-// }
+RC SM_Manager::LinkForeign(const std::string& reqTb, const ForeignKeyInfo &key) {
+    if (!usingDb()) {
+        return SM_DB_NOT_OPEN;
+    }
+    TableInfo table;
+    RC rc = GetTable(key.refTable, table);
+    SMRC(rc, SM_ERROR);
+    ForeignKeyInfo refKey(key);
+    refKey.refTable = reqTb;
+    table.linkedBy.push_back(refKey);
+    rc = UpdateTable(key.refTable, table);
+    SMRC(rc, SM_ERROR);
+    return OK_RC;
+}
+
+RC SM_Manager::DropForeignLink(const std::string& refTb, const std::string& fkName) {
+    if (!usingDb()) {
+        return SM_DB_NOT_OPEN;
+    }
+    TableInfo table;
+    RC rc = GetTable(refTb, table);
+    SMRC(rc, SM_ERROR);
+    int idx = ForeignKeyInfo::getPos(table.linkedBy, fkName);
+    if (idx == -1)
+        return SM_NO_SUCH_KEY;
+    table.linkedBy.erase(table.linkedBy.begin() + idx);
+    rc = UpdateTable(refTb, table);
+    SMRC(rc, SM_ERROR);
+    return OK_RC;
+}

@@ -23,3 +23,5 @@ int getDefaultLen(AttrType ty);
 bool typeIsMatch(std::vector<AttrType> ty1, std::vector<AttrType> ty2);
 bool lengthIsMatch(std::vector<std::string> attr1, std::vector<std::string> attr2);
 int getSum(const std::vector<int> &vec);
+int findName(const std::vector<std::string>& vec, const std::string& target);
+bool isDumplicated(const std::vector<std::string>& vec);

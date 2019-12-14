@@ -58,5 +58,16 @@ std::ostream& operator << (std::ostream& os, const TableInfo& table) {
             os << std::string(" ") << x;
         os << endl;
     }
+    if (table.foreignGroups.size() > 0) {
+        os << "Foreign Keys:" << endl;
+        for (auto& x: table.foreignGroups)
+            os << x << endl;
+    }
+    if (table.linkedBy.size() > 0) {
+        os << "Linked by:" << endl;
+        for (auto& x: table.linkedBy) {
+            os << x << endl;
+        }
+    }
     return os;
 }

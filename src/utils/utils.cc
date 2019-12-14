@@ -154,3 +154,19 @@ int getSum(const std::vector<int> &vec) {
         ret += x;
     return ret;
 }
+
+int findName(const std::vector<std::string>& vec, const std::string& target) {
+    for (int i=0; i<vec.size(); i++)
+        if (vec[i] == target)
+            return i;
+    return -1;
+}
+
+// Note: findName returns the first match, so always return self if only one exists
+bool isDumplicated(const std::vector<std::string>& vec) {
+    for (int i = 0; i < vec.size(); i++) {
+        if (findName(vec, vec[i]) != i)
+            return 1;
+    }
+    return 0;
+}

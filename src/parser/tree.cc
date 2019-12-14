@@ -72,45 +72,38 @@ void Parser::CreateTable::visit() {
             }
             for (Column* col: *(f->columns)) {
                 table.primaryKeys.push_back(*(col->colName));
-                table.setPrimaryNotNull();
             }
-        } 
-        // else if (f->ty == Field::Foreign) {
-        //     ForeignKeyInfo fKey;
-        //     fKey.fkName = "@@";
-        //     fKey.refTable = *(f->tbName);
-        //     fKey.attrs.push_back(*(f->colName));
-        //     // TODO match SOS
-        //     table.foreignGroups.push_back(fKey);
-        // }
-    }
-
-    for (auto s: table.primaryKeys) {
-        int idx = AttrInfo::getPos(table.attrs, s);
-        if (idx == -1) {
-            printf("[Fail] No key named %s\n", s.c_str());
-            return;
+            if (isDumplicated(table.primaryKeys)) {
+                printf("[Fail] Dumplicated primary key!\n");
+                return;
+            }
+            for (auto s: table.primaryKeys) {
+                int idx = AttrInfo::getPos(table.attrs, s);
+                if (idx == -1) {
+                    printf("[Fail] No key named %s\n", s.c_str());
+                    return;
+                }
+            }
+            table.setPrimaryNotNull();
+        }  else if (f->ty == Field::Foreign) {
+            ForeignKeyInfo fKey;
+            fKey.fkName = "@@";
+            fKey.refTable = *(f->tbName);
+            fKey.attrs.push_back(*(f->colName));
+            vector<std::string> refAttrs;
+            refAttrs.push_back(*(f->othercol));
+            RC rc = SM_Manager::instance().ShuffleForeign(table, fKey, refAttrs);
+            if (rc != OK_RC) {
+                printf("[Fail] Invalid keys\n");
+                return;
+            }
+            if (!QL_Manager::instance().CanAddForeignKey()) {
+                printf("[Fail] Invalid value in table!\n");
+                return;
+            }
+            table.foreignGroups.push_back(fKey);
         }
     }
-
-    // assert(fCols.size() == refTables.size() && refTables.size() == refAttrs.size());
-    // for (int i = 0; i < (int)fCols.size(); i++) {
-    //     int idx = AttrInfo::getPos(attrs, fCols[i]);
-    //     if (idx == -1) {
-    //         printf("[Fail] No key named %s\n", fCols[i].c_str());
-    //         return;
-    //     }
-    //     if (!SM_Manager::instance().ExistAttr(refTables[i], refAttrs[i], attrs[idx].type)) {
-    //         printf("[Fail] No attribute or type not match: %s.%s", refTables[i].c_str(), refAttrs[i].c_str());
-    //         return;
-    //     }
-    //     if (attrs[idx].isForeign()) {
-    //         printf("[Fail] Attr %s can have at most one foreign key\n", fCols[i].c_str());
-    //         return;
-    //     }
-    //     attrs[idx].setForeign(refTables[i], refAttrs[i]);
-    // }
-
     RC rc = SM_Manager::instance().CreateTable(*tbName, table);
     if (rc) {
         printf("[Fail] Can not create table %s\n", tbName->c_str());
@@ -288,4 +281,44 @@ void Parser::DropPrimaryKey::visit() {
     } else {
         printf("[Succ] Primary key in %s dropped!\n", tbName->c_str());
     }
+}
+
+void Parser::AddForeignKey::visit() {
+    std::string srcTb(*tbName);
+    ForeignKeyInfo key;
+    key.fkName = std::string(*fkName);
+    key.refTable = std::string(*refTable);
+    for (Column* col: *srcCols) {
+        key.attrs.push_back(*(col->colName));
+    }
+    std::vector<std::string> refAttrs;
+    for (Column* col: *refCols) {
+        refAttrs.push_back(*(col->colName));
+    }
+    if (!QL_Manager::instance().CanAddForeignKey()) {
+        printf("[Fail] Invalid value in table!\n");
+        return;
+    }
+    RC rc = SM_Manager::instance().ShuffleForeign(srcTb, key, refAttrs);
+    if (rc != OK_RC) {
+        printf("[Fail] Not match!\n");
+        return;
+    }
+    rc = SM_Manager::instance().AddForeignKey(srcTb, key);
+    if (rc != OK_RC) {
+        printf("[Fail] Can not add!");
+        return;
+    }
+    printf("[Succ] foreign key %s added to %s\n", key.fkName.c_str(), srcTb.c_str());
+}
+
+void Parser::DropForeignKey::visit() {
+    std::string srcTb(*tbName);
+    std::string fk(*fkName);
+    RC rc = SM_Manager::instance().DropForeignKey(srcTb, fk);
+    if (rc != OK_RC) {
+        printf("[Fail] Can not drop!");
+        return;
+    }
+    printf("[Succ] foreigh key %s in %s is dropped\n", fk.c_str(), srcTb.c_str());
 }

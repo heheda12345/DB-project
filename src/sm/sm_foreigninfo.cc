@@ -28,7 +28,7 @@ int ForeignKeyInfo::dump(char* pData) const {
 }
 
 int ForeignKeyInfo::getSize() const {
-    return sizeof(int) + sizeof(MAXNAME) * (attrs.size() + 2);
+    return sizeof(int) + MAXNAME * (attrs.size() + 2);
 }
 
 std::vector<ForeignKeyInfo> ForeignKeyInfo::loadForeigns(const char* pData) {
@@ -60,4 +60,24 @@ int ForeignKeyInfo::getForeignsSize(const std::vector<ForeignKeyInfo>& vec) {
         ret += x.getSize();
     }
     return ret;
+}
+
+int ForeignKeyInfo::getPos(const std::vector<ForeignKeyInfo> &fKeys, const std::string& fkName) {
+    assert(fkName != "@@");
+    for (int i=0; i<fKeys.size(); i++)
+        if (fKeys[i].fkName == fkName)
+            return i;
+    return -1;
+}
+
+std::ostream& operator << (std::ostream& os, const ForeignKeyInfo& fKey) {
+    os << fKey.fkName << "(";
+    for (int i = 0; i < fKey.attrs.size(); i++) {
+        if (i) {
+            os << ", " << fKey.attrs[i];
+        } else {
+            os << fKey.attrs[i];
+        }
+    }   
+    os << ") [" << fKey.refTable << "]";
 }

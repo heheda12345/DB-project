@@ -77,8 +77,10 @@ struct ForeignKeyInfo {
     static std::vector<ForeignKeyInfo> loadForeigns(const char* pData);
     static int dumpForeigns(char* pData, const std::vector<ForeignKeyInfo>& vec);
     static int getForeignsSize(const std::vector<ForeignKeyInfo>& vec);
-
+    static int getPos(const std::vector<ForeignKeyInfo> &fKeys, const std::string& fkName);
 };
+
+std::ostream& operator << (std::ostream& os, const ForeignKeyInfo& fKey);
 
 struct IndexInfo {
     std::string idxName;
@@ -141,13 +143,17 @@ public:
     RC AddPrimaryKey(const std::string& tbName, const std::vector<std::string>& attrNames);
     RC DropPrimaryKey(const std::string& tbName);
 
-    // RC AddForeignKey(const std::string& reqTb, const std::string& reqAttr, const std::string& dstTb, const std::string& dstAttr);
-    // RC DropForeignKey(const std::string& reqTb, const std::string& reqAttr);
+    RC AddForeignKey(const std::string& tbName, const ForeignKeyInfo& fKey);
+    RC DropForeignKey(const std::string& tbName, const std::string& fkName);
 
     RC GetTable(const std::string& relName, TableInfo& table);
     RC UpdateTable(const std::string& tbName, const TableInfo& table);
+    RC ShuffleForeign(const std::string& srcTbName, ForeignKeyInfo &key, const std::vector<std::string>& refAttrs);
+    RC ShuffleForeign(const TableInfo& srcTable, ForeignKeyInfo &key, const std::vector<std::string>& refAttrs);
+    RC LinkForeign(const std::string& reqTb, const ForeignKeyInfo &key);
+    RC DropForeignLink(const std::string& refTb, const std::string& fkName);
+
     // bool ExistAttr(const std::string& relName, const std::string& attrName, AttrType type = NO_TYPE);
-    // bool LinkForeign(const std::string& reqTb, const std::string& reqAttr, const std::string& dstTb, const std::string& dstAttr);
     // RC GetForeignDst(const std::string& reqTb, std::string& reqAttr, std::string& dstTb, std::string& dstAttr);
 
     // RC CreateIndex(const char *relName,           // create an index for
@@ -210,6 +216,9 @@ void SM_PrintError(RC rc);
 #define SM_NOT_FOREIGN          (START_SM_ERR - 5)
 #define SM_HAS_PRIMARY          (START_SM_ERR - 6)
 #define SM_NO_PRIMARY           (START_SM_ERR - 7)
+#define SM_FOREIGN_NOT_MATCH    (START_SM_ERR - 8)
+#define SM_DUMPLICATED          (START_SM_ERR - 9)
+#define SM_NO_SUCH_KEY          (START_SM_ERR - 10)
 #define SM_LASTERROR            SM_ERROR
 
 

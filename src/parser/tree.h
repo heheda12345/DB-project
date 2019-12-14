@@ -601,4 +601,40 @@ public:
     std::string* tbName;
 };
 
+class AddForeignKey: public Stmt {
+public:
+    AddForeignKey(std::string* _tbName, std::string* _fkName, std::vector<Column*>* _srcCols, std::string* _refTable, std::vector<Column*>* _refCols) : tbName(_tbName), fkName(_fkName), refTable(_refTable), srcCols(_srcCols), refCols(_refCols) {}
+    ~AddForeignKey() {
+        delete tbName;
+        delete fkName;
+        delete refTable;
+        for (auto c: *srcCols) {
+            delete c;
+        }
+        delete srcCols;
+        for (auto c: *refCols) {
+            delete c;
+        }
+        delete refCols;        
+    }
+
+    void visit() override;
+
+    std::string *tbName, *fkName, *refTable;
+    std::vector<Column*> *srcCols, *refCols;
+};
+
+class DropForeignKey: public Stmt {
+public:
+    DropForeignKey(std::string* _tbName, std::string* _fkName) : tbName(_tbName), fkName(_fkName) {}
+    ~DropForeignKey() {
+        delete tbName;
+        delete fkName; 
+    }
+
+    void visit() override;
+
+    std::string *tbName, *fkName;
+};
+
 }

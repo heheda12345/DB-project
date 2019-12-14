@@ -197,7 +197,14 @@ alterStmt: ALTER TABLE tbName ADD field
     {
         $$ = new DropPrimaryKey($3);
     }
-    | ALTER TABLE tbName DROP FOREIGN KEY colName
+    | ALTER TABLE tbName ADD CONSTRAINT idxName FOREIGN KEY '(' columnList ')' REFERENCES tbName '(' columnList ')'
+    {
+        $$ = new AddForeignKey($3, $6, $10, $13, $15);
+    }
+    | ALTER TABLE tbName DROP FOREIGN KEY idxName
+    {
+        $$ = new DropForeignKey($3, $7);
+    }
 
 fieldList: field
     {

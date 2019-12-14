@@ -1,1 +1,1 @@
-cd ../build &&  make -j6 && cd ../src && ../build/main.out < ../testcase/primaryKey
+cd ../build &&  make -j6 && cd ../src && ../build/main.out < ../testcase/foreignKey
