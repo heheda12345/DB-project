@@ -45,7 +45,9 @@ void IX_IndexHandle::setRoot(const RID& rid) {
     // printf("[SetRoot] (%lld %d)\n", rid.GetPageNum(), rid.GetSlotNum());
     header.rootPage = rid.GetPageNum();
     header.rootSlot = rid.GetSlotNum();
-    RC rc = fh.SetMeta(reinterpret_cast<char*>(&header), sizeof(IX_IndexHandle::Header));
+    char pool[header.getSize()];
+    int size = header.dump(pool); assert(size == header.getSize());
+    RC rc = fh.SetMeta(pool, header.getSize());
     if (rc) {
         IX_PrintError(rc);
         return;
@@ -100,13 +102,14 @@ void IX_IndexHandle::init(){
         RM_PrintError(rc);
         return;
     }
+    printf("metaSize %d\n", size);
     char pool[size];
     int loaded;
     fh.GetMeta(pool, loaded);
     size = header.load(pool);
     printf("loaded %d size %d\n", loaded, size);
     assert(loaded == size);
-    // printf("load header(%d) %lld %d %d\n", loaded, header.rootPage, header.rootSlot, header.nodeSize);
+    printf("load header(%d) %lld %d %d\n", loaded, header.rootPage, header.rootSlot, header.nodeSize);
     if (hasInit)
         delete bTree;
     bTree = new IX_BTree(*this);

@@ -82,7 +82,8 @@ public:
             for (auto& x: attrLength) {
                 *reinterpret_cast<int*>(pData + cur) = x; cur += sizeof(int);
             }
-            // printf("[header] dumpsize %d %d\n", (int)attrType.size(), cur);
+            // printf("[header] dump %d %d (%lld %d) %d\n", (int)attrType.size(), btm, rootPage, rootSlot, nodeSize);
+            // printf("%x %x\n", *reinterpret_cast<const int*>(pData), *reinterpret_cast<const int*>(pData + 4));
             return cur;
         }
 
@@ -100,7 +101,8 @@ public:
             for (int i=0; i<attrSize; i++) {
                 attrLength.push_back(*reinterpret_cast<const int*>(pData + cur)); cur += sizeof(int);
             }
-            // printf("[header] loadsize %d %d\n", (int)attrSize, cur);
+            printf("[header] load %d %d (%lld %d) %d\n", attrSize, btm, rootPage, rootSlot, nodeSize);
+            printf("%x %x\n", *reinterpret_cast<const int*>(pData), *reinterpret_cast<const int*>(pData + 4));
             return cur;
         }
     };

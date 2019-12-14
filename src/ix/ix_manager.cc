@@ -10,7 +10,6 @@ RC IX_Manager::CreateIndex(const char *fileName, int indexNo,
     IX_IndexHandle::Header header;
     header.attrLength = attrLength;
     header.attrType = attrType;
-    // header.updateTotal();
     header.btm = 3;
     header.nodeSize = IX_BTNode::getSize(header.attrLength, header.btm);
     char headerPool[header.getSize()];
@@ -31,8 +30,8 @@ RC IX_Manager::CreateIndex(const char *fileName, int indexNo,
     header.rootSlot = rid.GetSlotNum();
     char dataHeader[header.getSize()];
     size = header.dump(dataHeader); assert(size == header.getSize());
-    rc = handle.SetMeta(data, size);
-    // printf("save header(%d) %lld %d %d\n", (int)sizeof(IX_IndexHandle::Header), header.rootPage, header.rootSlot, header.nodeSize);
+    rc = handle.SetMeta(dataHeader, size);
+    // printf("save header(%d) %lld %d %d\n", header.getSize(), header.rootPage, header.rootSlot, header.nodeSize);
     RMRC(rc, IX_RM);
     rmm.CloseFile(handle);
     return OK_RC;
