@@ -48,6 +48,7 @@ public:
 
     bool CanAddPrimaryKey(const std::string& tbName, const std::vector<std::string>& attrNames) { return true; }
     bool CanAddForeignKey() { return true; }
+    bool CanChangeCol() { return true; }
 
     static QL_Manager& instance() { 
         static QL_Manager ins(SM_Manager::instance(), IX_Manager::instance(), RM_Manager::instance());

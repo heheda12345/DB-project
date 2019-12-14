@@ -189,10 +189,6 @@ alterStmt: ALTER TABLE tbName ADD field
     {
         $$ = new ChangeCol($3, $5, $6);
     }
-	| ALTER TABLE tbName RENAME TO tbName
-    {
-        $$ = new RenameTable($3, $6);
-    }
 	| ALTER TABLE tbName DROP PRIMARY KEY
     {
         $$ = new DropPrimaryKey($3);

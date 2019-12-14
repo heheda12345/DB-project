@@ -70,6 +70,14 @@ int ForeignKeyInfo::getPos(const std::vector<ForeignKeyInfo> &fKeys, const std::
     return -1;
 }
 
+bool ForeignKeyInfo::isForeignKey(const std::vector<ForeignKeyInfo> &fKeys, const std::string& attrName) {
+    for (auto& fKey: fKeys) {
+        if (findName(fKey.attrs, attrName) != -1)
+            return 1;
+    }
+    return 0;
+}
+
 std::ostream& operator << (std::ostream& os, const ForeignKeyInfo& fKey) {
     os << fKey.fkName << "(";
     for (int i = 0; i < fKey.attrs.size(); i++) {

@@ -78,6 +78,7 @@ struct ForeignKeyInfo {
     static int dumpForeigns(char* pData, const std::vector<ForeignKeyInfo>& vec);
     static int getForeignsSize(const std::vector<ForeignKeyInfo>& vec);
     static int getPos(const std::vector<ForeignKeyInfo> &fKeys, const std::string& fkName);
+    static bool isForeignKey(const std::vector<ForeignKeyInfo> &fKeys, const std::string& attrName);
 };
 
 std::ostream& operator << (std::ostream& os, const ForeignKeyInfo& fKey);
@@ -145,6 +146,10 @@ public:
 
     RC AddForeignKey(const std::string& tbName, const ForeignKeyInfo& fKey);
     RC DropForeignKey(const std::string& tbName, const std::string& fkName);
+
+    RC AddAttr(const std::string& tbName, const AttrInfo& attr);
+    RC DropAttr(const std::string& tbName, const std::string& attrName);
+    RC ChangeAttr(const std::string& tbName, const std::string& attrName, const AttrInfo& newAttr);
 
     RC GetTable(const std::string& relName, TableInfo& table);
     RC UpdateTable(const std::string& tbName, const TableInfo& table);
@@ -219,6 +224,8 @@ void SM_PrintError(RC rc);
 #define SM_FOREIGN_NOT_MATCH    (START_SM_ERR - 8)
 #define SM_DUMPLICATED          (START_SM_ERR - 9)
 #define SM_NO_SUCH_KEY          (START_SM_ERR - 10)
+#define SM_IS_PRIMARY           (START_SM_ERR - 11)
+#define SM_IS_FOREIGN           (START_SM_ERR - 12)
 #define SM_LASTERROR            SM_ERROR
 
 

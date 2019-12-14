@@ -196,14 +196,80 @@ RC SM_Manager::DropForeignKey(const std::string& reqTb, const std::string& fkNam
     RC rc = GetTable(reqTb, table);
     SMRC(rc, SM_ERROR);
     int idx = ForeignKeyInfo::getPos(table.foreignGroups, fkName);
-    if (idx == -1)
+    if (idx == -1) {
         return SM_NO_SUCH_KEY;
+    }
     std::string refTb = table.foreignGroups[idx].refTable;
     table.foreignGroups.erase(table.foreignGroups.begin() + idx);
     rc = UpdateTable(reqTb, table);
     SMRC(rc, SM_ERROR);
     rc = DropForeignLink(refTb, fkName);
     assert(rc == OK_RC);
+    SMRC(rc, SM_ERROR);
+    return OK_RC;
+}
+
+RC SM_Manager::AddAttr(const std::string& tbName, const AttrInfo& attr) {
+    if (!usingDb()) {
+        return SM_DB_NOT_OPEN;
+    }
+    TableInfo table;
+    RC rc = GetTable(tbName, table);
+    SMRC(rc, SM_ERROR);
+    if (AttrInfo::getPos(table.attrs, attr.attrName) != -1) {
+        return SM_DUMPLICATED;
+    }
+    table.attrs.push_back(attr);
+    rc = UpdateTable(tbName, table);
+    SMRC(rc, SM_ERROR);
+    return OK_RC;
+}
+
+RC SM_Manager::DropAttr(const std::string& tbName, const std::string& attrName) {
+    if (!usingDb()) {
+        return SM_DB_NOT_OPEN;
+    }
+    TableInfo table;
+    RC rc = GetTable(tbName, table);
+    SMRC(rc, SM_ERROR);
+    if (findName(table.primaryKeys, attrName) != -1) {
+        return SM_IS_PRIMARY;
+    }
+    if (ForeignKeyInfo::isForeignKey(table.foreignGroups, attrName)) {
+        return SM_IS_FOREIGN;
+    }
+    int idx = AttrInfo::getPos(table.attrs, attrName);
+    if (idx == -1) {
+        return SM_NO_SUCH_KEY;
+    }
+    table.attrs.erase(table.attrs.begin() + idx);
+    rc = UpdateTable(tbName, table);
+    SMRC(rc, SM_ERROR);
+    return OK_RC;
+}
+
+RC SM_Manager::ChangeAttr(const std::string& tbName, const std::string& attrName, const AttrInfo& newAttr) {
+    if (!usingDb()) {
+        return SM_DB_NOT_OPEN;
+    }
+    TableInfo table;
+    RC rc = GetTable(tbName, table);
+    SMRC(rc, SM_ERROR);
+    if (findName(table.primaryKeys, attrName) != -1) {
+        return SM_IS_PRIMARY;
+    }
+    if (ForeignKeyInfo::isForeignKey(table.foreignGroups, attrName)) {
+        return SM_IS_FOREIGN;
+    }
+    if (AttrInfo::getPos(table.attrs, newAttr.attrName) != -1) {
+        return SM_DUMPLICATED;
+    }
+    int idx = AttrInfo::getPos(table.attrs, attrName);
+    if (idx == -1) {
+        return SM_NO_SUCH_KEY;
+    }
+    table.attrs[idx] = newAttr;
+    rc = UpdateTable(tbName, table);
     SMRC(rc, SM_ERROR);
     return OK_RC;
 }

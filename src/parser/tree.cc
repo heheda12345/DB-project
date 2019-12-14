@@ -214,8 +214,22 @@ void Parser::AddField::visit() {
     }
     switch (field->ty) {
         case Field::Simple: {
-            printf("Add Field, simple\n");
-            assert(asst);
+            assert(field->attr.type != NO_TYPE);
+            if (field->attr.attrName.length() >= MAXNAME) {
+                printf("[Fail] Attribute name %s is too long\n", field->attr.attrName.c_str());
+                return;
+            }
+            if (field->hasError) {
+                printf("[Fail] Invalid Attr\n");
+                return;
+            }
+            RC rc = SM_Manager::instance().AddAttr(*tbName, field->attr);
+            if (rc != OK_RC) {
+                printf("[Fail] Can not add col!\n");
+                return;
+            } else {
+                printf("[Succ] col %s added to %s\n", field->attr.attrName.c_str(), tbName->c_str());
+            }
             break;
         }
         case Field::Primary: {
@@ -225,22 +239,22 @@ void Parser::AddField::visit() {
             }
             if (!QL_Manager::instance().CanAddPrimaryKey(*tbName, attrNames)) {
                 printf("[Fail] Invalid data exists\n");
+                return;
             }
             RC rc = SM_Manager::instance().AddPrimaryKey(*tbName, attrNames);
             if (rc != OK_RC) {
                 printf("[Fail] Cannot add these primary keys to %s\n", tbName->c_str());
+                return;
             } else {
                 printf("[Succ] Primary keys added!\n");
+                return;
             }
-            break;
         }
         case Field::Foreign: {
             printf("[Fail] please provide fkName by using add Constraint\n");
-            assert(asst);
-            break;
+            return;
         }
     }
-    assert(asst);
 }
 
 void Parser::DropCol::visit() {
@@ -248,8 +262,14 @@ void Parser::DropCol::visit() {
         printf("[Fail] Use a database first!\n");
         return;
     }
-    printf("DropCol");
-    assert(asst);
+    RC rc = SM_Manager::instance().DropAttr(*tbName, *colName);
+    if (rc != OK_RC) {
+        printf("[Fail] Cannot drop col %s.%s\n", tbName->c_str(), colName->c_str());
+        return;
+    } else {
+        printf("[Succ] col %s.%s dropped!\n", tbName->c_str(), colName->c_str());
+        return;
+    }
 }
 
 void Parser::ChangeCol::visit() {
@@ -257,8 +277,26 @@ void Parser::ChangeCol::visit() {
         printf("[Fail] Use a database first!\n");
         return;
     }
-    printf("ChangeCol");
-    assert(asst);
+    assert(field->attr.type != NO_TYPE);
+    if (field->attr.attrName.length() >= MAXNAME) {
+        printf("[Fail] Attribute name %s is too long\n", field->attr.attrName.c_str());
+        return;
+    }
+    if (field->hasError) {
+        printf("[Fail] Invalid Attr\n");
+        return;
+    }
+    if (!QL_Manager::instance().CanChangeCol()) {
+        printf("[Fail] Invalid data in table\n");
+    }
+    RC rc = SM_Manager::instance().ChangeAttr(*tbName, *colName, field->attr);
+    if (rc != OK_RC) {
+        printf("[Fail] Can not change\n");
+        return;
+    } else {
+        printf("[Succ] col %s change to %s\n", colName->c_str(), field->attr.attrName.c_str());
+        return;
+    }
 }
 
 void Parser::RenameTable::visit() {
