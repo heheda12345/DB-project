@@ -369,7 +369,7 @@ RC RM_FileHandle::SetMeta(const char* pData, int size) {
     PFRC(rc, rc_ret)
     (reinterpret_cast<FileHeader*>(data))->metaSize = size;
     fileHeader = *reinterpret_cast<FileHeader*> (data);
-    printf("[SetMeta] fileHeader %d %d %d\n", fileHeader.recordSize, fileHeader.recordPerPage, fileHeader.metaSize);
+    // printf("[SetMeta] fileHeader %d %d %d\n", fileHeader.recordSize, fileHeader.recordPerPage, fileHeader.metaSize);
     memcpy(data + sizeof(FileHeader), pData, size);
     // printf("%x %x\n", *reinterpret_cast<const int*>(pData), *reinterpret_cast<const int*>(pData + 4));
     

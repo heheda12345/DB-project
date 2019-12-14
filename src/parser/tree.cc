@@ -1,6 +1,7 @@
 #include "tree.h"
 #include "../utils/utils.h"
 #include "../sm/sm.h"
+#include "../ql/ql.h"
 #include <assert.h>
 using namespace std;
 using namespace Parser;
@@ -218,31 +219,34 @@ void Parser::AddField::visit() {
         printf("[Fail] Use a database first!\n");
         return;
     }
-    // switch (field->ty) {
-    //     case Field::Simple: {
-    //         printf("Add Field, simple\n");
-    //         assert(asst);
-    //         break;
-    //     }
-    //     case Field::Primary: {
-    //         vector<string> attrNames;
-    //         for (auto& col: *(field->columns)) {
-    //             attrNames.push_back(*(col->colName));
-    //         }
-    //         RC rc = SM_Manager::instance().AddPrimaryKey(*tbName, attrNames);
-    //         if (rc != OK_RC) {
-    //             printf("[Fail] Cannot add these primary keys to %s\n", tbName->c_str());
-    //         } else {
-    //             printf("[Succ] Primary keys added!\n");
-    //         }
-    //         break;
-    //     }
-    //     case Field::Foreign: {
-    //         printf("Add Field, foreign\n");
-    //         assert(asst);
-    //         break;
-    //     }
-    // }
+    switch (field->ty) {
+        case Field::Simple: {
+            printf("Add Field, simple\n");
+            assert(asst);
+            break;
+        }
+        case Field::Primary: {
+            vector<string> attrNames;
+            for (auto& col: *(field->columns)) {
+                attrNames.push_back(*(col->colName));
+            }
+            if (!QL_Manager::instance().CanAddPrimaryKey(*tbName, attrNames)) {
+                printf("[Fail] Invalid data exists\n");
+            }
+            RC rc = SM_Manager::instance().AddPrimaryKey(*tbName, attrNames);
+            if (rc != OK_RC) {
+                printf("[Fail] Cannot add these primary keys to %s\n", tbName->c_str());
+            } else {
+                printf("[Succ] Primary keys added!\n");
+            }
+            break;
+        }
+        case Field::Foreign: {
+            printf("[Fail] please provide fkName by using add Constraint\n");
+            assert(asst);
+            break;
+        }
+    }
     assert(asst);
 }
 
@@ -278,11 +282,10 @@ void Parser::DropPrimaryKey::visit() {
         printf("[Fail] Use a database first!\n");
         return;
     }
-    assert(asst);
-    // RC rc = SM_Manager::instance().DropPrimaryKey(*tbName);
-    // if (rc != OK_RC) {
-    //     printf("[Fail] Cannot drop primary key of %s\n", tbName->c_str());
-    // } else {
-    //     printf("[Succ] Primary key in %s dropped!\n", tbName->c_str());
-    // }
+    RC rc = SM_Manager::instance().DropPrimaryKey(*tbName);
+    if (rc != OK_RC) {
+        printf("[Fail] Cannot drop primary key of %s\n", tbName->c_str());
+    } else {
+        printf("[Succ] Primary key in %s dropped!\n", tbName->c_str());
+    }
 }

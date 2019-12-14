@@ -133,38 +133,43 @@ RC SM_Manager::ShowTables() {
 }
 
 
-// RC SM_Manager::AddPrimaryKey(const std::string& tbName, const std::vector<std::string>& attrNames) {
-//     if (!usingDb()) {
-//         return SM_DB_NOT_OPEN;
-//     }
-//     vector<AttrInfo> attrs;
-//     RC rc = GetAttrs(tbName, attrs);
-//     SMRC(rc, SM_ERROR);
-//     for (auto name: attrNames) {
-//         int idx = AttrInfo::getPos(attrs, name);
-//         if (idx == -1) {
-//             return SM_NO_SUCH_ATTR;
-//         }
-//         attrs[idx].setPrimaryFlag(1);
-//     }
-//     rc = UpdateAttrs(tbName, attrs);
-//     SMRC(rc, SM_ERROR);
-//     return OK_RC;
-// }
-// RC SM_Manager::DropPrimaryKey(const std::string& tbName) {
-//     if (!usingDb()) {
-//         return SM_DB_NOT_OPEN;
-//     }
-//     vector<AttrInfo> attrs;
-//     RC rc = GetAttrs(tbName, attrs);
-//     SMRC(rc, SM_ERROR);
-//     for (auto& attr: attrs) {
-//         attr.setPrimaryFlag(0);
-//     }
-//     rc = UpdateAttrs(tbName, attrs);
-//     SMRC(rc, SM_ERROR);
-//     return OK_RC;
-// }
+RC SM_Manager::AddPrimaryKey(const std::string& tbName, const std::vector<std::string>& attrNames) {
+    if (!usingDb()) {
+        return SM_DB_NOT_OPEN;
+    }
+    TableInfo table;
+    RC rc = GetTable(tbName, table);
+    SMRC(rc, SM_ERROR);
+    if (table.hasPrimary())
+        return SM_HAS_PRIMARY;
+    for (auto name: attrNames) {
+        int idx = AttrInfo::getPos(table.attrs, name);
+        if (idx == -1) {
+            return SM_NO_SUCH_ATTR;
+        }
+    }
+    table.primaryKeys = attrNames;
+    rc = UpdateTable(tbName, table);
+    SMRC(rc, SM_ERROR);
+    return OK_RC;
+}
+
+RC SM_Manager::DropPrimaryKey(const std::string& tbName) {
+    if (!usingDb()) {
+        return SM_DB_NOT_OPEN;
+    }
+    TableInfo table;
+    RC rc = GetTable(tbName, table);
+    SMRC(rc, SM_ERROR);
+    if (!table.hasPrimary())
+        return SM_NO_PRIMARY;
+    if (table.linkedByOthers())
+        return SM_OTHERS_FOREIGN;
+    table.primaryKeys.clear();
+    rc = UpdateTable(tbName, table);
+    SMRC(rc, SM_ERROR);
+    return OK_RC;
+}
 
 // RC SM_Manager::AddForeignKey(const std::string& reqTb, const std::string& reqAttr, const std::string& dstTb, const std::string& dstAttr) {
 //     if (!usingDb()) {
