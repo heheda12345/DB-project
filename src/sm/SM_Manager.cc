@@ -274,24 +274,65 @@ RC SM_Manager::ChangeAttr(const std::string& tbName, const std::string& attrName
     return OK_RC;
 }
 
-// RC SM_Manager::GetForeignDst(const std::string& reqTb, std::string& reqAttr, std::string& dstTb, std::string& dstAttr) {
-//     if (!usingDb()) {
-//         return SM_DB_NOT_OPEN;
-//     }
-//     vector<AttrInfo> attrs;
-//     RC rc = GetAttrs(reqTb, attrs);
-//     SMRC(rc, SM_ERROR);
-//     int idx = AttrInfo::getPos(attrs, reqAttr);
-//     if (idx == -1) {
-//         return SM_NO_SUCH_ATTR;
-//     }
-//     if (!attrs[idx].isForeign()) {
-//         return SM_NOT_FOREIGN;
-//     }
-//     dstTb = attrs[idx].refTable;
-//     dstAttr = attrs[idx].refAttr;
-//     return OK_RC;
-// }
+RC SM_Manager::CreateIndex(const std::string& tbName, const std::string& idxName, const std::vector<std::string>& attrNames) {
+    if (!usingDb()) {
+        return SM_DB_NOT_OPEN;
+    }
+    TableInfo table;
+    RC rc = GetTable(tbName, table);
+    SMRC(rc, SM_ERROR);
+    
+    for (auto name: attrNames) {
+        int idx = AttrInfo::getPos(table.attrs, name);
+        if (idx == -1) {
+            return SM_NO_SUCH_ATTR;
+        }
+        if (!table.attrs[idx].isNotNull()) {
+            return SM_REQUIRE_NOT_NULL;
+        }
+    }
+    
+    if (IndexInfo::getPos(table.indexes, idxName) != -1) {
+        return SM_DUMPLICATED;
+    }
+
+    IndexInfo idx;
+    idx.idxName = idxName;
+    idx.idxID = IndexInfo::getNextId(table.indexes);
+    idx.attrs = attrNames;
+
+    rc = ixm.CreateIndex(tbName.c_str(), idx.idxID,
+        AttrInfo::mapType(table.attrs, attrNames),
+        AttrInfo::mapMxLen(table.attrs, attrNames));
+    IXRC(rc, SM_ERROR);
+
+    table.indexes.push_back(idx);
+    rc = UpdateTable(tbName, table);
+    SMRC(rc, SM_ERROR);
+    return OK_RC;
+}
+
+RC SM_Manager::DropIndex(const std::string& tbName, const std::string& idxName) {
+    if (!usingDb()) {
+        return SM_DB_NOT_OPEN;
+    }
+    TableInfo table;
+    RC rc = GetTable(tbName, table);
+    SMRC(rc, SM_ERROR);
+
+    int pos = IndexInfo::getPos(table.indexes, idxName);
+    if (pos == -1) {
+        return SM_NO_SUCH_KEY;
+    }
+    
+    rc = ixm.DestroyIndex(tbName.c_str(), table.indexes[pos].idxID);
+    IXRC(rc, SM_ERROR);
+
+    table.indexes.erase(table.indexes.begin() + pos);
+    rc = UpdateTable(tbName, table);
+    SMRC(rc, SM_ERROR);
+    return OK_RC;
+}
 
 RC SM_Manager::GetTable(const std::string& relName, TableInfo& table) {
     if (!usingDb()) {

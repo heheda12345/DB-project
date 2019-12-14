@@ -46,21 +46,14 @@ struct AttrInfo {
     
     int getMaxLen() const;
     
-    static int getRecordSize(const std::vector<AttrInfo>& attrs) {
-        int ret = 0;
-        for (auto& attr: attrs) {
-            ret += attr.mxLen;
-        }
-        return ret;
-    }
+    static int getRecordSize(const std::vector<AttrInfo>& attrs);
+    static int getPos(const std::vector<AttrInfo>& attrs, std::string attrName);
 
-    static int getPos(const std::vector<AttrInfo>& attrs, std::string attrName) {
-        for (int i=0; i<(int)attrs.size(); i++) {
-            if (attrs[i].attrName == attrName)
-                return i;
-        }
-        return -1;
-    }
+    static std::vector<int> getAllMxLen(const std::vector<AttrInfo>& attrs);
+    static std::vector<AttrType> getAllType(const std::vector<AttrInfo>& attrs);
+
+    static std::vector<int> mapMxLen(const std::vector<AttrInfo>& attrs, const std::vector<std::string>& attrNames);
+    static std::vector<AttrType> mapType(const std::vector<AttrInfo>& attrs, const std::vector<std::string>& attrNames);
 };
 
 std::ostream& operator << (std::ostream& os, const std::vector<AttrInfo>& attrs);
@@ -88,14 +81,18 @@ struct IndexInfo {
     int idxID;
     std::vector<std::string> attrs;
 
-    int load(const char* pData) { return 0; }
-    int dump(char* pData) const { return 0; }
-    int getSize() const { return 0; }
+    int load(const char* pData);
+    int dump(char* pData) const;
+    int getSize() const;
 
-    static std::vector<IndexInfo> loadIndexes(const char* pData) { return std::vector<IndexInfo>(); }
-    static int dumpIndexes(char* pData, const std::vector<IndexInfo>& vec) { return 0; }
-    static int getIndexesSize(const std::vector<IndexInfo>& vec) { return 0; }
+    static std::vector<IndexInfo> loadIndexes(const char* pData);
+    static int dumpIndexes(char* pData, const std::vector<IndexInfo>& vec);
+    static int getIndexesSize(const std::vector<IndexInfo>& vec);
+    static int getPos(const std::vector<IndexInfo> &idxKeys, const std::string& idxName);
+    static int getNextId(const std::vector<IndexInfo> &idxKeys);
 };
+
+std::ostream& operator << (std::ostream& os, const IndexInfo& fKey);
 
 struct TableInfo {
     std::vector<AttrInfo> attrs;
@@ -151,6 +148,10 @@ public:
     RC DropAttr(const std::string& tbName, const std::string& attrName);
     RC ChangeAttr(const std::string& tbName, const std::string& attrName, const AttrInfo& newAttr);
 
+    RC CreateIndex(const std::string& tbName, const std::string& idxName, const std::vector<std::string>& attrNames);
+    RC DropIndex(const std::string& tbName, const std::string& idxName);
+
+
     RC GetTable(const std::string& relName, TableInfo& table);
     RC UpdateTable(const std::string& tbName, const TableInfo& table);
     RC ShuffleForeign(const std::string& srcTbName, ForeignKeyInfo &key, const std::vector<std::string>& refAttrs);
@@ -158,28 +159,11 @@ public:
     RC LinkForeign(const std::string& reqTb, const ForeignKeyInfo &key);
     RC DropForeignLink(const std::string& refTb, const std::string& fkName);
 
-    // bool ExistAttr(const std::string& relName, const std::string& attrName, AttrType type = NO_TYPE);
-    // RC GetForeignDst(const std::string& reqTb, std::string& reqAttr, std::string& dstTb, std::string& dstAttr);
-
-    // RC CreateIndex(const char *relName,           // create an index for
-    //                const char *attrName);         //   relName.attrName
-
-    // RC DropIndex  (const char *relName,           // destroy index on
-    //                const char *attrName);         //   relName.attrName
-    // RC Load       (const char *relName,           // load relName from
-    //                const char *fileName);         //   fileName
-    // RC Help       ();                             // Print relations in db
-    // RC Help       (const char *relName);          // print schema of relName
-
-    // RC Print      (const char *relName);          // print relName contents
-
-    // RC Set        (const char *paramName,         // set parameter to
-    //                const char *value);            //   value
-
     static SM_Manager& instance() {
         static SM_Manager ins;
         return ins;
     }
+
 private:
     friend class QL_Manager;
     static const int NO_INDEXES = -1;
@@ -226,6 +210,7 @@ void SM_PrintError(RC rc);
 #define SM_NO_SUCH_KEY          (START_SM_ERR - 10)
 #define SM_IS_PRIMARY           (START_SM_ERR - 11)
 #define SM_IS_FOREIGN           (START_SM_ERR - 12)
+#define SM_REQUIRE_NOT_NULL     (START_SM_ERR - 13)
 #define SM_LASTERROR            SM_ERROR
 
 

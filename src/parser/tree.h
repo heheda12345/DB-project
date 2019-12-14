@@ -476,42 +476,6 @@ public:
     std::vector<WhereClause*>* wheres;
 };
 
-class CreateIndex: public Stmt {
-public:
-    CreateIndex(std::string* _idxName, std::string* _tbName,   std::vector<Column*>* _columns): idxName(_idxName), tbName(_tbName), columns(_columns) {}
-    ~CreateIndex() {
-        delete idxName;
-        delete tbName;
-        for (auto c: *columns) {
-            delete c;
-        }
-        delete columns;
-    }
-
-    void visit() override;
-
-    std::string* idxName;
-    std::string* tbName;
-    std::vector<Column*>* columns;
-};
-
-class DropIndex: public Stmt {
-public:
-    DropIndex(std::string* _idxName): hasTb(false), idxName(_idxName) {}
-    DropIndex(std::string* _tbName, std::string* _idxName): hasTb(true), tbName(_tbName), idxName(_idxName) {}
-    ~DropIndex() {
-        if (hasTb) {
-            delete tbName;
-        }
-        delete idxName;
-    }
-
-    void visit() override;
-    bool hasTb;
-    std::string* tbName;
-    std::string* idxName;
-};
-
 class AddIndex: public Stmt {
 public:
     AddIndex(std::string* _tbName, std::string* _idxName, std::vector<Column*>* _columns): tbName(_tbName), idxName(_idxName), columns(_columns) {}
@@ -529,6 +493,19 @@ public:
     std::string* tbName;
     std::string* idxName;
     std::vector<Column*>* columns;
+};
+
+class DropIndex: public Stmt {
+public:
+    DropIndex(std::string* _tbName, std::string* _idxName): tbName(_tbName), idxName(_idxName) {}
+    ~DropIndex() {
+        delete tbName;
+        delete idxName;
+    }
+
+    void visit() override;
+    std::string* tbName;
+    std::string* idxName;
 };
 
 class AddField: public Stmt {
@@ -573,20 +550,6 @@ public:
     std::string* tbName;
     std::string* colName;
     Field* field;
-};
-
-class RenameTable: public Stmt {
-public:
-    RenameTable(std::string* _oldName, std::string* _newName): oldName(_oldName), newName(_newName) {}
-    ~RenameTable() {
-        delete oldName;
-        delete newName;
-    }
-
-    void visit() override;
-
-    std::string* oldName;
-    std::string* newName;
 };
 
 class DropPrimaryKey: public Stmt {

@@ -180,13 +180,28 @@ void Parser::SelectValue::visit() {
     assert(asst);
 }
 
-void Parser::CreateIndex::visit() {
+
+void Parser::AddIndex::visit() {
     if (!SM_Manager::instance().usingDb()) {
         printf("[Fail] Use a database first!\n");
         return;
     }
-    printf("CreateIndex");
-    assert(asst);
+    vector<string> attrNames;
+    for (auto& col: *columns) {
+        attrNames.push_back(*(col->colName));
+    }
+    if (!QL_Manager::instance().CanCreateIndex()) {
+        printf("[Fail] Invalid data exists\n");
+        return;
+    }
+    RC rc = SM_Manager::instance().CreateIndex(*tbName, *idxName, attrNames);
+    if (rc != OK_RC) {
+        printf("[Fail] Cannot create index %s.%s\n", tbName->c_str(), idxName->c_str());
+        return;
+    } else {
+        printf("[Succ] Index %s.%s created!\n", tbName->c_str(), idxName->c_str());
+        return;
+    }
 }
 
 void Parser::DropIndex::visit() {
@@ -194,17 +209,14 @@ void Parser::DropIndex::visit() {
         printf("[Fail] Use a database first!\n");
         return;
     }
-    printf("DropIndex");
-    assert(asst);
-}
-
-void Parser::AddIndex::visit() {
-    if (!SM_Manager::instance().usingDb()) {
-        printf("[Fail] Use a database first!\n");
+    RC rc = SM_Manager::instance().DropIndex(*tbName, *idxName);
+    if (rc != OK_RC) {
+        printf("[Fail] Cannot drop index %s.%s\n", tbName->c_str(), idxName->c_str());
+        return;
+    } else {
+        printf("[Succ] Index %s.%s dropped!\n", tbName->c_str(), idxName->c_str());
         return;
     }
-    printf("AddIndex");
-    assert(asst);
 }
 
 void Parser::AddField::visit() {
@@ -297,15 +309,6 @@ void Parser::ChangeCol::visit() {
         printf("[Succ] col %s change to %s\n", colName->c_str(), field->attr.attrName.c_str());
         return;
     }
-}
-
-void Parser::RenameTable::visit() {
-    if (!SM_Manager::instance().usingDb()) {
-        printf("[Fail] Use a database first!\n");
-        return;
-    }
-    printf("RenameTable");
-    assert(asst);
 }
 
 void Parser::DropPrimaryKey::visit() {

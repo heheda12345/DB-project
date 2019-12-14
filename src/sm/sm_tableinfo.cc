@@ -69,5 +69,11 @@ std::ostream& operator << (std::ostream& os, const TableInfo& table) {
             os << x << endl;
         }
     }
+    if (table.indexes.size() > 0) {
+        os << "Index:" << endl;
+        for (auto& x: table.indexes) {
+            os << x << endl;
+        }
+    }
     return os;
 }

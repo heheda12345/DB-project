@@ -83,6 +83,22 @@ int AttrInfo::getAttrsSize(const std::vector<AttrInfo>& vec) {
     return ret;
 }
 
+int AttrInfo::getRecordSize(const std::vector<AttrInfo>& attrs) {
+    int ret = 0;
+    for (auto& attr: attrs) {
+        ret += attr.mxLen;
+    }
+    return ret;
+}
+
+int AttrInfo::getPos(const std::vector<AttrInfo>& attrs, std::string attrName) {
+    for (int i=0; i<(int)attrs.size(); i++) {
+        if (attrs[i].attrName == attrName)
+            return i;
+    }
+    return -1;
+}
+
 std::ostream& operator << (std::ostream& os, const std::vector<AttrInfo>& attrs) {
     for (auto& attr: attrs) {
         std::string st_ty = getName(attr.type);
@@ -106,4 +122,40 @@ std::ostream& operator << (std::ostream& os, const std::vector<AttrInfo>& attrs)
 
 int AttrInfo::getMaxLen() const {
     return mxLen ? mxLen : getDefaultLen(type);
+}
+
+std::vector<int> AttrInfo::getAllMxLen(const std::vector<AttrInfo>& attrs) {
+    std::vector<int> ret;
+    for (auto& attr: attrs) {
+        ret.push_back(attr.getMaxLen());
+    }
+    return ret;
+}
+
+std::vector<AttrType> AttrInfo::getAllType(const std::vector<AttrInfo>& attrs) {
+    std::vector<AttrType> ret;
+    for (auto& attr: attrs) {
+        ret.push_back(attr.type);
+    }
+    return ret;
+}
+
+std::vector<int> AttrInfo::mapMxLen(const std::vector<AttrInfo>& attrs, const std::vector<std::string>& attrNames) {
+    std::vector<int> ret;
+    for (auto& name: attrNames) {
+        int pos = getPos(attrs, name);
+        assert(pos != -1);
+        ret.push_back(attrs[pos].mxLen);
+    }
+    return ret;
+}
+
+std::vector<AttrType> AttrInfo::mapType(const std::vector<AttrInfo>& attrs, const std::vector<std::string>& attrNames) {
+    std::vector<AttrType> ret;
+    for (auto& name: attrNames) {
+        int pos = getPos(attrs, name);
+        assert(pos != -1);
+        ret.push_back(attrs[pos].type);
+    }
+    return ret;
 }

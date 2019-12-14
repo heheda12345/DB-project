@@ -1,1 +1,1 @@
-cd ../build && make -j6 && cd ../src && ../build/main.out < ../testcase/changeCol
+cd ../build && make -j6 && cd ../src && ../build/main.out < ../testcase/changeIndex

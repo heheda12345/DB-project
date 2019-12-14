@@ -160,15 +160,7 @@ tbStmt: CREATE TABLE tbName '(' fieldList ')'
         $$ = new SelectValue($2, $4, $6);
     }
 
-idxStmt: CREATE INDEX idxName ON tbName '(' columnList ')'
-    {
-        $$ = new CreateIndex($3, $5, $7);
-    }
-    | DROP INDEX idxName
-    {
-        $$ = new DropIndex($3);
-    }
-    | ALTER TABLE tbName ADD INDEX idxName '(' columnList ')'
+idxStmt: ALTER TABLE tbName ADD INDEX idxName '(' columnList ')'
     {
         $$ = new AddIndex($3, $6, $8);
     }
