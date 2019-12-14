@@ -44,11 +44,11 @@ void Parser::CreateTable::visit() {
         printf("[Fail] Table name %s is too long\n", tbName->c_str());
         return;
     }
-    vector<AttrInfo> attrs;
+    TableInfo table;
     for (auto& f: *fields) {
         if (f->ty == Field::Simple) {
             assert(f->attr.type != NO_TYPE);
-            if (AttrInfo::getIndex(attrs, f->attr.attrName) != -1) {
+            if (AttrInfo::getPos(table.attrs, f->attr.attrName) != -1) {
                 printf("[Fail] Attrbute name %s duplicated!\n", f->attr.attrName.c_str());
                 return;
             }
@@ -60,53 +60,56 @@ void Parser::CreateTable::visit() {
                 printf("[Fail] Invalid Attr\n");
                 return;
             }
-            attrs.push_back(f->attr);
+            table.attrs.push_back(f->attr);
         }
     }
-    vector<string> pCols;
-    vector<string> fCols;
-    vector<string> refTables;
-    vector<string> refAttrs;
     for (Field* f: *fields) {
         if (f->ty == Field::Primary) {
-            for (Column* col: *(f->columns)) {
-                pCols.push_back(*(col->colName));
+            if (table.primaryKeys.size() != 0) {
+                printf("[Fail] At most one primary key!\n");
+                return;
             }
-        } else if (f->ty == Field::Foreign) {
-            fCols.push_back(*(f->colName));
-            refTables.push_back(*(f->tbName));
-            refAttrs.push_back(*(f->othercol));
-        }
+            for (Column* col: *(f->columns)) {
+                table.primaryKeys.push_back(*(col->colName));
+            }
+        } 
+        // else if (f->ty == Field::Foreign) {
+        //     ForeignKeyInfo fKey;
+        //     fKey.fkName = "@@";
+        //     fKey.refTable = *(f->tbName);
+        //     fKey.attrs.push_back(*(f->colName));
+        //     // TODO match SOS
+        //     table.foreignGroups.push_back(fKey);
+        // }
     }
 
-    for (auto s: pCols) {
-        int idx = AttrInfo::getIndex(attrs, s);
+    for (auto s: table.primaryKeys) {
+        int idx = AttrInfo::getPos(table.attrs, s);
         if (idx == -1) {
             printf("[Fail] No key named %s\n", s.c_str());
             return;
         }
-        attrs[idx].setPrimaryFlag(1);
     }
 
-    assert(fCols.size() == refTables.size() && refTables.size() == refAttrs.size());
-    for (int i = 0; i < (int)fCols.size(); i++) {
-        int idx = AttrInfo::getIndex(attrs, fCols[i]);
-        if (idx == -1) {
-            printf("[Fail] No key named %s\n", fCols[i].c_str());
-            return;
-        }
-        if (!SM_Manager::instance().ExistAttr(refTables[i], refAttrs[i], attrs[idx].type)) {
-            printf("[Fail] No attribute or type not match: %s.%s", refTables[i].c_str(), refAttrs[i].c_str());
-            return;
-        }
-        if (attrs[idx].isForeign()) {
-            printf("[Fail] Attr %s can have at most one foreign key\n", fCols[i].c_str());
-            return;
-        }
-        attrs[idx].setForeign(refTables[i], refAttrs[i]);
-    }
+    // assert(fCols.size() == refTables.size() && refTables.size() == refAttrs.size());
+    // for (int i = 0; i < (int)fCols.size(); i++) {
+    //     int idx = AttrInfo::getPos(attrs, fCols[i]);
+    //     if (idx == -1) {
+    //         printf("[Fail] No key named %s\n", fCols[i].c_str());
+    //         return;
+    //     }
+    //     if (!SM_Manager::instance().ExistAttr(refTables[i], refAttrs[i], attrs[idx].type)) {
+    //         printf("[Fail] No attribute or type not match: %s.%s", refTables[i].c_str(), refAttrs[i].c_str());
+    //         return;
+    //     }
+    //     if (attrs[idx].isForeign()) {
+    //         printf("[Fail] Attr %s can have at most one foreign key\n", fCols[i].c_str());
+    //         return;
+    //     }
+    //     attrs[idx].setForeign(refTables[i], refAttrs[i]);
+    // }
 
-    RC rc = SM_Manager::instance().CreateTable(*tbName, attrs);
+    RC rc = SM_Manager::instance().CreateTable(*tbName, table);
     if (rc) {
         printf("[Fail] Can not create table %s\n", tbName->c_str());
         return;
@@ -214,32 +217,32 @@ void Parser::AddField::visit() {
         printf("[Fail] Use a database first!\n");
         return;
     }
-    switch (field->ty) {
-        case Field::Simple: {
-            printf("Add Field, simple\n");
-            assert(asst);
-            break;
-        }
-        case Field::Primary: {
-            vector<string> attrNames;
-            for (auto& col: *(field->columns)) {
-                attrNames.push_back(*(col->colName));
-            }
-            RC rc = SM_Manager::instance().AddPrimaryKey(*tbName, attrNames);
-            if (rc != OK_RC) {
-                printf("[Fail] Cannot add these primary keys to %s\n", tbName->c_str());
-            } else {
-                printf("[Succ] Primary keys added!\n");
-            }
-            break;
-        }
-        case Field::Foreign: {
-            printf("Add Field, foreign\n");
-            assert(asst);
-            break;
-        }
-    }
-    
+    // switch (field->ty) {
+    //     case Field::Simple: {
+    //         printf("Add Field, simple\n");
+    //         assert(asst);
+    //         break;
+    //     }
+    //     case Field::Primary: {
+    //         vector<string> attrNames;
+    //         for (auto& col: *(field->columns)) {
+    //             attrNames.push_back(*(col->colName));
+    //         }
+    //         RC rc = SM_Manager::instance().AddPrimaryKey(*tbName, attrNames);
+    //         if (rc != OK_RC) {
+    //             printf("[Fail] Cannot add these primary keys to %s\n", tbName->c_str());
+    //         } else {
+    //             printf("[Succ] Primary keys added!\n");
+    //         }
+    //         break;
+    //     }
+    //     case Field::Foreign: {
+    //         printf("Add Field, foreign\n");
+    //         assert(asst);
+    //         break;
+    //     }
+    // }
+    assert(asst);
 }
 
 void Parser::DropCol::visit() {
@@ -274,10 +277,11 @@ void Parser::DropPrimaryKey::visit() {
         printf("[Fail] Use a database first!\n");
         return;
     }
-    RC rc = SM_Manager::instance().DropPrimaryKey(*tbName);
-    if (rc != OK_RC) {
-        printf("[Fail] Cannot drop primary key of %s\n", tbName->c_str());
-    } else {
-        printf("[Succ] Primary key in %s dropped!\n", tbName->c_str());
-    }
+    assert(asst);
+    // RC rc = SM_Manager::instance().DropPrimaryKey(*tbName);
+    // if (rc != OK_RC) {
+    //     printf("[Fail] Cannot drop primary key of %s\n", tbName->c_str());
+    // } else {
+    //     printf("[Succ] Primary key in %s dropped!\n", tbName->c_str());
+    // }
 }

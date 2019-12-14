@@ -1,50 +1,14 @@
 #include "sm.h"
 using namespace std;
 
- AttrInfo::AttrInfo(const AttrType& _type, unsigned short _mxLen, const std::string& _attrName, bool notNull, bool isPrimary, bool hasDefault, const std::string& _dVal): type(_type), flag(0), mxLen(_mxLen), attrName(_attrName), refTable(""), refAttr(""), dVal(_dVal) {
+ AttrInfo::AttrInfo(const AttrType& _type, unsigned short _mxLen, const std::string& _attrName, bool notNull, bool hasDefault, const std::string& _dVal): type(_type), flag(0), mxLen(_mxLen), attrName(_attrName), dVal(_dVal) {
     setNotNullFlag(notNull);
-    setPrimaryFlag(isPrimary);
-    setForeignFlag(0);
-    setDefaultFlag(hasDefault);
-    mxLen = getMaxLen();
-}
-
-AttrInfo::AttrInfo(const AttrType& _type, unsigned short _mxLen, const std::string& _attrName, bool notNull, bool hasDefault, const std::string& _dVal, const std::string &_refTable, const std::string& _refAttr): type(_type), flag(0), mxLen(_mxLen), attrName(_attrName), refTable(_refTable), refAttr(_refAttr), dVal(_dVal) {
-    setNotNullFlag(notNull);
-    setPrimaryFlag(0);
-    setForeignFlag(1);
     setDefaultFlag(hasDefault);
     mxLen = getMaxLen();
 }
 
 void AttrInfo::setNotNullFlag(bool b) { setBit(flag, 0, b); }
 bool AttrInfo::isNotNull() const { return getBit(flag, 0); }
-
-void AttrInfo::setPrimaryFlag(bool b) {
-    setBit(flag, 1, b);
-}
-bool AttrInfo::isPrimary() const { return getBit(flag, 1); }
-
-void AttrInfo::setForeignFlag(bool b) {
-    setBit(flag, 2, b);
-    if (b == 0) {
-        refTable = "";
-        refAttr = "";
-    }
-}
-
-bool AttrInfo::isForeign() const { return getBit(flag, 2); }
-
-RC AttrInfo::setForeign(const std::string& _refTable, const std::string& _refAttr) {
-    if (!SM_Manager::instance().ExistAttr(_refTable, _refAttr)) {
-        return SM_NO_SUCH_ATTR;
-    }
-    this->refTable = _refTable;
-    this->refAttr = _refAttr;
-    setForeignFlag(1);
-    return OK_RC;
-}
-
 bool AttrInfo::hasDefault() const { return getBit(flag, 4); }
 void AttrInfo::setDefaultFlag(bool b) {
     setBit(flag, 4, b);
@@ -55,22 +19,11 @@ int AttrInfo::load(const char* pData) {
     type = (AttrType)*reinterpret_cast<const unsigned char*>(pData); cur += sizeof(char);
     flag = *reinterpret_cast<const unsigned char*>(pData + cur); cur += sizeof(char);
     mxLen = *reinterpret_cast<const unsigned short*>(pData + cur); cur += sizeof(short);
-    int linked = *reinterpret_cast<const int*>(pData + cur); cur += sizeof(int);
     // printf("[load] %d %d %d %d\n", (int)type, (int)flag, (int)mxLen, (int) linked);
     attrName = std::string(pData + cur); cur += MAXNAME;
-    if (isForeign()) {
-        refTable = std::string(pData + cur); cur += MAXNAME;
-        refAttr = std::string(pData + cur); cur += MAXNAME;
-    }
     if (hasDefault()) {
         int len = *reinterpret_cast<const int*>(pData + cur); cur += sizeof(int);
         dVal = std::string(pData + cur, len); cur += mxLen;
-    }
-    linkedForeign.clear();
-    for (int i=0; i<linked; i++) {
-        std::string tb(pData + cur); cur += MAXNAME;
-        std::string attr(pData + cur); cur += MAXNAME;
-        linkedForeign.push_back(make_pair(tb, attr));
     }
     return cur;
 }
@@ -80,37 +33,22 @@ int AttrInfo::dump(char* pData) const {
     *reinterpret_cast<unsigned char*>(pData) = (unsigned char) type; cur += sizeof(char);
     *reinterpret_cast<unsigned char*>(pData + cur) = flag; cur += sizeof(char);
     *reinterpret_cast<unsigned short*>(pData + cur) = mxLen; cur += sizeof(short);
-    *reinterpret_cast<int*>(pData + cur) = int(linkedForeign.size()); cur += sizeof(int);
     // printf("[dump] %d %d %d %d\n", (int)type, (int)flag, (int)mxLen, (int) linkedForeign.size());
     assert(attrName.length() < MAXNAME);
-    assert(refTable.length() < MAXNAME);
-    assert(refAttr.length() < MAXNAME);
     dumpString(pData + cur, attrName); cur += MAXNAME;
-    if (isForeign()) {
-        dumpString(pData + cur, refTable); cur += MAXNAME;
-        dumpString(pData + cur, refAttr); cur += MAXNAME;
-    }
     if (hasDefault()) {
         *reinterpret_cast<int*>(pData + cur) = int(dVal.length()); cur += sizeof(int);
         memset(pData + cur, 0, mxLen);
         memcpy(pData + cur, dVal.c_str(), dVal.length()); cur += mxLen;
     }
-    for (int i=0; i<(int)linkedForeign.size(); i++) {
-        dumpString(pData+cur, linkedForeign[i].first.c_str()); cur += MAXNAME;
-        dumpString(pData+cur, linkedForeign[i].second.c_str()); cur += MAXNAME;
-    }
     return cur;
 }
 
-int AttrInfo::getAttrSize() const {
-    int cur = sizeof(char) + sizeof(char) + sizeof(short) + sizeof(int) + MAXNAME;
-    if (isForeign()) {
-        cur += MAXNAME * 2;
-    }
+int AttrInfo::getSize() const {
+    int cur = sizeof(char) + sizeof(char) + sizeof(short) + MAXNAME;
     if (hasDefault()) {
         cur += sizeof(int) + mxLen;
     }
-    cur += linkedForeign.size() * MAXNAME * 2;
     return cur;
 }
 
@@ -127,14 +65,22 @@ vector<AttrInfo> AttrInfo::loadAttrs(const char* pData) {
     return ret;
 }
 
-int AttrInfo::dumpAttrs(char* pData, const std::vector<AttrInfo>& attrs) {
-    *reinterpret_cast<int*>(pData) = (int)attrs.size();
+int AttrInfo::dumpAttrs(char* pData, const std::vector<AttrInfo>& vec) {
+    *reinterpret_cast<int*>(pData) = (int)vec.size();
     int cur = sizeof(int);
-    for (const AttrInfo& attr: attrs) {
-        int size = attr.dump(pData + cur);
+    for (const AttrInfo& x: vec) {
+        int size = x.dump(pData + cur);
         cur += size;
     }
     return cur;
+}
+
+int AttrInfo::getAttrsSize(const std::vector<AttrInfo>& vec) {
+    int ret = sizeof(int);
+    for (auto& x: vec) {
+        ret += x.getSize();
+    }
+    return ret;
 }
 
 std::ostream& operator << (std::ostream& os, const std::vector<AttrInfo>& attrs) {
@@ -146,31 +92,14 @@ std::ostream& operator << (std::ostream& os, const std::vector<AttrInfo>& attrs)
         }
         if (attr.hasDefault()) {
             if (info != "")
-                info += ",";
+                info += ", ";
             info += "Has Default";
-        }
-        if (attr.isPrimary()) {
-            if (info != "")
-                info += ",";
-            info += "Primary";
-        }
-        if (attr.isForeign()) {
-            if (info != "")
-                info += ",";
-            info.append("Foreign ").append(attr.refTable).append(".").append(attr.refAttr);
         }
         if (info != "") {
             info.insert(0, "(");
             info.append(")");
         }
-        info.append("[");
-        for (auto& x: attr.linkedForeign) {
-            info.append(x.first).append(".").append(x.second).append(" ");
-        }
-        if (info[info.size() - 1] == ' ')
-            info.pop_back();
-        info.append("]   ");
-        os << attr.attrName << std::string(" ") << st_ty << info;
+        os << attr.attrName << std::string(" ") << st_ty << info << "    ";
     }
     return os;
 }

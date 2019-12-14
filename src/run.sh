@@ -1,1 +1,1 @@
-cd ../build &&  make -j6 && cd ../src && ../build/ix_test.out # && ../build/main.out < ../testcase/foreignKey
+cd ../build &&  make -j6 && cd ../src && ../build/main.out < ../testcase/tableAttr

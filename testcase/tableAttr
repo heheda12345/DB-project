@@ -1,9 +1,12 @@
 create database test;
 use database test;
-create table tbclass(id int default 1, score float default 1.5, class varchar 4 default 'xxxx');
+create table tbclass(id int not null default 1, score float default 1.5, class varchar 4 default 'xxxx', primary key(class));
 show tables;
-create table tbtest(id int not null, name varchar, class varchar, score float not null, birthday date, primary key(id), foreign key(class) references tbclass(class));
+create table tbtest(id int not null, name varchar, class varchar, score float not null, birthday date, primary key(id, class), foreign key(class) references tbclass(class));
 show tables;
+drop table tbtest;
+show tables;
+exit;
 create table tbfail1(id int, id int);
 create table tbfail2(id int, primary key(id1));
 create table tbfail3(id int, foreign key(id1) references tbclass(id));

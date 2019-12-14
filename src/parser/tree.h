@@ -158,8 +158,8 @@ public:
     Field(std::string* _colName, Type* _type,
         bool _hasDefault, Value* _dVal, bool _notNull):
         colName(_colName), type(_type), 
-        hasDefault(_hasDefault), dVal(_dVal), notNull(false),
-        ty(Simple), attr(_type->ty,  _type->vi, *_colName, _notNull, false, _hasDefault, _hasDefault ? _dVal->dump() : std::string()), hasError(0) {
+        hasDefault(_hasDefault), dVal(_dVal), notNull(_notNull),
+        ty(Simple), attr(_type->ty,  _type->vi, *_colName, _notNull, _hasDefault, _hasDefault ? _dVal->dump() : std::string()), hasError(0) {
             if (hasDefault) {
                 if (dVal->ty != _type->ty) {
                     hasError = 1;
