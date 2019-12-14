@@ -343,7 +343,7 @@ RC RM_FileHandle::GetMeta(char* pData, int &size) {
     rc = pfPageHandle.GetData(data);
     PFRC(rc, rc_ret)
     fileHeader = *reinterpret_cast<FileHeader*> (data);
-    // printf("[GetMeta] fileHeader %d %d %d\n", fileHeader.recordSize, fileHeader.recordPerPage, fileHeader.metaSize);
+    printf("[GetMeta] fileHeader %d %d %d\n", fileHeader.recordSize, fileHeader.recordPerPage, fileHeader.metaSize);
     size = fileHeader.metaSize;
 
     memcpy(pData, data + sizeof(FileHeader), fileHeader.metaSize);
@@ -369,7 +369,7 @@ RC RM_FileHandle::SetMeta(const char* pData, int size) {
     PFRC(rc, rc_ret)
     (reinterpret_cast<FileHeader*>(data))->metaSize = size;
     fileHeader = *reinterpret_cast<FileHeader*> (data);
-    // printf("[SetMeta] fileHeader %d %d %d\n", fileHeader.recordSize, fileHeader.recordPerPage, fileHeader.metaSize);
+    printf("[SetMeta] fileHeader %d %d %d\n", fileHeader.recordSize, fileHeader.recordPerPage, fileHeader.metaSize);
     memcpy(data + sizeof(FileHeader), pData, size);
     
     PageNum pageNum;

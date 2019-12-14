@@ -37,10 +37,10 @@ public:
     RID(char* pData) { this->loadFrom(pData); }
     static int getSize() { return sizeof(PageNum) + sizeof(SlotNum) + sizeof(bool); }
 
-    void loadFrom(char* pData) {
-        pageNum = *reinterpret_cast<PageNum*>(pData);
-        slotNum = *reinterpret_cast<SlotNum*>(pData + sizeof(PageNum));
-        valid = *reinterpret_cast<bool*>(pData + sizeof(PageNum) + sizeof(SlotNum));
+    void loadFrom(const char* pData) {
+        pageNum = *reinterpret_cast<const PageNum*>(pData);
+        slotNum = *reinterpret_cast<const SlotNum*>(pData + sizeof(PageNum));
+        valid = *reinterpret_cast<const bool*>(pData + sizeof(PageNum) + sizeof(SlotNum));
     }
 
     void dumpTo(char* pData) {

@@ -1,15 +1,16 @@
 #include "ix.h"
 #include "ix_btree.h"
+#include "../utils/utils.h"
 
-RC IX_IndexHandle::InsertEntry(void *pData, const RID &rid) {
-    IX_BTKEY key = IX_BTKEY((char*)pData, header.attrLength, header.attrType, rid);
+RC IX_IndexHandle::InsertEntry(const std::vector<std::string> &pData, const RID &rid) {
+    IX_BTKEY key = IX_BTKEY(pData, header.attrLength, header.attrType, rid);
     RC rc = bTree->insert(key);
     IXRC(rc, rc)
     return OK_RC;
 }
 
-RC IX_IndexHandle::DeleteEntry(void *pData, const RID &rid) {
-    IX_BTKEY key = IX_BTKEY((char*)pData, header.attrLength, header.attrType, rid);
+RC IX_IndexHandle::DeleteEntry(const std::vector<std::string> &pData, const RID &rid) {
+    IX_BTKEY key = IX_BTKEY(pData, header.attrLength, header.attrType, rid);
     RC rc = bTree->remove(key);
     IXRC(rc, rc)
     return OK_RC;
@@ -93,12 +94,25 @@ void IX_IndexHandle::deleteNode(IX_BTNode &tr) {
 }
 
 void IX_IndexHandle::init(){
+    int size;
+    RC rc = fh.GetMetaSize(size);
+    if (rc) {
+        RM_PrintError(rc);
+        return;
+    }
+    char pool[size];
     int loaded;
-    fh.GetMeta(reinterpret_cast<char*>(&header), loaded);
+    fh.GetMeta(pool, loaded);
+    size = header.load(pool);
+    printf("loaded %d size %d\n", loaded, size);
+    assert(loaded == size);
     // printf("load header(%d) %lld %d %d\n", loaded, header.rootPage, header.rootSlot, header.nodeSize);
-    assert(loaded == sizeof(Header));
     if (hasInit)
         delete bTree;
     bTree = new IX_BTree(*this);
     hasInit = true;
+}
+
+int IX_IndexHandle::getAttrLen() const {
+    return getSum(header.attrLength);
 }

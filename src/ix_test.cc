@@ -20,6 +20,8 @@
 #include <cstdlib>
 #include <ctime>
 #include <unistd.h>
+#include <vector>
+#include <string>
 
 #include "redbase.h"
 #include "pf/pf.h"
@@ -213,6 +215,35 @@ void ran(int n)
    }
 }
 
+vector<string> FormatSingleInt(int value) {
+   vector<string> pool;
+   pool.push_back(string((char*)&value, sizeof(int)));
+   return pool;
+}
+
+vector<string> FormatSingleFloat(float value) {
+   vector<string> pool;
+   pool.push_back(string((char*)&value, sizeof(float)));
+   return pool;
+}
+
+vector<string> FormatSingleString(const char* st, int len) {
+   vector<string> pool;
+   pool.push_back(string(st, sizeof(len)));
+   return pool;
+}
+
+vector<AttrType> FormatSingleType(AttrType ty) {
+   vector<AttrType> pool;
+   pool.push_back(ty);
+   return pool;
+}
+
+vector<int> FormatSingleLen(int len) {
+   vector<int> pool;
+   pool.push_back(len);
+   return pool;
+}
 //
 // InsertIntEntries
 //
@@ -230,7 +261,8 @@ RC InsertIntEntries(IX_IndexHandle &ih, int nEntries)
       printf("%d: \n", i);
       value = values[i] + 1;
       RID rid(value, value*2);
-      if ((rc = ih.InsertEntry((void *)&value, rid)))
+      
+      if ((rc = ih.InsertEntry(FormatSingleInt(value), rid)))
          return (rc);
 
       if((i + 1) % PROG_UNIT == 0){
@@ -256,10 +288,10 @@ RC VerifyIntEntries(IX_IndexHandle &ih, int nStart, int nEntries, bool bExists) 
       value = values[i] + 1;
       RID rid(value, value*2);
       if (bExists) {
-         rc = ih.InsertEntry((void *)&value, rid);
+         rc = ih.InsertEntry(FormatSingleInt(value), rid);
          assert(rc == IX_ENTRYEXISTS);
       } else {
-         rc = ih.DeleteEntry((void*)&value, rid);
+         rc = ih.DeleteEntry(FormatSingleInt(value), rid);
          assert(rc == IX_KEYNOTFOUND);
       }
 
@@ -288,7 +320,7 @@ RC InsertFloatEntries(IX_IndexHandle &ih, int nEntries)
    for (i = 0; i < nEntries; i++) {
       value = values[i] + 1;
       RID rid((PageNum)value, (SlotNum)value*2);
-      if ((rc = ih.InsertEntry((void *)&value, rid)))
+      if ((rc = ih.InsertEntry(FormatSingleFloat(value), rid)))
          return (rc);
 
       if((i + 1) % PROG_UNIT == 0){
@@ -317,7 +349,7 @@ RC InsertStringEntries(IX_IndexHandle &ih, int nEntries)
       memset(value, ' ', STRLEN);
       sprintf(value, "number %d", values[i] + 1);
       RID rid(values[i] + 1, (values[i] + 1)*2);
-      if ((rc = ih.InsertEntry(value, rid)))
+      if ((rc = ih.InsertEntry(FormatSingleString(value, STRLEN), rid)))
          return (rc);
 
       if((i + 1) % PROG_UNIT == 0){
@@ -380,7 +412,7 @@ RC DeleteIntEntries(IX_IndexHandle &ih, int nEntries)
       printf("%d: \n", i);
       value = values[i] + 1;
       RID rid(value, value*2);
-      if ((rc = ih.DeleteEntry((void *)&value, rid)))
+      if ((rc = ih.DeleteEntry(FormatSingleInt(value), rid)))
          return (rc);
 
       if((i + 1) % PROG_UNIT == 0){
@@ -407,7 +439,7 @@ RC DeleteFloatEntries(IX_IndexHandle &ih, int nEntries)
    for (i = 0; i < nEntries; i++) {
       value = values[i] + 1;
       RID rid((PageNum)value, (SlotNum)value*2);
-      if ((rc = ih.DeleteEntry((void *)&value, rid)))
+      if ((rc = ih.DeleteEntry(FormatSingleFloat(value), rid)))
          return (rc);
 
       if((i + 1) % PROG_UNIT == 0){
@@ -434,7 +466,7 @@ RC DeleteStringEntries(IX_IndexHandle &ih, int nEntries)
    for (i = 0; i < nEntries; i++) {
       sprintf(value, "number %d", values[i] + 1);
       RID rid(values[i] + 1, (values[i] + 1)*2);
-      if ((rc = ih.DeleteEntry(value, rid)))
+      if ((rc = ih.DeleteEntry(FormatSingleString(value, STRLEN), rid)))
          return (rc);
 
       if((i + 1) % PROG_UNIT == 0){
@@ -473,7 +505,7 @@ RC VerifyIntIndex(IX_IndexHandle &ih, int nStart, int nEntries, int bExists)
    for (i = nStart; i < nStart + nEntries; i++) {
       int value = values[i] + 1;
 
-      if ((rc = scan.OpenScan(ih, EQ_OP, &value))) {
+      if ((rc = scan.OpenScan(ih, EQ_OP, FormatSingleInt(value)))) {
          printf("Verify error: opening scan\n");
          return (rc);
       }
@@ -534,26 +566,26 @@ RC Test0(void)
 
    printf("Test0: a Simple Script\n");
 
-   if ((rc = ixm.CreateIndex(FILENAME, index, INT, 4)) ||
+   if ((rc = ixm.CreateIndex(FILENAME, index, FormatSingleType(INT), FormatSingleLen(4))) ||
          (rc = ixm.OpenIndex(FILENAME, index, ih)))
          return (rc);
    int a = 11, b = 22, c = 33, d = 44;
-   if ((rc = ih.InsertEntry(&a, RID(10, 10))) ||
-       (rc = ih.InsertEntry(&b, RID(10, 20))) ||
-       (rc = ih.InsertEntry(&c, RID(10, 30))) ||
-       (rc = ih.InsertEntry(&d, RID(10, 40))) ||
-       (rc = ih.DeleteEntry(&a, RID(10, 10))) ||
-       (rc = ih.DeleteEntry(&b, RID(10, 20))) ||
-       (rc = ih.DeleteEntry(&c, RID(10, 30))) ||
-       (rc = ih.DeleteEntry(&d, RID(10, 40))))
+   if ((rc = ih.InsertEntry(FormatSingleInt(a), RID(10, 10))) ||
+       (rc = ih.InsertEntry(FormatSingleInt(b), RID(10, 20))) ||
+       (rc = ih.InsertEntry(FormatSingleInt(c), RID(10, 30))) ||
+       (rc = ih.InsertEntry(FormatSingleInt(d), RID(10, 40))) ||
+       (rc = ih.DeleteEntry(FormatSingleInt(a), RID(10, 10))) ||
+       (rc = ih.DeleteEntry(FormatSingleInt(b), RID(10, 20))) ||
+       (rc = ih.DeleteEntry(FormatSingleInt(c), RID(10, 30))) ||
+       (rc = ih.DeleteEntry(FormatSingleInt(d), RID(10, 40))))
        return (rc);
-   rc = ih.DeleteEntry(&a, RID(10, 10));
+   rc = ih.DeleteEntry(FormatSingleInt(a), RID(10, 10));
    assert(rc == IX_KEYNOTFOUND);
-   rc = ih.DeleteEntry(&b, RID(10, 20));
+   rc = ih.DeleteEntry(FormatSingleInt(b), RID(10, 20));
    assert(rc == IX_KEYNOTFOUND);
-   rc = ih.DeleteEntry(&c, RID(10, 30));
+   rc = ih.DeleteEntry(FormatSingleInt(c), RID(10, 30));
    assert(rc == IX_KEYNOTFOUND);
-   rc = ih.DeleteEntry(&d, RID(10, 40));
+   rc = ih.DeleteEntry(FormatSingleInt(d), RID(10, 40));
    assert(rc == IX_KEYNOTFOUND);
 
    if ((rc = ixm.CloseIndex(ih)))
@@ -578,7 +610,7 @@ RC Test1(void)
    IX_IndexHandle ih;
    printf("Test 1: create, open, close, delete an index... \n");
 
-   if ((rc = ixm.CreateIndex(FILENAME, index, INT, sizeof(int))) ||
+   if ((rc = ixm.CreateIndex(FILENAME, index, FormatSingleType(INT), FormatSingleLen(sizeof(int)))) ||
          (rc = ixm.OpenIndex(FILENAME, index, ih)) ||
          (rc = ixm.CloseIndex(ih)))
       return (rc);
@@ -601,7 +633,7 @@ RC Test2(void)
 
    printf("Test2: Insert a few integer entries into an index... \n");
 
-   if ((rc = ixm.CreateIndex(FILENAME, index, INT, sizeof(int))) ||
+   if ((rc = ixm.CreateIndex(FILENAME, index, FormatSingleType(INT), FormatSingleLen(sizeof(int)))) ||
          (rc = ixm.OpenIndex(FILENAME, index, ih)) ||
          (rc = InsertIntEntries(ih, FEW_ENTRIES)) ||
          (rc = VerifyIntEntries(ih, 0, FEW_ENTRIES, 1)) ||
@@ -634,7 +666,7 @@ RC Test3(void)
 
    printf("Test3: Insert and delete a few integer entries from an index... \n");
 
-   if ((rc = ixm.CreateIndex(FILENAME, index, INT, sizeof(int))) ||
+   if ((rc = ixm.CreateIndex(FILENAME, index, FormatSingleType(INT), FormatSingleLen(sizeof(int)))) ||
          (rc = ixm.OpenIndex(FILENAME, index, ih)) ||
          (rc = InsertIntEntries(ih, FEW_ENTRIES)) ||
          (rc = DeleteIntEntries(ih, nDelete)) ||
@@ -671,7 +703,7 @@ RC Test4(void)
 
    printf("Test4: Inequality scans... \n");
 
-   if ((rc = ixm.CreateIndex(FILENAME, index, INT, sizeof(int))) ||
+   if ((rc = ixm.CreateIndex(FILENAME, index, FormatSingleType(INT), FormatSingleLen(sizeof(int)))) ||
          (rc = ixm.OpenIndex(FILENAME, index, ih)) ||
          (rc = InsertIntEntries(ih, FEW_ENTRIES)))
       return (rc);
@@ -679,7 +711,7 @@ RC Test4(void)
    // Scan NO_OP
    printf("===============Start NOP Scan===============\n");
    IX_IndexScan scannop;
-   if ((rc = scannop.OpenScan(ih, NO_OP, &value))) {
+   if ((rc = scannop.OpenScan(ih, NO_OP, FormatSingleInt(value)))) {
      printf("Scan error: opening scan\n");
      return (rc);
    }
@@ -695,7 +727,7 @@ RC Test4(void)
    // Scan <
    printf("===============Start < Scan===============\n");
    IX_IndexScan scanlt;
-   if ((rc = scanlt.OpenScan(ih, LT_OP, &value))) {
+   if ((rc = scanlt.OpenScan(ih, LT_OP, FormatSingleInt(value)))) {
      printf("Scan error: opening scan\n");
      return (rc);
    }
@@ -711,7 +743,7 @@ RC Test4(void)
    // Scan <=
    printf("===============Start <= Scan===============\n");
    IX_IndexScan scanle;
-   if ((rc = scanle.OpenScan(ih, LE_OP, &value))) {
+   if ((rc = scanle.OpenScan(ih, LE_OP, FormatSingleInt(value)))) {
      printf("Scan error: opening scan\n");
      return (rc);
    }
@@ -727,7 +759,7 @@ RC Test4(void)
    // Scan >
    printf("===============Start > Scan===============\n");
    IX_IndexScan scangt;
-   if ((rc = scangt.OpenScan(ih, GT_OP, &value))) {
+   if ((rc = scangt.OpenScan(ih, GT_OP, FormatSingleInt(value)))) {
      printf("Scan error: opening scan\n");
      return (rc);
    }
@@ -743,7 +775,7 @@ RC Test4(void)
    // Scan >=
    printf("===============Start >= Scan===============\n");
    IX_IndexScan scange;
-   if ((rc = scange.OpenScan(ih, GE_OP, &value))) {
+   if ((rc = scange.OpenScan(ih, GE_OP, FormatSingleInt(value)))) {
      printf("Scan error: opening scan\n");
      return (rc);
    }
@@ -759,7 +791,7 @@ RC Test4(void)
    // Scan !=
    printf("===============Start != Scan===============\n");
    IX_IndexScan scanne;
-   if ((rc = scanne.OpenScan(ih, NE_OP, &value))) {
+   if ((rc = scanne.OpenScan(ih, NE_OP, FormatSingleInt(value)))) {
      printf("Scan error: opening scan\n");
      return (rc);
    }
@@ -775,7 +807,7 @@ RC Test4(void)
    // Scan ==
    printf("===============Start == Scan===============\n");
    IX_IndexScan scaneq;
-   if ((rc = scaneq.OpenScan(ih, EQ_OP, &value))) {
+   if ((rc = scaneq.OpenScan(ih, EQ_OP, FormatSingleInt(value)))) {
      printf("Scan error: opening scan\n");
      return (rc);
    }
@@ -809,14 +841,14 @@ RC InsertIntEntry(IX_IndexHandle &ih, int value, SlotNum sn = -1)
       sn = slotCnt++;
    RID rid(1, sn);
 // printf("Inserting key=%d rid=(1,%d)\n", value, sn);
-   return ih.InsertEntry((void *)&value, rid);
+   return ih.InsertEntry(FormatSingleInt(value), rid);
 }
 
 RC DeleteIntEntry(IX_IndexHandle &ih, int value, SlotNum sn)
 {
    RID rid(1, sn);
 // printf("Deleting key=%d rid=(1,%d)\n", value, sn);
-   return ih.DeleteEntry((void *)&value, rid);
+   return ih.DeleteEntry(FormatSingleInt(value), rid);
 }
 
 #ifdef DEBUG_IX
@@ -860,7 +892,7 @@ RC Test5(void)
 
    printf("Test5: Creating an sample index... \n");
 
-   if (rc = ixm.CreateIndex(FILENAME, index, INT, sizeof(int)))
+   if (rc = ixm.CreateIndex(FILENAME, index, FormatSingleType(INT), FormatSingleLen(sizeof(int))))
       return (rc);
 
    if (rc = ixm.OpenIndex(FILENAME, index, ih))
@@ -943,7 +975,7 @@ RC Test6(void)
    printf("NO_OP\n");
    IX_IndexScan scanno;
    int num = 0;
-   if ((rc = scanno.OpenScan(ih, NO_OP, &num))) {
+   if ((rc = scanno.OpenScan(ih, NO_OP, FormatSingleInt(num)))) {
      printf("Scan error: opening scan\n");
      return (rc);
    }
@@ -963,7 +995,7 @@ RC Test6(void)
    // Scan =
    printf("Key = %d\n", value);
    IX_IndexScan scaneq;
-   if ((rc = scaneq.OpenScan(ih, EQ_OP, &value))) {
+   if ((rc = scaneq.OpenScan(ih, EQ_OP, FormatSingleInt(value)))) {
      printf("Scan error: opening scan\n");
      return (rc);
    }
@@ -983,7 +1015,7 @@ RC Test6(void)
    // Scan <
    printf("Key < %d\n", value);
    IX_IndexScan scanlt;
-   if ((rc = scanlt.OpenScan(ih, LT_OP, &value))) {
+   if ((rc = scanlt.OpenScan(ih, LT_OP, FormatSingleInt(value)))) {
      printf("Scan error: opening scan\n");
      return (rc);
    }
@@ -1003,7 +1035,7 @@ RC Test6(void)
    // Scan <=
    printf("Key <= %d\n", value);
    IX_IndexScan scanle;
-   if ((rc = scanle.OpenScan(ih, LE_OP, &value))) {
+   if ((rc = scanle.OpenScan(ih, LE_OP, FormatSingleInt(value)))) {
      printf("Scan error: opening scan\n");
      return (rc);
    }
@@ -1022,7 +1054,7 @@ RC Test6(void)
    // Scan >
    printf("Key > %d\n", value);
    IX_IndexScan scangt;
-   if ((rc = scangt.OpenScan(ih, GT_OP, &value))) {
+   if ((rc = scangt.OpenScan(ih, GT_OP, FormatSingleInt(value)))) {
      printf("Scan error: opening scan\n");
      return (rc);
    }
@@ -1041,7 +1073,7 @@ RC Test6(void)
    // Scan >=
    printf("Key >= %d\n", value);
    IX_IndexScan scange;
-   if ((rc = scange.OpenScan(ih, GE_OP, &value))) {
+   if ((rc = scange.OpenScan(ih, GE_OP, FormatSingleInt(value)))) {
      printf("Scan error: opening scan\n");
      return (rc);
    }
@@ -1087,7 +1119,7 @@ RC Test7(void)
 
    printf("Test7: Deletion Scan test... \n");
 
-   if (rc = ixm.CreateIndex(FILENAME, index, INT, sizeof(int)))
+   if (rc = ixm.CreateIndex(FILENAME, index, FormatSingleType(INT), FormatSingleLen(sizeof(int))))
       return (rc);
 
    if (rc = ixm.OpenIndex(FILENAME, index, ih))
@@ -1206,7 +1238,7 @@ RC Test7(void)
 
    // Deletion scan
    printf("[Step 7]             Deleting entries = %d\n", values[N-1]);
-   if ((rc = scanle.OpenScan(ih, EQ_OP, &values[N-1]))) {
+   if ((rc = scanle.OpenScan(ih, EQ_OP, FormatSingleInt(values[N-1])))) {
      printf("Scan error: opening scan\n");
      return (rc);
    }
@@ -1232,7 +1264,7 @@ RC Test7(void)
 
    // Deletion scan
    printf("[Step 8]             Deleting entries = %d\n", values[N-1]);
-   if ((rc = scanle.OpenScan(ih, EQ_OP, &values[N-1]))) {
+   if ((rc = scanle.OpenScan(ih, EQ_OP, FormatSingleInt(values[N-1])))) {
      printf("Scan error: opening scan\n");
      return (rc);
    }
@@ -1244,7 +1276,7 @@ RC Test7(void)
 
    // Deletion scan
    printf("[Step 9]             Deleting entries < %d\n", values[1]);
-   if ((rc = scanle.OpenScan(ih, LT_OP, &values[1]))) {
+   if ((rc = scanle.OpenScan(ih, LT_OP, FormatSingleInt(values[1])))) {
      printf("Scan error: opening scan\n");
      return (rc);
    }
@@ -1270,7 +1302,7 @@ RC Test7(void)
 
    // Deletion scan
    printf("[Step 10]             Deleting entries < %d\n", values[1]);
-   if ((rc = scanle.OpenScan(ih, LT_OP, &values[1]))) {
+   if ((rc = scanle.OpenScan(ih, LT_OP, FormatSingleInt(values[1])))) {
      printf("Scan error: opening scan\n");
      return (rc);
    }
@@ -1282,7 +1314,7 @@ RC Test7(void)
 
    // Deletion scan
    printf("[Step 11]             Deleting entries >= %d\n", values[2]);
-   if ((rc = scanle.OpenScan(ih, GE_OP, &values[2]))) {
+   if ((rc = scanle.OpenScan(ih, GE_OP, FormatSingleInt(values[2])))) {
      printf("Scan error: opening scan\n");
      return (rc);
    }
@@ -1308,7 +1340,7 @@ RC Test7(void)
 
    // Deletion scan
    printf("[Step 12]             Deleting entries >= %d\n", values[2]);
-   if ((rc = scanle.OpenScan(ih, GE_OP, &values[2]))) {
+   if ((rc = scanle.OpenScan(ih, GE_OP, FormatSingleInt(values[2])))) {
      printf("Scan error: opening scan\n");
      return (rc);
    }

@@ -13,12 +13,12 @@ class IX_IndexHandle;
 
 struct IX_BTKEY {
     RID rid; // provided by users
-    AttrType ty;
-    std::string attr;
+    std::vector<AttrType> ty;
+    std::vector<std::string> attr;
 
-    IX_BTKEY(char* pData, int attrLen);
+    IX_BTKEY(const char* pData, const std::vector<int>& attrLen);
 
-    IX_BTKEY(char* pData, int attrLen, AttrType ty, const RID& rid);
+    IX_BTKEY(const std::vector<std::string>& attr, const std::vector<int>& attrLen, const std::vector<AttrType>& ty, const RID& rid);
 
     void toCharArray(char* pData);
 
@@ -36,7 +36,9 @@ struct IX_BTKEY {
         return cmp(that) == 0;
     }
 
-    static int getSize(int attrLen);
+    static bool matches(const IX_BTKEY& attr1, const IX_BTKEY& attr2);
+
+    static int getSize(const std::vector<int>& attrLen);
 
     static int search(const std::vector<IX_BTKEY> vec, IX_BTKEY e);
 };
@@ -53,9 +55,9 @@ struct IX_BTNode {
     IX_BTNode(IX_IndexHandle &saver, IX_BTKEY e, RID lc = RID(), RID rc = RID());
     IX_BTNode(IX_IndexHandle &saver, RID pos);
 
-    static RC getSize(int attrLen, int m);
-    void dump(char* pData, int attrLen, int m);
-    void load(char* pData, int attrLen, int m);
+    static RC getSize(const std::vector<int>& attrLen, int m);
+    void dump(char* pData, const std::vector<int>& attrLen, int m);
+    void load(char* pData, const std::vector<int>& attrLen, int m);
     void outit();
 };
 

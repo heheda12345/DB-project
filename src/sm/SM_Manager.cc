@@ -166,6 +166,58 @@ RC SM_Manager::DropPrimaryKey(const std::string& tbName) {
     return OK_RC;
 }
 
+RC SM_Manager::AddForeignKey(const std::string& reqTb, const std::string& reqAttr, const std::string& dstTb, const std::string& dstAttr) {
+    if (!usingDb()) {
+        return SM_DB_NOT_OPEN;
+    }
+    vector<AttrInfo> attrs;
+    RC rc = GetAttrs(reqTb, attrs);
+    SMRC(rc, SM_ERROR);
+    int idx = AttrInfo::getIndex(attrs, reqAttr);
+    assert(idx >= 0);
+    if (idx == -1)
+        return SM_NO_SUCH_ATTR;
+    attrs[idx].setForeign(dstTb, dstAttr);
+    rc = UpdateAttrs(reqTb, attrs);
+    SMRC(rc, SM_ERROR);
+    return OK_RC;
+}
+
+RC SM_Manager::DropForeignKey(const std::string& reqTb, const std::string& reqAttr) {
+    if (!usingDb()) {
+        return SM_DB_NOT_OPEN;
+    }
+    vector<AttrInfo> attrs;
+    RC rc = GetAttrs(reqTb, attrs);
+    SMRC(rc, SM_ERROR);
+    int idx = AttrInfo::getIndex(attrs, reqAttr);
+    assert(idx >= 0);
+    if (idx == -1)
+        return SM_NO_SUCH_ATTR;
+    attrs[idx].setForeignFlag(0);
+    rc = UpdateAttrs(reqTb, attrs);
+    SMRC(rc, SM_ERROR);
+    return OK_RC;
+}
+
+RC SM_Manager::GetForeignDst(const std::string& reqTb, std::string& reqAttr, std::string& dstTb, std::string& dstAttr) {
+    if (!usingDb()) {
+        return SM_DB_NOT_OPEN;
+    }
+    vector<AttrInfo> attrs;
+    RC rc = GetAttrs(reqTb, attrs);
+    SMRC(rc, SM_ERROR);
+    int idx = AttrInfo::getIndex(attrs, reqAttr);
+    if (idx == -1) {
+        return SM_NO_SUCH_ATTR;
+    }
+    if (!attrs[idx].isForeign()) {
+        return SM_NOT_FOREIGN;
+    }
+    dstTb = attrs[idx].refTable;
+    dstAttr = attrs[idx].refAttr;
+    return OK_RC;
+}
 
 RC SM_Manager::GetAttrs(const std::string& relName, std::vector<AttrInfo>& attributes) {
     if (!usingDb()) {

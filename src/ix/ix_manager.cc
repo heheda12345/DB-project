@@ -4,15 +4,18 @@
 using namespace std;
 
 // Create a new Index
-RC IX_Manager::CreateIndex(const char *fileName, int indexNo, AttrType attrType, int attrLength) {
+RC IX_Manager::CreateIndex(const char *fileName, int indexNo,
+                           const std::vector<AttrType> &attrType, const std::vector<int> &attrLength) {
     string name = string(fileName) + "." + to_string(indexNo);
     IX_IndexHandle::Header header;
     header.attrLength = attrLength;
     header.attrType = attrType;
+    // header.updateTotal();
     header.btm = 3;
-    header.nodeSize = IX_BTNode::getSize(attrLength, header.btm);
-    RC rc = rmm.CreateFile(name.c_str(), header.nodeSize,
-        reinterpret_cast<char*>(&header), sizeof(IX_IndexHandle::Header));
+    header.nodeSize = IX_BTNode::getSize(header.attrLength, header.btm);
+    char headerPool[header.getSize()];
+    int size = header.dump(headerPool); assert(size == header.getSize());
+    RC rc = rmm.CreateFile(name.c_str(), header.nodeSize, headerPool, size);
     RMRC(rc, IX_RM);
 
     RM_FileHandle handle;
@@ -26,7 +29,9 @@ RC IX_Manager::CreateIndex(const char *fileName, int indexNo, AttrType attrType,
     RMRC(rc, IX_RM);
     header.rootPage = rid.GetPageNum();
     header.rootSlot = rid.GetSlotNum();
-    rc = handle.SetMeta(reinterpret_cast<char*>(&header), sizeof(IX_IndexHandle::Header));
+    char dataHeader[header.getSize()];
+    size = header.dump(dataHeader); assert(size == header.getSize());
+    rc = handle.SetMeta(data, size);
     // printf("save header(%d) %lld %d %d\n", (int)sizeof(IX_IndexHandle::Header), header.rootPage, header.rootSlot, header.nodeSize);
     RMRC(rc, IX_RM);
     rmm.CloseFile(handle);

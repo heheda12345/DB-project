@@ -47,6 +47,10 @@ public:
         int   nConditions,               // # conditions in where clause
         const Condition conditions[]);   // conditions in where clause
 
+    bool CanAddForeignKey(const std::string& reqTb, const std::string& reqAttr, const std::string& dstTb, const std::string& dstAttr) { return true; } // SOS TODO in QL
+
+    RC AddForeignKey(const std::string& reqTb, const std::string& reqAttr, const std::string& dstTb, const std::string& dstAttr) {return OK_RC;}
+
 private:
 };
 

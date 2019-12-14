@@ -15,7 +15,8 @@
 #include "../rm/rm.h"
 #include "ix_error.h"
 #include "ix_btree.h"
-#include "queue"
+#include <queue>
+#include <vector>
 
 class IX_BTKEY;
 class IX_BTNode;
@@ -36,12 +37,9 @@ public:
     IX_IndexHandle(const IX_IndexHandle&) = delete;
     IX_IndexHandle& operator = (const IX_IndexHandle&) = delete;
 
-	RC InsertEntry     (void *pData, const RID &rid);  // Insert new index entry
-	RC DeleteEntry     (void *pData, const RID &rid);  // Delete index entry
+	RC InsertEntry     (const std::vector<std::string> &pData, const RID &rid);  // Insert new index entry
+	RC DeleteEntry     (const std::vector<std::string> &pData, const RID &rid);  // Delete index entry
 	RC ForcePages      ();                             // Copy index to disk
-    int getAttrLen() {
-        return header.attrLength;
-    }
 
     IX_BTNode get(RID pos);
 
@@ -54,17 +52,57 @@ public:
     
     void deleteNode(IX_BTNode& tr);
 
-    int getAttrLen() const {
-        return header.attrLength;
-    }
+    int getAttrLen() const;
 
     struct Header {
-        AttrType attrType;
-        int attrLength;
+        std::vector<AttrType> attrType;
+        std::vector<int> attrLength;
         int btm;
         long long rootPage;
         int rootSlot;
         int nodeSize;
+
+        int getSize() {
+            // printf("[header] getsize %d %d\n", int(attrType.size()), int(sizeof(int) + sizeof(int) + sizeof(long long) + sizeof(int) + sizeof(int) + sizeof(AttrType) * attrType.size() + sizeof(int) * attrLength.size()));
+            return sizeof(int) + sizeof(int) + sizeof(long long) + sizeof(int) + sizeof(int)
+                   + sizeof(AttrType) * attrType.size() + sizeof(int) * attrLength.size();
+        }
+
+        int dump(char* pData) const {
+            int cur = 0;
+            assert(attrType.size() == attrLength.size());
+            *reinterpret_cast<int*>(pData) = (int)attrType.size(); cur += sizeof(int);
+            *reinterpret_cast<int*>(pData + cur) = btm; cur += sizeof(int);
+            *reinterpret_cast<long long*>(pData + cur) = rootPage; cur += sizeof(long long);
+            *reinterpret_cast<int*>(pData + cur) = rootSlot; cur += sizeof(int);
+            *reinterpret_cast<int*>(pData + cur) = nodeSize; cur += sizeof(int);
+            for (auto& x: attrType) {
+                *reinterpret_cast<AttrType*>(pData + cur) = x; cur += sizeof(AttrType);
+            }
+            for (auto& x: attrLength) {
+                *reinterpret_cast<int*>(pData + cur) = x; cur += sizeof(int);
+            }
+            // printf("[header] dumpsize %d %d\n", (int)attrType.size(), cur);
+            return cur;
+        }
+
+        int load(const char* pData) {
+            int cur = 0;
+            int attrSize = *reinterpret_cast<const int*>(pData); cur += sizeof(int);
+            btm = *reinterpret_cast<const int*>(pData + cur); cur += sizeof(int);
+            rootPage = *reinterpret_cast<const long long*>(pData + cur); cur += sizeof(long long);
+            rootSlot = *reinterpret_cast<const int*>(pData + cur); cur += sizeof(int);
+            nodeSize = *reinterpret_cast<const int*>(pData + cur); cur += sizeof(int);
+            attrType.clear(); attrLength.clear();
+            for (int i=0; i<attrSize; i++) {
+                attrType.push_back(*reinterpret_cast<const AttrType*>(pData + cur)); cur += sizeof(AttrType);
+            }
+            for (int i=0; i<attrSize; i++) {
+                attrLength.push_back(*reinterpret_cast<const int*>(pData + cur)); cur += sizeof(int);
+            }
+            // printf("[header] loadsize %d %d\n", (int)attrSize, cur);
+            return cur;
+        }
     };
     
     Header getHeader() const {
@@ -89,7 +127,7 @@ public:
 	~IX_IndexScan () = default;                       // Destructor
 	RC OpenScan      (IX_IndexHandle &indexHandle, // Initialize index scan
 					  CompOp      compOp,
-					  void        *value,
+					  const std::vector<std::string> &value,
 					  ClientHint  pinHint = NO_HINT);       
 	RC GetNextEntry  (RID &rid);                          // Get next matching entry
 	RC CloseScan     ();                                  // Terminate index scan
@@ -111,7 +149,7 @@ public:
 
     // Create a new Index
     RC CreateIndex(const char *fileName, int indexNo,
-				    AttrType attrType, int attrLength);
+				   const std::vector<AttrType> &attrType, const std::vector<int> &attrLength);
 
     // Destroy and Index
     RC DestroyIndex(const char *fileName, int indexNo);

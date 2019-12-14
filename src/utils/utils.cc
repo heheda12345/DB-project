@@ -129,3 +129,28 @@ int getDefaultLen(AttrType ty) {
     }
     return 0;
 }
+
+bool typeIsMatch(std::vector<AttrType> ty1, std::vector<AttrType> ty2) {
+    if (ty1.size() != ty2.size())
+        return 0;
+    for (int i=0; i<ty1.size(); i++)
+        if (ty1[i] != ty2[i])
+            return 0;
+    return 1;
+}
+
+bool lengthIsMatch(std::vector<std::string> attr1, std::vector<std::string> attr2) {
+    if (attr1.size() != attr2.size())
+        return 0;
+    for (int i=0; i<attr1.size(); i++)
+        if (attr1[i].length() != attr2[i].length())
+            return 0;
+    return 1;
+}
+
+int getSum(const std::vector<int> &vec) {
+    int ret = 0;
+    for (auto &x: vec)
+        ret += x;
+    return ret;
+}

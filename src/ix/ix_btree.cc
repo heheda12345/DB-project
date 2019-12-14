@@ -1,43 +1,67 @@
 #include "ix_btree.h"
 #include "ix.h"
+#include "../utils/utils.h"
 
-IX_BTKEY::IX_BTKEY(char* pData, int attrLen) { // from saver
-        rid.loadFrom(pData);
-        ty = *reinterpret_cast<AttrType*>(pData + RID::getSize());
-        attr = std::string(pData + RID::getSize() + sizeof(AttrType), attrLen);
+IX_BTKEY::IX_BTKEY(const char* pData, const std::vector<int>& attrLen) { // from saver
+    int cur = 0;
+    rid.loadFrom(pData); cur += RID::getSize();
+    ty.clear(); attr.clear();
+    for (auto x: attrLen) {
+        ty.push_back(*reinterpret_cast<const AttrType*>(pData + cur));
+        cur += sizeof(AttrType);
     }
+    for (auto x: attrLen) {
+        attr.push_back(std::string(pData + cur, x));
+        cur += x;
+    }
+}
 
-IX_BTKEY::IX_BTKEY(char* pData, int attrLen, AttrType ty, const RID& rid): rid(rid), ty(ty), attr(pData, attrLen) {}
+IX_BTKEY::IX_BTKEY(const std::vector<std::string>& attr, const std::vector<int>& attrLen, const std::vector<AttrType>& ty, const RID& rid): rid(rid), ty(ty), attr(attr) {}
 
 void IX_BTKEY::toCharArray(char* pData) {
-    rid.dumpTo(pData);
-    *reinterpret_cast<AttrType*>(pData + RID::getSize()) = ty;
-    memcpy(pData + RID::getSize() + sizeof(AttrType), attr.c_str(), attr.length());
+    int cur = 0;
+    rid.dumpTo(pData); cur += RID::getSize();
+    for (auto& x: ty) {
+        *reinterpret_cast<AttrType*>(pData + cur) = x;
+        cur += sizeof(AttrType);
+    }
+    for (auto& x: attr) {
+        memcpy(pData + cur, x.c_str(), x.length());
+        cur += x.length();
+    }
+}
+
+bool IX_BTKEY::matches(const IX_BTKEY& attr1, const IX_BTKEY& attr2) {
+    if (!typeIsMatch(attr1.ty, attr2.ty))
+        return 0;
+    if (!lengthIsMatch(attr1.attr, attr2.attr))
+        return 0;
+    return 1;
 }
 
 int IX_BTKEY::cmp(const IX_BTKEY &that) const {
-    // printf("cmp %d %d\n", ty, that.ty);
-    assert(ty == that.ty);
-    assert(attr.length() == that.attr.length());
-    switch (ty) {
-        case INT: {
-            int l = *reinterpret_cast<const int*>(attr.c_str()),
-                r = *reinterpret_cast<const int*>(that.attr.c_str());
-            // printf("l %d r %d\n", l, r);
-            if (l != r)
-                return l < r ? -1 : 1;
-        }
-        case FLOAT: {
-            float fl = *reinterpret_cast<const float*>(attr.c_str()),
-                  fr = *reinterpret_cast<const float*>(that.attr.c_str());
-            if (fl != fr)
-                return fl < fr ? -1 : 1;
-        }
-        case STRING: {
-            std::string l = attr, r = that.attr;
-            for (int i=0; i<l.length(); i++)
-                if (l[i] != r[i])
-                    return l[i] < r[i] ? -1 : 1;
+    assert(matches(*this, that));
+    for (int i = 0; i < ty.size(); i++) {
+        switch (ty[i]) {
+            case INT: {
+                int l = *reinterpret_cast<const int*>(attr[i].c_str()),
+                    r = *reinterpret_cast<const int*>(that.attr[i].c_str());
+                // printf("l %d r %d\n", l, r);
+                if (l != r)
+                    return l < r ? -1 : 1;
+            }
+            case FLOAT: {
+                float fl = *reinterpret_cast<const float*>(attr[i].c_str()),
+                    fr = *reinterpret_cast<const float*>(that.attr[i].c_str());
+                if (fl != fr)
+                    return fl < fr ? -1 : 1;
+            }
+            case STRING: {
+                std::string l = attr[i], r = that.attr[i];
+                for (int i=0; i<l.length(); i++)
+                    if (l[i] != r[i])
+                        return l[i] < r[i] ? -1 : 1;
+            }
         }
     }
     if (rid.isValid() && that.rid.isValid()) {
@@ -51,8 +75,8 @@ int IX_BTKEY::cmp(const IX_BTKEY &that) const {
     }
 }
 
-int IX_BTKEY::getSize(int attrLen) {
-    return RID::getSize() + sizeof(AttrType) + attrLen;
+int IX_BTKEY::getSize(const std::vector<int>& attrLen) {
+    return RID::getSize() + sizeof(AttrType) * attrLen.size() + getSum(attrLen);
 }
 
 int IX_BTKEY::search(const std::vector<IX_BTKEY> vec, IX_BTKEY e) {
@@ -92,12 +116,12 @@ IX_BTNode::IX_BTNode(IX_IndexHandle &saver, IX_BTKEY e, RID lc, RID rc): parent(
 
 IX_BTNode::IX_BTNode(IX_IndexHandle &saver, RID pos): IX_BTNode(saver.get(pos)) {}
 
-RC IX_BTNode::getSize(int attrLen, int m) {
+RC IX_BTNode::getSize(const std::vector<int>& attrLen, int m) {
     return sizeof(int) + RID::getSize() + RID::getSize() + m * IX_BTKEY::getSize(attrLen) + (m+1) * RID::getSize();
     // int is child.size()
 }
 
-void IX_BTNode::dump(char* pData, int attrLen, int m) {
+void IX_BTNode::dump(char* pData, const std::vector<int>& attrLen, int m) {
     // printf("dump(%d) size %d\n", m, (int)child.size());
     assert(key.size() <= m);
     assert(child.size() == key.size() + 1);
@@ -112,7 +136,7 @@ void IX_BTNode::dump(char* pData, int attrLen, int m) {
     }
 }
 
-void IX_BTNode::load(char* pData, int attrLen, int m) {
+void IX_BTNode::load(char* pData, const std::vector<int>& attrLen, int m) {
     int n = *reinterpret_cast<int*>(pData);
     // printf("load(%d) size %d\n", m, n);
     assert(n <= m+1);
@@ -133,7 +157,12 @@ void IX_BTNode::load(char* pData, int attrLen, int m) {
 void IX_BTNode::outit() {
     printf("(%lld %d): %d %d\n", this->pos.GetPageNum(), this->pos.GetSlotNum(), (int)this->key.size(), (int)this->child.size());
     for (auto key: this->key) {
-        printf("%d ", *reinterpret_cast<const int*>(key.attr.c_str()));
+        std::string st_key;
+        for (auto x: key.attr) {
+            st_key.append(",").append(std::to_string(std::stoi(x)));
+        }
+        st_key[0] = '('; st_key.append(")"); 
+        printf("%s ", st_key.c_str());
     }
     printf("\n");
     for (auto child: this->child) {

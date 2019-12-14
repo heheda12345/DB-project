@@ -197,6 +197,7 @@ alterStmt: ALTER TABLE tbName ADD field
     {
         $$ = new DropPrimaryKey($3);
     }
+    | ALTER TABLE tbName DROP FOREIGN KEY colName
 
 fieldList: field
     {

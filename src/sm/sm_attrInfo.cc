@@ -27,6 +27,10 @@ bool AttrInfo::isPrimary() const { return getBit(flag, 1); }
 
 void AttrInfo::setForeignFlag(bool b) {
     setBit(flag, 2, b);
+    if (b == 0) {
+        refTable = "";
+        refAttr = "";
+    }
 }
 
 bool AttrInfo::isForeign() const { return getBit(flag, 2); }

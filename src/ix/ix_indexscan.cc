@@ -7,7 +7,7 @@ IX_IndexScan::IX_IndexScan(): state(UNSTART) {
 
 RC IX_IndexScan::OpenScan(IX_IndexHandle &indexHandle,
                           CompOp      compOp,
-                          void        *value,
+                          const std::vector<std::string> &value,
                           ClientHint  pinHint) {
     if (state != UNSTART) {
         return IX_SCAN_OPENED;
@@ -16,7 +16,7 @@ RC IX_IndexScan::OpenScan(IX_IndexHandle &indexHandle,
     while (!entrys.empty()) {
         entrys.pop();
     }
-    IX_BTKEY key((char*)value, indexHandle.header.attrLength, indexHandle.header.attrType, RID()); // NOTE: pass an invalid rid
+    IX_BTKEY key(value, indexHandle.header.attrLength, indexHandle.header.attrType, RID()); // NOTE: pass an invalid rid
     RC rc = search(RID(handle->header.rootPage, handle->header.rootSlot), compOp, key, true);
     IXRC(rc, IX_BTREE)
     state = RUNNING;

@@ -108,10 +108,14 @@ public:
     RC AddPrimaryKey(const std::string& tbName, const std::vector<std::string>& attrNames);
     RC DropPrimaryKey(const std::string& tbName);
 
+    RC AddForeignKey(const std::string& reqTb, const std::string& reqAttr, const std::string& dstTb, const std::string& dstAttr);
+    RC DropForeignKey(const std::string& reqTb, const std::string& reqAttr);
+
     RC GetAttrs(const std::string& relName, std::vector<AttrInfo>& attributes);
     RC UpdateAttrs(const std::string& tbName, const std::vector<AttrInfo>& attributes);
     bool ExistAttr(const std::string& relName, const std::string& attrName, AttrType type = NO_TYPE);
     bool LinkForeign(const std::string& reqTb, const std::string& reqAttr, const std::string& dstTb, const std::string& dstAttr);
+    RC GetForeignDst(const std::string& reqTb, std::string& reqAttr, std::string& dstTb, std::string& dstAttr);
 
     // RC CreateIndex(const char *relName,           // create an index for
     //                const char *attrName);         //   relName.attrName
@@ -173,6 +177,7 @@ void SM_PrintError(RC rc);
 #define SM_DB_NOT_OPEN          (START_SM_ERR - 2)
 #define SM_NO_SUCH_ATTR         (START_SM_ERR - 3)
 #define SM_OTHERS_FOREIGN       (START_SM_ERR - 4)
+#define SM_NOT_FOREIGN          (START_SM_ERR - 5)
 #define SM_LASTERROR            SM_ERROR
 
 
