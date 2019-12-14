@@ -71,6 +71,7 @@ void Parser::CreateTable::visit() {
             }
             for (Column* col: *(f->columns)) {
                 table.primaryKeys.push_back(*(col->colName));
+                table.setPrimaryNotNull();
             }
         } 
         // else if (f->ty == Field::Foreign) {

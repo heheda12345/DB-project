@@ -108,6 +108,8 @@ struct TableInfo {
         return primaryKeys.size() != 0;
     }
 
+    void setPrimaryNotNull();
+
     // static std::vector<TableInfo> loadtables(const char* pData);
     // static int dumpTables(char* pData, const std::vector<TableInfo>& attrs);
     // static int getTablesSize(const std::vector<TableInfo>& attrs);

@@ -42,6 +42,14 @@ int TableInfo::getSize() const {
         + IndexInfo::getIndexesSize(indexes);
 }
 
+void TableInfo::setPrimaryNotNull() {
+    for (auto& x: primaryKeys) {
+        int idx = AttrInfo::getPos(attrs, x);
+        assert(idx != -1);
+        attrs[idx].setNotNullFlag(1);
+    }
+}
+
 std::ostream& operator << (std::ostream& os, const TableInfo& table) {
     os << table.attrs << endl;
     if (table.primaryKeys.size() > 0) {
