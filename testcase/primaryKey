@@ -12,5 +12,8 @@ show tables;
 alter table tbclass add primary key(score);
 show tables;
 alter table tbclass drop primary key;
+show tables;
 alter table tbclass drop primary key;
+alter table tbclass add primary key (id, score);
+show tables;
 exit;

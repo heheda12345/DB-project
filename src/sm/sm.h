@@ -104,11 +104,11 @@ struct TableInfo {
     int dump(char* pData) const;
     int getSize() const;
 
-    bool hasPrimary() {
+    bool hasPrimary() const {
         return primaryKeys.size() != 0;
     }
 
-    bool linkedByOthers() {
+    bool linkedByOthers() const {
         return linkedBy.size() != 0;
     }
 

@@ -88,6 +88,11 @@ RC SM_Manager::CreateTable(const std::string& relName, const TableInfo& table) {
         assert(rc == OK_RC);
         SMRC(rc, SM_ERROR);
     }
+    if (table.hasPrimary()) {
+        RC rc = CreateIndex(relName, "@Primary", table.primaryKeys);
+        assert(rc == OK_RC);
+        SMRC(rc, SM_ERROR);
+    }
     return OK_RC;
 }
 
@@ -102,6 +107,11 @@ RC SM_Manager::DropTable(const std::string& relName) {
         return SM_OTHERS_FOREIGN;
     rc = rmm.DestroyFile(relName.c_str());
     RMRC(rc, SM_ERROR);
+    if (table.hasPrimary()) {
+        RC rc = DropIndex(relName, "@Primary");
+        assert(rc == OK_RC);
+        SMRC(rc, SM_ERROR);
+    }
     return OK_RC;
 }
 
@@ -151,6 +161,9 @@ RC SM_Manager::AddPrimaryKey(const std::string& tbName, const std::vector<std::s
     table.setPrimaryNotNull();
     rc = UpdateTable(tbName, table);
     SMRC(rc, SM_ERROR);
+    rc = CreateIndex(tbName, "@Primary", table.primaryKeys);
+    assert(rc == OK_RC);
+    SMRC(rc, SM_ERROR);
     return OK_RC;
 }
 
@@ -167,6 +180,9 @@ RC SM_Manager::DropPrimaryKey(const std::string& tbName) {
         return SM_OTHERS_FOREIGN;
     table.primaryKeys.clear();
     rc = UpdateTable(tbName, table);
+    SMRC(rc, SM_ERROR);
+    rc = DropIndex(tbName, "@Primary");
+    assert(rc == OK_RC);
     SMRC(rc, SM_ERROR);
     return OK_RC;
 }
