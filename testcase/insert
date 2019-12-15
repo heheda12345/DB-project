@@ -18,4 +18,5 @@ INSERT INTO nation VALUES (88, 'fail', 0.0, 2100-2-29, 'xxxxx', NULL);
 INSERT INTO nation VALUES (88, 'fail', 0.0, 2019-12-15, 'xxxxx');
 INSERT INTO nation VALUES (88, 'fail', 0.0, 2019-12-15, 'xxxxx', 'fail fail fail fail');
 INSERT INTO nation VALUES (88, 'fail', NULL, 2019-12-15, 'xxxxx', NULL);
+desc nation;
 exit;

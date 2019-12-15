@@ -53,10 +53,17 @@ RC QL_Manager::Insert(const std::string& tbName, const TableLine& values_i) {
         assert(rc == OK_RC);
         IXRC(rc, QL_ERROR);
     }
+    return OK_RC;
+}
 
-    vector<TableLine> items;
-    rc = GetAllItems(tbName, items);
+RC QL_Manager::Desc(const std::string& tbName) {
+    TableInfo table;
+    RC rc = smm.GetTable(tbName, table);
+    SMRC(rc, QL_INVALID_TABLE);
+    std::vector<TableLine> values;
+    rc = GetAllItems(tbName, values);
     QLRC(rc, QL_ERROR);
+    PrintTable(table, values);
     return OK_RC;
 }
 
@@ -89,7 +96,6 @@ RC QL_Manager::GetAllItems(const std::string& tbName, std::vector<TableLine>& va
     rc = rmm.CloseFile(handle);
     RMRC(rc, QL_ERROR);
     
-    PrintTable(table, values);
     return OK_RC;
 }
 

@@ -130,8 +130,7 @@ void Parser::Desc::visit() {
         printf("[Fail] Use a database first!\n");
         return;
     }
-    printf("DropTable");
-    assert(asst);
+    QL_Manager::instance().Desc(*tbName);
 }
 
 

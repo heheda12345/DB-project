@@ -49,8 +49,8 @@ public:
     //     const Condition conditions[]);   // conditions in where clause
 
     RC Insert(const std::string& tbName, const TableLine& values_i);
+    RC Desc(const std::string& tbName);
 
-    RC GetAllItems(const std::string& tbName, std::vector<TableLine>& values);
 
     // RC Delete  (const char *relName,     // relation to delete from
     //     int   nConditions,               // # conditions in where clause
@@ -64,6 +64,7 @@ public:
     //     int   nConditions,               // # conditions in where clause
     //     const Condition conditions[]);   // conditions in where clause
 
+    RC GetAllItems(const std::string& tbName, std::vector<TableLine>& values);
     void PrintTable(const TableInfo& table, const std::vector<TableLine>& values);
     std::vector<RID> SearchIndex(const std::string& tbName, const std::string& idxName, const std::vector<std::string> & values, CompOp compOp);
     bool ExistInIndex(const std::string& tbName, const TableInfo& table, const std::string& idxName, const TableLine& value); // for index
