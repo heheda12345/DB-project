@@ -10,18 +10,27 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <iostream>
 #include "../redbase.h"
 #include "../rm/rm.h"
 #include "../ix/ix.h"
 #include "../sm/sm.h"
+
+struct Item {
+    std::string value;
+    bool isNull;
+    AttrType type;
+};
+std::ostream& operator << (std::ostream& os, const Item& item);
+std::ostream& operator << (std::ostream& os, const std::vector<Item>& items);
 
 //
 // QL_Manager: query language (DML)
 //
 class QL_Manager {
 public:
-    QL_Manager (SM_Manager &smm, IX_Manager &ixm, RM_Manager &rmm);
-    ~QL_Manager();                       // Destructor
+    QL_Manager (): smm(SM_Manager::instance()), ixm(IX_Manager::instance()), rmm(RM_Manager::instance()) {}
+    ~QL_Manager() = default;
 
     // RC Select  (int nSelAttrs,           // # attrs in select clause
     //     const RelAttr selAttrs[],        // attrs in select clause
@@ -30,9 +39,7 @@ public:
     //     int   nConditions,               // # conditions in where clause
     //     const Condition conditions[]);   // conditions in where clause
 
-    // RC Insert  (const char *relName,     // relation to insert into
-    //     int   nValues,                   // # values
-    //     const Value values[]);           // values to insert
+    RC Insert(const std::string& tbName, const std::vector<Item>& values_i);
 
     // RC Delete  (const char *relName,     // relation to delete from
     //     int   nConditions,               // # conditions in where clause
@@ -53,16 +60,29 @@ public:
     bool CanAddUniqueKey() { return true; }
 
     static QL_Manager& instance() { 
-        static QL_Manager ins(SM_Manager::instance(), IX_Manager::instance(), RM_Manager::instance());
+        static QL_Manager ins;
         return ins;
     }
 
 private:
+    SM_Manager &smm;
+    IX_Manager &ixm;
+    RM_Manager &rmm;
 };
 
 //
 // Print-error function
 //
 void QL_PrintError(RC rc);
+
+#define QLRC(rc, ret_rc) { \
+   if (rc != 0) { \
+      QL_PrintError(rc); \
+      return ret_rc;  \
+   } \
+}
+
+#define QL_INVAILD_VALUE (START_QL_WARN + 1)
+#define QL_INVALID_TABLE (START_QL_WARN + 2)
 
 #endif

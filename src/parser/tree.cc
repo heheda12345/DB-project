@@ -149,8 +149,18 @@ void Parser::InsertValue::visit() {
         printf("[Fail] Use a database first!\n");
         return;
     }
-    printf("InsertValue");
-    assert(asst);
+    vector<Item> items;
+    for (auto& val: *values) {
+        items.push_back(val->toItem());
+    }
+    RC rc = QL_Manager::instance().Insert(*tbName, items);
+    if (rc != OK_RC) {
+        printf("[Fail] Can not insert!\n");
+        return;
+    } else {
+        printf("[Succ] Insert 1 item to table %s!\n", tbName->c_str());
+        return;
+    }
 }
 
 void Parser::DeleteValue::visit() {

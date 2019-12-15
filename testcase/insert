@@ -1,4 +1,7 @@
 CREATE DATABASE orderDB;
 USE DATABASE orderDB;
-CREATE TABLE nation (n_nationkey INT NOT NULL, n_name CHAR(25) NOT NULL, n_regionkey INT NOT NULL, n_comment VARCHAR(152));
+CREATE TABLE nation (in INT NOT NULL, cn CHAR(100) NOT NULL, fn float NOT NULL, dn date NOT NULL, cc VARCHAR(25));
 SHOW TABLES;
+INSERT INTO nation VALUES (86, 'xxxxx', 0, 2019-12-15, NULL);
+INSERT INTO nation VALUES (86, 'aaaa bbbb cccc dddd eeee ffff', 0, 2019-12-6, 'xxxxx');
+exit;

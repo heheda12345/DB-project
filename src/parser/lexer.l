@@ -77,7 +77,7 @@ EXIT { return EXIT; }
 {FORMAT_DATE} {
     int year, month, date;
     sscanf(yytext, "%d-%d-%d", &year, &month, &date);
-    yylval.intval = year * 100000 + month * 100 + date;
+    yylval.intval = year * 10000 + month * 100 + date;
     return VALUE_DATE;
 }
 %%

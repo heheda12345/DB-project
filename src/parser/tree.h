@@ -3,6 +3,7 @@
 #include <vector>
 #include "../redbase.h"
 #include "../sm/sm.h"
+#include "../ql/ql.h"
 
 namespace Parser {
 
@@ -73,6 +74,14 @@ public:
                 return std::string();
             }
         }
+    }
+
+    Item toItem() {
+        Item item;
+        item.isNull = ty == NO_TYPE;
+        item.type = ty;
+        item.value = dump();
+        return item;
     }
 
     AttrType ty;
@@ -175,11 +184,7 @@ public:
                             hasError = 1;
                             return;
                         }
-                        if (_type->canChange && dVal->dt.vs->length() > _type->vi) {
-                            hasError = 1;
-                            return;
-                        }
-                        if (!_type->canChange && dVal->dt.vs->length() != _type->vi) {
+                        if (dVal->dt.vs->length() > _type->vi) {
                             hasError = 1;
                             return;
                         }
@@ -408,14 +413,11 @@ public:
 
 class InsertValue: public Stmt {
 public:
-    InsertValue(std::string* _tbName, std::vector<std::vector<Value*>*>* _values): tbName(_tbName), values(_values) {}
+    InsertValue(std::string* _tbName, std::vector<Value*>* _values): tbName(_tbName), values(_values) {}
     ~InsertValue() {
         delete tbName;
-        for (auto vv: *values) {
-            for (auto v: *vv) {
-                delete v;
-            }
-            delete vv;
+        for (auto v: *values) {
+            delete v;
         }
         delete values;
     }
@@ -423,7 +425,7 @@ public:
     void visit() override;
     
     std::string* tbName;
-    std::vector<std::vector<Value*>*>* values;
+    std::vector<Value*>* values;
 };
 
 class DeleteValue: public Stmt {

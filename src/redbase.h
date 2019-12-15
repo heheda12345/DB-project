@@ -12,11 +12,11 @@
 //
 #define MAXNAME       32                // maximum length of a relation
                                         // or attribute name
-#define MAXSTRINGLEN  255               // maximum length of a
+#define MAXSTRINGLEN  250               // maximum length of a
                                         // string-type attribute
 #define MAXATTRS      32                // maximum number of attributes
                                         // in a relation
-
+#define PRINT_WIDTH     20
 
 //
 // Return codes

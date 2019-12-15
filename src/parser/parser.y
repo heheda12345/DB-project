@@ -31,7 +31,6 @@ using namespace std;
     Parser::Type* type;
     Parser::Value* value;
     std::vector<Parser::Value*>* valueList;
-    std::vector<std::vector<Parser::Value*>*>* valueLists;
     Parser::WhereClause* whereClause;
     std::vector<Parser::WhereClause*>* whereClauseList;
     Parser::Col* col;
@@ -56,7 +55,6 @@ using namespace std;
 %type <fieldList> fieldList
 %type <field> field
 %type <type> type
-%type <valueLists> valueLists
 %type <valueList> valueList
 %type <value> value
 %type <whereClause> whereClause
@@ -143,9 +141,9 @@ tbStmt: CREATE TABLE tbName '(' fieldList ')'
     {
         $$ = new Desc($2);
     }
-    | INSERT INTO tbName VALUES valueLists
+    | INSERT INTO tbName VALUES '(' valueList ')'
     {
-        $$ = new InsertValue($3, $5);
+        $$ = new InsertValue($3, $6);
     }
     | DELETE FROM tbName WHERE whereClauseList
     {
@@ -267,17 +265,6 @@ type: TYPE_INT
     | TYPE_FLOAT
     {
         $$ = new Type(FLOAT);
-    }
-
-valueLists: '(' valueList ')'
-    {
-        $$ = new vector<vector<Value*>*>();
-        $$->push_back($2);
-    }
-    | valueLists ',' '(' valueList ')'
-    {
-        $$ = $1;
-        $$->push_back($4);
     }
 
 valueList: value
