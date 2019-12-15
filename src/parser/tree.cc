@@ -171,8 +171,27 @@ void Parser::DeleteValue::visit() {
         printf("[Fail] Use a database first!\n");
         return;
     }
-    printf("DeleteValue");
-    assert(asst);
+    vector<RawSingleWhere> conds;
+    for (auto& where: *wheres) {
+        if (!where->inSingle) {
+            printf("[Fail] One table only!\n");
+            return;
+        }
+        if (where->singleWhere.hasError) {
+            printf("[Fail] Invalid clause!\n");
+            return;
+        }
+        conds.push_back(where->singleWhere);
+    }
+    
+    RC rc = QL_Manager::instance().Delete(*tbName, conds);
+    if (rc != OK_RC) {
+        printf("[Fail] Cannot delete!\n");
+        return;
+    } else {
+        printf("[Succ] Succussfully delete value in %s\n", tbName->c_str());
+        return;
+    }
 }
 
 void Parser::UpdateValue::visit() {

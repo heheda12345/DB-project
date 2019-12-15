@@ -56,6 +56,20 @@ RC QL_Manager::Insert(const std::string& tbName, const TableLine& values_i) {
     return OK_RC;
 }
 
+RC QL_Manager::Delete(const std::string& tbName, const vector<RawSingleWhere>& RawConds) {
+    TableInfo table;
+    RC rc = smm.GetTable(tbName, table);
+    SMRC(rc, QL_INVALID_TABLE);
+    std::vector<SingleWhere> conds;
+    rc = CompileWheres(conds, RawConds, table.attrs, tbName);
+    QLRC(rc, rc);
+    std::vector<TableLine> values;
+    rc = GetAllItems(tbName, values);
+    auto selected = select(values, conds);
+    PrintTable(table, selected);
+    return OK_RC;
+}
+
 RC QL_Manager::Desc(const std::string& tbName) {
     TableInfo table;
     RC rc = smm.GetTable(tbName, table);

@@ -1,0 +1,15 @@
+CREATE DATABASE orderDB;
+USE DATABASE orderDB;
+CREATE TABLE test (ccc char(200) NOT NULL, primary key(ccc));
+CREATE TABLE nation (in INT NOT NULL, cn CHAR(100) NOT NULL, fn float NOT NULL, dn date NOT NULL, cc VARCHAR(25), cd CHAR(10) default 'a b c', primary key(in), foreign key(cc) references test(ccc));
+alter table nation add constraint dn_unique unique key (dn);
+SHOW TABLES;
+insert into test values ('xxxxx');
+INSERT INTO nation VALUES (86, 'xxxxx', 0.0, 2019-12-15, 'xxxxx', NULL);
+INSERT INTO nation VALUES (87, 'aaaa bbbb cccc dddd eeee ffff', 0.0, 2019-12-16, 'xxxxx', 'xxxxx');
+INSERT INTO nation VALUES (88, 'xxxxx', 0.0, 2019-12-17, 'xxxxx', NULL);
+INSERT INTO nation VALUES (89, 'aaaa bbbb cccc dddd eeee ffff', 0.0, 2019-12-18, 'xxxxx', 'xxxxx');
+INSERT INTO nation VALUES (90, 'xxxxx', 0.0, 2019-12-19, 'xxxxx', NULL);
+INSERT INTO nation VALUES (91, 'aaaa bbbb cccc dddd eeee ffff', 0.0, 2019-12-20, 'xxxxx', 'xxxxx');
+desc nation;
+delete from nation where in is not null;

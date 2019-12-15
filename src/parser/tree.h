@@ -123,6 +123,13 @@ class Col {
 public:
     Col(std::string* _colName): hasTb(false), colName(_colName) {}
     Col(std::string* _tbName, std::string* _colName): hasTb(true), tbName(_tbName), colName(_colName) {}
+    std::string getTbName() {
+        return hasTb? *tbName : std::string();
+    }
+    std::string getColName() {
+        return *colName;
+    }
+
     ~Col() {
         if (hasTb) {
             delete tbName;
@@ -248,8 +255,37 @@ public:
 
 class WhereClause {
 public:
-    WhereClause(Col* _col, CompOp _op, Expr* _expr): ty(OP), col(_col), op(_op), expr(_expr) {}
-    WhereClause(Col* _col, bool is_null): col(_col), ty(is_null ? IS_NULL : NOT_NULL) {}
+    WhereClause(Col* _col, CompOp _op, Expr* _expr): ty(OP), col(_col), op(_op), expr(_expr) {
+        if (expr->ty == Expr::EXPR_VALUE) {
+            inSingle = 1;
+            singleWhere.whereType = SingleWhere::TY_OP_VALUE;
+            Value* v = _expr->dt.vv;
+            if (v->hasError)
+                singleWhere.hasError = 1;
+            if (v->ty == NO_TYPE)
+                singleWhere.hasError = 1;
+            singleWhere.ty = v->ty;
+            singleWhere.idx1 = col->getColName();
+            singleWhere.value = v->dump();
+            singleWhere.tbName = col->getTbName();
+        } else {
+            Col* col2 = _expr->dt.vc;
+            if (col->getColName() == col2->getColName()) {
+                inSingle = 1;
+                singleWhere.whereType = SingleWhere::TY_OP_COL;
+                singleWhere.idx1 = col->getColName();
+                singleWhere.idx2 = col2->getColName();
+                singleWhere.tbName = col->getTbName();
+            } else {
+                assert(false);
+            }
+        }
+    }
+    WhereClause(Col* _col, bool is_null): col(_col), ty(is_null ? IS_NULL : NOT_NULL) {
+        singleWhere.whereType = is_null ? SingleWhere::TY_IS_NULL : SingleWhere::TY_NOT_NULL;
+        singleWhere.idx1 = col->getColName();
+        inSingle = 1;
+    }
     ~WhereClause() {
         switch (ty) {
             case OP: {
@@ -273,6 +309,8 @@ public:
     Col* col;
     CompOp op;
     Expr* expr;
+    bool inSingle;
+    RawSingleWhere singleWhere;
 };
 
 class SetClause {

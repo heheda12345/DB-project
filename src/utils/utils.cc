@@ -199,3 +199,64 @@ std::string cutForPrint(std::string st) {
         st = std::string(st, 0, PRINT_WIDTH - 5).append("...");
     return st;
 }
+
+int cmpStr(const std::string& sl, const std::string& sr, AttrType type) {
+    if (type == DATE)
+        type = INT;
+    switch (type) {
+        case INT: {
+            int l = *reinterpret_cast<const int*>(sl.c_str()),
+                r = *reinterpret_cast<const int*>(sr.c_str());
+            if (l == r)
+                return 0;
+            return l < r ? -1 : 1;
+            break;
+        }
+        case FLOAT: {
+            float fl = *reinterpret_cast<const float*>(sl.c_str()),
+                fr = *reinterpret_cast<const float*>(sr.c_str());
+            if (fl == fr)
+                return 0;
+            if (fl != fr)
+                return fl < fr ? -1 : 1;
+            break;
+        }
+        case STRING: {
+            if (sl < sr)
+                return -1;
+            if (sl == sr)
+                return 0;
+            return 1;
+        }
+    }
+    assert(false);
+    return 0;
+}
+
+bool satisfyOp(const std::string& sl, const std::string& sr, AttrType type, CompOp op) {
+    if (op == NO_OP)
+        return 0;
+    int cp = cmpStr(sl, sr, type);
+    switch (op) {
+        case EQ_OP: {
+            return cp == 0;
+        }
+        case NE_OP: {
+            return cp != 0;
+        }
+        case LT_OP: {
+            return cp < 0;
+        }
+        case GT_OP: {
+            return cp > 0;
+        }
+        case LE_OP: {
+            return cp <= 0;
+        }
+        case GE_OP: {
+            return cp >= 0;
+        }
+    }
+    assert(false);
+    return 0;
+}

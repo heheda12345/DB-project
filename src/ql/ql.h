@@ -33,6 +33,34 @@ std::ostream& operator << (std::ostream& os, const Item& item);
 std::ostream& operator << (std::ostream& os, const TableLine& items);
 RC formatItem(const TableInfo& table, TableLine & items);
 std::vector<std::string> formatIndex(const std::vector<AttrInfo>& as, const std::vector<std::string>& attrNames, const TableLine& attrValues);
+
+struct SingleWhere {
+    enum Type {
+        TY_OP_COL, TY_OP_VALUE, TY_NOT_NULL, TY_IS_NULL, TY_LIKE
+    } whereType;
+    AttrType ty;
+    CompOp op;
+    int idx1, idx2;
+    std::string val;
+    bool satisfy(const TableLine& value) const;
+};
+
+std::vector<TableLine> select(const std::vector<TableLine>& values, const std::vector<SingleWhere>& conds);
+
+struct RawSingleWhere {
+    SingleWhere::Type whereType;
+    std::string tbName;
+    std::string idx1;
+    std::string idx2;
+    std::string like;
+    std::string value;
+    AttrType ty;
+    bool hasError;
+    RC Compile(SingleWhere& where, const std::vector<AttrInfo>& attrs, const std::string& tbName_i) const;
+};
+
+RC CompileWheres(std::vector<SingleWhere>& conds, const std::vector<RawSingleWhere> &rawConds, const std::vector<AttrInfo>& attrs, const std::string& tbName_i);
+
 //
 // QL_Manager: query language (DML)
 //
@@ -49,20 +77,9 @@ public:
     //     const Condition conditions[]);   // conditions in where clause
 
     RC Insert(const std::string& tbName, const TableLine& values_i);
+    RC Delete(const std::string& tbName, const std::vector<RawSingleWhere>& rawConds);
     RC Desc(const std::string& tbName);
 
-
-    // RC Delete  (const char *relName,     // relation to delete from
-    //     int   nConditions,               // # conditions in where clause
-    //     const Condition conditions[]);   // conditions in where clause
-
-    // RC Update  (const char *relName,     // relation to update
-    //     const RelAttr &updAttr,          // attribute to update
-    //     const int bIsValue,              // 1 if RHS is a value, 0 if attribute
-    //     const RelAttr &rhsRelAttr,       // attr on RHS to set LHS equal to
-    //     const Value &rhsValue,           // or value to set attr equal to
-    //     int   nConditions,               // # conditions in where clause
-    //     const Condition conditions[]);   // conditions in where clause
 
     RC GetAllItems(const std::string& tbName, std::vector<TableLine>& values);
     void PrintTable(const TableInfo& table, const std::vector<TableLine>& values);
@@ -108,4 +125,8 @@ void QL_PrintError(RC rc);
 #define QL_ERROR (START_QL_WARN + 7)
 #define QL_DUMPLICATED (START_QL_WARN + 8)
 #define QL_NOT_IN_FOREIGN (START_QL_WARN + 9)
+#define QL_NO_SUCH_KEY (START_QL_WARN + 10)
+#define QL_PRE_ERROR (START_QL_WARN + 11)
+#define QL_INVALID_WHERE (START_QL_WARN + 12)
+#define QL_NAME_NOT_MATCH (START_QL_WARN + 13)
 #endif

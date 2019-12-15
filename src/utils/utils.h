@@ -28,3 +28,5 @@ bool isDumplicated(const std::vector<std::string>& vec);
 
 bool isLegalDate(int date);
 std::string cutForPrint(std::string st);
+int cmpStr(const std::string& sl, const std::string& sr, AttrType type);
+bool satisfyOp(const std::string& sl, const std::string& sr, AttrType type, CompOp op);
