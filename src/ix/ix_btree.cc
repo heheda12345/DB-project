@@ -52,18 +52,24 @@ int IX_BTKEY::cmp(const IX_BTKEY &that) const {
                 // printf("l %d r %d\n", l, r);
                 if (l != r)
                     return l < r ? -1 : 1;
+                break;
             }
             case FLOAT: {
                 float fl = *reinterpret_cast<const float*>(attr[i].c_str()),
                     fr = *reinterpret_cast<const float*>(that.attr[i].c_str());
                 if (fl != fr)
                     return fl < fr ? -1 : 1;
+                break;
             }
             case STRING: {
                 std::string l = attr[i], r = that.attr[i];
                 for (int i=0; i<l.length(); i++)
                     if (l[i] != r[i])
                         return l[i] < r[i] ? -1 : 1;
+                break;
+            }
+            default: {
+               assert(false);
             }
         }
     }
@@ -162,7 +168,7 @@ void IX_BTNode::outit() {
     for (auto key: this->key) {
         std::string st_key;
         for (auto x: key.attr) {
-            st_key.append(",").append(std::to_string(std::stoi(x)));
+            st_key.append(",").append(std::to_string(*reinterpret_cast<const int*>(x.c_str())));
         }
         st_key[0] = '('; st_key.append(")"); 
         printf("%s ", st_key.c_str());
@@ -178,7 +184,7 @@ void IX_BTNode::outit() {
 }
 
 IX_BTree::IX_BTree(IX_IndexHandle& saver): _order(saver.getHeader().btm), _root(saver.loadRoot().pos), _hot(), saver(saver) {
-    printf("BTree info %d %lld %d\n", _order, _root.GetPageNum(), _root.GetSlotNum());
+    // printf("BTree info %d %lld %d\n", _order, _root.GetPageNum(), _root.GetSlotNum());
 }
 
 RC IX_BTree::search(IX_BTKEY& e, RID& ret) {
@@ -199,7 +205,7 @@ RC IX_BTree::search(IX_BTKEY& e, RID& ret) {
 }
 
 RC IX_BTree::insert(IX_BTKEY& e) {
-    // printf("[[[[[[insert]]]]]] %d %lld %d\n", *reinterpret_cast<const int*>(e.attr.c_str()), e.rid.GetPageNum(), e.rid.GetSlotNum());
+    // printf("[[[[[[insert]]]]]] %d %lld %d\n", *reinterpret_cast<const int*>(e.attr[0].c_str()), e.rid.GetPageNum(), e.rid.GetSlotNum());
     RID v;
     RC rc = search(e, v);
     if (rc == IX_ENTRYEXISTS) {

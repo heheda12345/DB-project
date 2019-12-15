@@ -151,12 +151,16 @@ std::vector<int> AttrInfo::mapMxLen(const std::vector<AttrInfo>& attrs, const st
     return ret;
 }
 
-std::vector<AttrType> AttrInfo::mapType(const std::vector<AttrInfo>& attrs, const std::vector<std::string>& attrNames) {
+std::vector<AttrType> AttrInfo::mapType(const std::vector<AttrInfo>& attrs, const std::vector<std::string>& attrNames, bool dateAsInt) {
     std::vector<AttrType> ret;
     for (auto& name: attrNames) {
         int pos = getPos(attrs, name);
         assert(pos != -1);
-        ret.push_back(attrs[pos].type);
+        if (dateAsInt && attrs[pos].type == DATE) {
+            ret.push_back(INT);
+        } else {
+            ret.push_back(attrs[pos].type);
+        }
     }
     return ret;
 }

@@ -102,14 +102,14 @@ void IX_IndexHandle::init(){
         RM_PrintError(rc);
         return;
     }
-    printf("metaSize %d\n", size);
+    // printf("metaSize %d\n", size);
     char pool[size];
     int loaded;
     fh.GetMeta(pool, loaded);
     size = header.load(pool);
-    printf("loaded %d size %d\n", loaded, size);
+    // printf("loaded %d size %d\n", loaded, size);
     assert(loaded == size);
-    printf("load header(%d) %lld %d %d\n", loaded, header.rootPage, header.rootSlot, header.nodeSize);
+    // printf("load header(%d) %lld %d %d\n", loaded, header.rootPage, header.rootSlot, header.nodeSize);
     if (hasInit)
         delete bTree;
     bTree = new IX_BTree(*this);

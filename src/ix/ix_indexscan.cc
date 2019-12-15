@@ -20,7 +20,7 @@ RC IX_IndexScan::OpenScan(IX_IndexHandle &indexHandle,
     RC rc = search(RID(handle->header.rootPage, handle->header.rootSlot), compOp, key, true);
     IXRC(rc, IX_BTREE)
     state = RUNNING;
-    printf("Finish Open Scan\n");
+    // printf("Finish Open Scan\n");
     return OK_RC;
 }          
 
@@ -242,4 +242,23 @@ RC IX_IndexScan::search(RID pos, CompOp compOp, IX_BTKEY &key, bool needCheck) {
     }
     assert(false);
     return IX_INVALIDCOMP;
+}
+
+RC IX_IndexScan::GetEntries(IX_IndexHandle &indexHandle, CompOp compOp, const std::vector<std::string> &value, std::vector<RID>& entries) {
+    // printf("[Scan] GetEntries %d %d\n", *reinterpret_cast<const int*>(value[0].c_str()), (int)value.size());
+    IX_IndexScan scan;
+    RC rc = scan.OpenScan(indexHandle, compOp, value);
+    IXRC(rc, rc);
+
+    entries.clear();
+    RID rid;
+    while (true) {
+        rc = scan.GetNextEntry(rid);
+        if (rc == IX_EOF)
+            break;
+        IXRC(rc, rc);
+        entries.push_back(rid);
+    }
+    // printf("[Scan] find %d entries\n", (int)entries.size());
+    return OK_RC;
 }

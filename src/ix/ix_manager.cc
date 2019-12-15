@@ -10,6 +10,10 @@ RC IX_Manager::CreateIndex(const char *fileName, int indexNo,
     IX_IndexHandle::Header header;
     header.attrLength = attrLength;
     header.attrType = attrType;
+    for (auto type: attrType) {
+        printf("type %d\n", type);
+        assert(type != DATE);
+    }
     header.btm = 3;
     header.nodeSize = IX_BTNode::getSize(header.attrLength, header.btm);
     char headerPool[header.getSize()];
@@ -49,7 +53,7 @@ RC IX_Manager::DestroyIndex(const char *fileName, int indexNo) {
 RC IX_Manager::OpenIndex(const char *fileName, int indexNo,
             IX_IndexHandle &indexHandle) {
     string name = string(fileName) + "." + to_string(indexNo);
-    printf("[OpenIndex] %s\n", name.c_str());
+    // printf("[OpenIndex] %s\n", name.c_str());
     RC rc = rmm.OpenFile(name.c_str(), indexHandle.fh);
     RMRC(rc, IX_PF);
     indexHandle.init();
@@ -58,7 +62,7 @@ RC IX_Manager::OpenIndex(const char *fileName, int indexNo,
 
 // Close an Index
 RC IX_Manager::CloseIndex(IX_IndexHandle &indexHandle) {
-    printf("[CloseIndex]\n");
+    // printf("[CloseIndex]\n");
     RC rc = rmm.CloseFile(indexHandle.fh);
     RMRC(rc, IX_PF);
     return OK_RC;

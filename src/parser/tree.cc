@@ -87,7 +87,7 @@ void Parser::CreateTable::visit() {
             table.setPrimaryNotNull();
         }  else if (f->ty == Field::Foreign) {
             ForeignKeyInfo fKey;
-            fKey.fkName = "@@";
+            fKey.fkName = std::string("@@").append(std::to_string(table.foreignGroups.size())).append("-").append(*tbName);
             fKey.refTable = *(f->tbName);
             fKey.attrs.push_back(*(f->colName));
             vector<std::string> refAttrs;

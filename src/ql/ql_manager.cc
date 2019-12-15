@@ -9,6 +9,23 @@ RC QL_Manager::Insert(const std::string& tbName, const TableLine& values_i) {
     TableLine value = values_i;
     rc = formatItem(table, value);
     if (rc) return rc;
+
+    // check primary key
+    if (table.hasPrimary()) {
+        if (ExistInIndex(tbName, table, "@Primary", value))
+            return QL_DUMPLICATED;
+    }
+    // check foreign key
+    for (auto& fi: table.foreignGroups) {
+        if (!ExistInIndex(table, fi.fkName, value, fi.refTable, "@Primary"))
+            return QL_NOT_IN_FOREIGN;
+    }
+    // check unique key
+    for (auto& pi: table.uniqueGroups) {
+        if (ExistInIndex(tbName, table, std::string("@Unique.").append(pi.idxName), value))
+            return QL_DUMPLICATED;
+    }
+
     RM_FileHandle handle;
     rc = rmm.OpenFile(tbName.c_str(), handle);
     RMRC(rc, QL_ERROR);
@@ -23,6 +40,19 @@ RC QL_Manager::Insert(const std::string& tbName, const TableLine& values_i) {
     rc = rmm.CloseFile(handle);
     assert(rc == OK_RC);
     RMRC(rc, QL_ERROR);
+
+    for (auto& idx: table.indexes) {
+        IX_IndexHandle handle;
+        rc = ixm.OpenIndex(tbName.c_str(), idx.idxID, handle);
+        assert(rc == OK_RC);
+        IXRC(rc, QL_ERROR);
+        rc = handle.InsertEntry(formatIndex(table.attrs, idx.attrs, value), rid);
+        assert(rc == OK_RC);
+        IXRC(rc, QL_ERROR);
+        rc = ixm.CloseIndex(handle);
+        assert(rc == OK_RC);
+        IXRC(rc, QL_ERROR);
+    }
 
     vector<TableLine> items;
     rc = GetAllItems(tbName, items);
@@ -78,4 +108,37 @@ void QL_Manager::PrintTable(const TableInfo& table, const std::vector<TableLine>
         cout << value << endl;
     }
     cout << "+"; for (int i = 0; i < n; i++) cout << line << "+"; cout << endl;
+}
+
+std::vector<RID> QL_Manager::SearchIndex(const std::string& tbName, const std::string& idxName, const std::vector<std::string> & toSearch, CompOp compOp) {
+    TableInfo table;
+    RC rc = smm.GetTable(tbName, table); 
+    assert(rc == OK_RC);
+    int pos = IndexInfo::getPos(table.indexes, idxName);
+    assert(pos != -1);
+    auto& indexInfo = table.indexes[pos];
+    vector<RID> rids;
+    IX_IndexHandle handle;
+    rc = ixm.OpenIndex(tbName.c_str(), indexInfo.idxID, handle);
+    assert(rc == OK_RC);
+    rc = IX_IndexScan::GetEntries(handle, compOp, toSearch, rids);
+    assert(rc == OK_RC);
+    // printf("[result] rid.size = %d\n", (int)rids.size());
+    return rids;
+}
+
+bool QL_Manager::ExistInIndex(const TableInfo& table, const std::string& fkName, const TableLine& value, const std::string& refTbName, const std::string& refIdxName) {
+    int pos = ForeignKeyInfo::getPos(table.foreignGroups, fkName);
+    // printf("searching %s\n", fkName.c_str());
+    assert(pos != -1);
+    auto toSearch = formatIndex(table.attrs, table.foreignGroups[pos].attrs, value);
+    return SearchIndex(refTbName, refIdxName, toSearch, EQ_OP).size() > 0;
+}
+
+bool QL_Manager::ExistInIndex(const std::string& tbName, const TableInfo& table, const std::string& idxName, const TableLine& value) {
+    int pos = IndexInfo::getPos(table.indexes, idxName);
+    // printf("searching %s\n", idxName.c_str());
+    assert(pos != -1);
+    auto toSearch = formatIndex(table.attrs, table.indexes[pos].attrs, value);
+    return SearchIndex(tbName, idxName, toSearch, EQ_OP).size() > 0;
 }

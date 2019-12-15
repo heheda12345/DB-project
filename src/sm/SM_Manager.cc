@@ -254,7 +254,7 @@ RC SM_Manager::AddUniqueKey(const std::string& tbName, const std::string& pkName
     table.uniqueGroups.push_back(idxInfo);
     rc = UpdateTable(tbName, table);
     SMRC(rc, SM_ERROR);
-    rc = CreateIndex(tbName, std::string("@Unique.").append(pkName), table.primaryKeys);
+    rc = CreateIndex(tbName, std::string("@Unique.").append(pkName), pKeys);
     assert(rc == OK_RC);
     SMRC(rc, SM_ERROR);
     return OK_RC;
@@ -376,7 +376,7 @@ RC SM_Manager::CreateIndex(const std::string& tbName, const std::string& idxName
     idx.attrs = attrNames;
 
     rc = ixm.CreateIndex(tbName.c_str(), idx.idxID,
-        AttrInfo::mapType(table.attrs, attrNames),
+        AttrInfo::mapType(table.attrs, attrNames, true),
         AttrInfo::mapMxLen(table.attrs, attrNames));
     IXRC(rc, SM_ERROR);
 
@@ -484,14 +484,6 @@ RC SM_Manager::ShuffleForeign(const TableInfo& srcTable, ForeignKeyInfo &key, co
     key.attrs = srcAttrs;
     return OK_RC;
 }
-
-// bool SM_Manager::ExistAttr(const std::string& relName, const std::string& attrName, AttrType type) {
-//     std::vector<AttrInfo> attrs;
-//     RC rc = GetAttrs(relName, attrs);
-//     RMRC(rc, 0);
-//     int idx = AttrInfo::getPos(attrs, attrName);
-//     return idx != -1 && (type == NO_TYPE || attrs[idx].type == type);
-// }
 
 RC SM_Manager::LinkForeign(const std::string& reqTb, const ForeignKeyInfo &key) {
     if (!usingDb()) {

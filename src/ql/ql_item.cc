@@ -122,3 +122,14 @@ RC formatItem(const TableInfo& table, TableLine& items) {
     }
     return OK_RC;
 }
+
+std::vector<std::string> formatIndex(const std::vector<AttrInfo>& as, const std::vector<std::string>& attrNames, const TableLine& value) {
+    assert(as.size() == value.size());
+    std::vector<std::string> ret;
+    for (auto& s: attrNames) {
+        int idx = AttrInfo::getPos(as, s);
+        assert(idx != -1);
+        ret.push_back(value[idx].value);
+    }
+    return ret;
+}

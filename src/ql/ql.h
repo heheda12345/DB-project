@@ -32,6 +32,7 @@ struct Item {
 std::ostream& operator << (std::ostream& os, const Item& item);
 std::ostream& operator << (std::ostream& os, const TableLine& items);
 RC formatItem(const TableInfo& table, TableLine & items);
+std::vector<std::string> formatIndex(const std::vector<AttrInfo>& as, const std::vector<std::string>& attrNames, const TableLine& attrValues);
 //
 // QL_Manager: query language (DML)
 //
@@ -64,6 +65,9 @@ public:
     //     const Condition conditions[]);   // conditions in where clause
 
     void PrintTable(const TableInfo& table, const std::vector<TableLine>& values);
+    std::vector<RID> SearchIndex(const std::string& tbName, const std::string& idxName, const std::vector<std::string> & values, CompOp compOp);
+    bool ExistInIndex(const std::string& tbName, const TableInfo& table, const std::string& idxName, const TableLine& value); // for index
+    bool ExistInIndex(const TableInfo& table, const std::string& idxName, const TableLine & value, const std::string& refTbName, const std::string& refIdxName); // for foreign
 
     bool CanAddPrimaryKey(const std::string& tbName, const std::vector<std::string>& attrNames) { return true; }
     bool CanAddForeignKey() { return true; }
@@ -101,4 +105,6 @@ void QL_PrintError(RC rc);
 #define QL_TYPE_NOT_MATCH (START_QL_WARN + 5)
 #define QL_ATTR_TO_LONG (START_QL_WARN + 6)
 #define QL_ERROR (START_QL_WARN + 7)
+#define QL_DUMPLICATED (START_QL_WARN + 8)
+#define QL_NOT_IN_FOREIGN (START_QL_WARN + 9)
 #endif

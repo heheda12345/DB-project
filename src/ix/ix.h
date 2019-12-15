@@ -101,8 +101,8 @@ public:
             for (int i=0; i<attrSize; i++) {
                 attrLength.push_back(*reinterpret_cast<const int*>(pData + cur)); cur += sizeof(int);
             }
-            printf("[header] load %d %d (%lld %d) %d\n", attrSize, btm, rootPage, rootSlot, nodeSize);
-            printf("%x %x\n", *reinterpret_cast<const int*>(pData), *reinterpret_cast<const int*>(pData + 4));
+            // printf("[header] load %d %d (%lld %d) %d\n", attrSize, btm, rootPage, rootSlot, nodeSize);
+            // printf("%x %x\n", *reinterpret_cast<const int*>(pData), *reinterpret_cast<const int*>(pData + 4));
             return cur;
         }
     };
@@ -133,6 +133,10 @@ public:
 					  ClientHint  pinHint = NO_HINT);       
 	RC GetNextEntry  (RID &rid);                          // Get next matching entry
 	RC CloseScan     ();                                  // Terminate index scan
+    static RC GetEntries(IX_IndexHandle &indexHandle,
+        CompOp compOp,
+        const std::vector<std::string> &value,
+        std::vector<RID> &entries);
 private:
     enum State {
         UNSTART, RUNNING

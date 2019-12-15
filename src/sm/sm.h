@@ -56,7 +56,7 @@ struct AttrInfo {
     static std::vector<AttrType> getAllType(const std::vector<AttrInfo>& attrs);
 
     static std::vector<int> mapMxLen(const std::vector<AttrInfo>& attrs, const std::vector<std::string>& attrNames);
-    static std::vector<AttrType> mapType(const std::vector<AttrInfo>& attrs, const std::vector<std::string>& attrNames);
+    static std::vector<AttrType> mapType(const std::vector<AttrInfo>& attrs, const std::vector<std::string>& attrNames, bool dateAsInt = false);
 };
 
 std::ostream& operator << (std::ostream& os, const std::vector<AttrInfo>& attrs);
