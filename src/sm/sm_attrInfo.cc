@@ -87,7 +87,7 @@ int AttrInfo::getAttrsSize(const std::vector<AttrInfo>& vec) {
 int AttrInfo::getRecordSize(const std::vector<AttrInfo>& attrs) {
     int ret = 0;
     for (auto& attr: attrs) {
-        ret += attr.mxLen;
+        ret += sizeof(char) + sizeof(int) + attr.mxLen;
     }
     return ret;
 }

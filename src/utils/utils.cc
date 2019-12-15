@@ -193,3 +193,9 @@ bool isLegalDate(int date) {
     assert(false);
     return false;
 }
+
+std::string cutForPrint(std::string st) {
+    if (st.length() > PRINT_WIDTH - 5)
+        st = std::string(st, 0, PRINT_WIDTH - 5).append("...");
+    return st;
+}

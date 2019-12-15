@@ -15,16 +15,23 @@
 #include "../rm/rm.h"
 #include "../ix/ix.h"
 #include "../sm/sm.h"
+class Item;
 
+typedef std::vector<Item> TableLine;
 struct Item {
     std::string value;
     bool isNull;
     AttrType type;
+    int dump(char* pData, const AttrInfo& a) const;
+    int load(const char* pData, const AttrInfo& a);
+    int getSize(const AttrInfo& a) const;
+    static int dumpTableLine(char* pData, const TableLine& items, const std::vector<AttrInfo>& as);
+    static TableLine loadTableLine(const char* pData, const std::vector<AttrInfo>& as);
+    static int getLineSize(const std::vector<AttrInfo>& as);
 };
 std::ostream& operator << (std::ostream& os, const Item& item);
-std::ostream& operator << (std::ostream& os, const std::vector<Item>& items);
-RC formatItem(const TableInfo& table, std::vector<Item> & items);
-
+std::ostream& operator << (std::ostream& os, const TableLine& items);
+RC formatItem(const TableInfo& table, TableLine & items);
 //
 // QL_Manager: query language (DML)
 //
@@ -40,7 +47,9 @@ public:
     //     int   nConditions,               // # conditions in where clause
     //     const Condition conditions[]);   // conditions in where clause
 
-    RC Insert(const std::string& tbName, const std::vector<Item>& values_i);
+    RC Insert(const std::string& tbName, const TableLine& values_i);
+
+    RC GetAllItems(const std::string& tbName, std::vector<TableLine>& values);
 
     // RC Delete  (const char *relName,     // relation to delete from
     //     int   nConditions,               // # conditions in where clause
@@ -53,6 +62,8 @@ public:
     //     const Value &rhsValue,           // or value to set attr equal to
     //     int   nConditions,               // # conditions in where clause
     //     const Condition conditions[]);   // conditions in where clause
+
+    void PrintTable(const TableInfo& table, const std::vector<TableLine>& values);
 
     bool CanAddPrimaryKey(const std::string& tbName, const std::vector<std::string>& attrNames) { return true; }
     bool CanAddForeignKey() { return true; }

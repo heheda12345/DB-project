@@ -27,3 +27,4 @@ int findName(const std::vector<std::string>& vec, const std::string& target);
 bool isDumplicated(const std::vector<std::string>& vec);
 
 bool isLegalDate(int date);
+std::string cutForPrint(std::string st);

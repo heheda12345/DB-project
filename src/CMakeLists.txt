@@ -12,8 +12,8 @@ add_subdirectory(utils)
 add_compile_options("-g")
 add_compile_options("-std=c++11")
 
-add_executable(rm_test.out rm_test.cc)
-target_link_libraries(rm_test.out rm pf utils)
+# add_executable(rm_test.out rm_test.cc)
+# target_link_libraries(rm_test.out rm pf utils)
 
 add_executable(ix_test.out ix_test.cc)
 target_link_libraries(ix_test.out ix rm pf utils)

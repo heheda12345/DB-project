@@ -184,19 +184,11 @@ public:
     RM_FileScan  () : state(CLOSE) {};
     ~RM_FileScan () = default;
 
-    RC OpenScan  (const RM_FileHandle &fileHandle,
-                  AttrType   attrType,
-                  int        attrLength,
-                  int        attrOffset,
-                  CompOp     compOp,
-                  void       *value,
-                  ClientHint pinHint = NO_HINT); // Initialize a file scan
+    RC OpenScan  (const RM_FileHandle &fileHandle); // Initialize a file scan
     RC GetNextRec(RM_Record &rec);               // Get next matching record
     RC CloseScan ();                             // Close the scan
 private:
     const RM_FileHandle *fileHandle;
-    CompOp     compOp;
-    RM_Attr attr;
     enum State {
         CLOSE, UNSTART, RUNNING, DONE
     } state;

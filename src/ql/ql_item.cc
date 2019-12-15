@@ -2,6 +2,58 @@
 #include <iomanip>
 using namespace std;
 
+int Item::dump(char* pData, const AttrInfo& a) const {
+    int cur = 0;
+    *reinterpret_cast<char*>(pData + cur) = (char)isNull; cur += sizeof(char);
+    *reinterpret_cast<int*>(pData + cur) = (int) value.length(); cur += sizeof(int);
+    memcpy(pData+cur, value.c_str(), value.length()); cur += a.mxLen;
+    // printf("[Item] dump(%d) %d %d\n", cur, (int)isNull, (int)value.length());
+    return cur;
+}
+
+int Item::load(const char* pData, const AttrInfo& a) {
+    int cur = 0;
+    isNull = *reinterpret_cast<const char*>(pData + cur); cur += sizeof(char);
+    int len = *reinterpret_cast<const int*>(pData + cur); cur += sizeof(int);
+    assert(len <= a.mxLen);
+    value = std::string(pData + cur, len); cur += a.mxLen;
+    type = isNull ? NO_TYPE : a.type;
+    // printf("[Item] load(%d) %d %d\n", cur, (int)isNull, len);
+    return cur;
+}
+
+int Item::getSize(const AttrInfo& a) const {
+    // printf("[Item] getsize %d\n", (int)(sizeof(char) + sizeof(int) + a.mxLen));
+    return sizeof(char) + sizeof(int) + a.mxLen;
+}
+
+int Item::dumpTableLine(char* pData, const TableLine& items, const std::vector<AttrInfo>& as) {
+    assert(items.size() == as.size());
+    int cur = 0;
+    for (int i=0; i < as.size(); i++) {
+        cur += items[i].dump(pData + cur, as[i]);
+    }
+    // printf("[Line] dump %d\n", cur);
+    return cur;
+}
+
+TableLine Item::loadTableLine(const char* pData, const std::vector<AttrInfo>& as) {
+    TableLine ret;
+    int cur = 0;
+    for (auto& a: as) {
+        Item item;
+        cur += item.load(pData + cur, a);
+        ret.push_back(item);
+    }
+    // printf("[Line] load %d\n", cur);
+    return ret;
+}
+
+int Item::getLineSize(const std::vector<AttrInfo>& as) {
+    // printf("[Line] getSize %d\n", AttrInfo::getRecordSize(as));
+    return AttrInfo::getRecordSize(as);
+}
+
 std::ostream& operator << (std::ostream& os, const Item& item) {
     if (item.isNull) {
         os << "NULL";
@@ -29,9 +81,7 @@ std::ostream& operator << (std::ostream& os, const Item& item) {
                 break;
             }
             case STRING: {
-                std::string st = item.value;
-                if (st.length() > PRINT_WIDTH - 5)
-                    st = std::string(st, 0, PRINT_WIDTH - 5).append("...");
+                std::string st = cutForPrint(item.value);
                 os << st;
                 break;
             }
@@ -40,7 +90,7 @@ std::ostream& operator << (std::ostream& os, const Item& item) {
     return os;
 }
 
-std::ostream& operator << (std::ostream& os, const std::vector<Item>& items) {
+std::ostream& operator << (std::ostream& os, const TableLine& items) {
     os << "|";
     for (auto& item: items) {
         os << setiosflags(ios::left) << " " << setw(PRINT_WIDTH) << item << "|";
@@ -48,7 +98,7 @@ std::ostream& operator << (std::ostream& os, const std::vector<Item>& items) {
     return os;
 }
 
-RC formatItem(const TableInfo& table, std::vector<Item> & items) {
+RC formatItem(const TableInfo& table, TableLine& items) {
     if (table.attrs.size() != items.size())
         return QL_LEN_NOT_MATCH;
     int n = table.attrs.size();
