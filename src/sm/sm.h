@@ -26,7 +26,7 @@ struct AttrInfo {
     std::string attrName;
     std::string dVal;
 
-    AttrInfo(const AttrType& _type, unsigned short _mxLen, const std::string& _attrName, bool notNull, bool hasDefault, const std::string& _dVal);
+    AttrInfo(const AttrType& _type, unsigned short _mxLen, const std::string& _attrName, bool notNull, bool hasDefault, bool canChange, const std::string& _dVal);
 
     AttrInfo(): type(NO_TYPE), flag(0), mxLen(0) {}
 
@@ -35,6 +35,9 @@ struct AttrInfo {
 
     void setDefaultFlag(bool b);
     bool hasDefault() const;
+
+    void setCanChangeFlag(bool b);
+    bool canChange() const;
 
     int load(const char* pData);
     int dump(char* pData) const;

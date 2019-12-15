@@ -17,7 +17,7 @@ void dumpString(char* pData, const std::string& st);
 std::vector<std::string> getFiles(const char* path);
 std::vector<std::string> getAllTable(const char* path);
 
-std::string getName(AttrType ty);
+std::string getName(AttrType ty, bool canChange);
 int getDefaultLen(AttrType ty);
 
 bool typeIsMatch(std::vector<AttrType> ty1, std::vector<AttrType> ty2);

@@ -1,18 +1,19 @@
 #include "sm.h"
 using namespace std;
 
- AttrInfo::AttrInfo(const AttrType& _type, unsigned short _mxLen, const std::string& _attrName, bool notNull, bool hasDefault, const std::string& _dVal): type(_type), flag(0), mxLen(_mxLen), attrName(_attrName), dVal(_dVal) {
+ AttrInfo::AttrInfo(const AttrType& _type, unsigned short _mxLen, const std::string& _attrName, bool notNull, bool hasDefault, bool canChange, const std::string& _dVal): type(_type), flag(0), mxLen(_mxLen), attrName(_attrName), dVal(_dVal) {
     setNotNullFlag(notNull);
     setDefaultFlag(hasDefault);
+    setCanChangeFlag(canChange);
     mxLen = getMaxLen();
 }
 
 void AttrInfo::setNotNullFlag(bool b) { setBit(flag, 0, b); }
 bool AttrInfo::isNotNull() const { return getBit(flag, 0); }
+void AttrInfo::setCanChangeFlag(bool b) { setBit(flag, 1, b); }
+bool AttrInfo::canChange() const { return getBit(flag, 1); }
 bool AttrInfo::hasDefault() const { return getBit(flag, 4); }
-void AttrInfo::setDefaultFlag(bool b) {
-    setBit(flag, 4, b);
-}
+void AttrInfo::setDefaultFlag(bool b) { setBit(flag, 4, b); }
 
 int AttrInfo::load(const char* pData) {
     int cur = 0;
@@ -101,7 +102,7 @@ int AttrInfo::getPos(const std::vector<AttrInfo>& attrs, std::string attrName) {
 
 std::ostream& operator << (std::ostream& os, const std::vector<AttrInfo>& attrs) {
     for (auto& attr: attrs) {
-        std::string st_ty = getName(attr.type);
+        std::string st_ty = getName(attr.type, attr.canChange());
         std::string info = "";
         if (attr.isNotNull()) {
             info += "Not Null";

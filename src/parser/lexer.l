@@ -40,7 +40,8 @@ SET { return SET; }
 SELECT { return SELECT; }
 IS { return IS; }
 INT { return TYPE_INT; }
-VARCHAR { return TYPE_STRING; }
+VARCHAR { return TYPE_VARCHAR; }
+CHAR { return TYPE_CHAR; }
 DEFAULT { return DEFAULT; }
 CONSTRAINT { return CONSTRAINT; }
 CHANGE { return CHANGE; }

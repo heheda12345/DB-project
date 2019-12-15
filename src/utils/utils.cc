@@ -53,7 +53,7 @@ void dumpString(char* pData, const string& st) {
     strcpy(pData, st.c_str());
 }
 
-std::string getName(AttrType ty) {
+std::string getName(AttrType ty, bool canChange) {
      switch (ty) {
         case INT: {
             return "INT";
@@ -62,7 +62,7 @@ std::string getName(AttrType ty) {
             return "FLOAT";
         }
         case STRING: {
-            return "STRING";
+            return canChange ? "VARCHAR" : "CHAR";
         }
         case DATE: {
             return "DATE";

@@ -11,13 +11,17 @@ class TreeNode {
 
 class Type {
 public:
-    Type(AttrType _ty): ty(_ty), withi(false), vi(0) {}
-    Type(AttrType _ty, int _vi): ty(_ty), withi(true), vi(_vi) {}
+    Type(AttrType _ty): ty(_ty), withi(false), vi(0), canChange(0) {}
+    Type(AttrType _ty, int _vi): ty(_ty), withi(true), vi(_vi), canChange(0) {}
+    void setCanChange() {
+        canChange = 1;
+    }
     // do not need dtor
 
     AttrType ty;
     bool withi;
     int vi;
+    bool canChange;
 };
 
 class Value {
@@ -159,16 +163,26 @@ public:
         bool _hasDefault, Value* _dVal, bool _notNull):
         colName(_colName), type(_type), 
         hasDefault(_hasDefault), dVal(_dVal), notNull(_notNull),
-        ty(Simple), attr(_type->ty,  _type->vi, *_colName, _notNull, _hasDefault, _hasDefault ? _dVal->dump() : std::string()), hasError(0) {
+        ty(Simple), attr(_type->ty,  _type->vi, *_colName, _notNull, _hasDefault, _type->canChange, _hasDefault ? _dVal->dump() : std::string()), hasError(0) {
             if (hasDefault) {
                 if (dVal->ty != _type->ty) {
                     hasError = 1;
                     return;
                 }
                 if (dVal->ty == STRING) {
-                    if (_type->withi && dVal->dt.vs->length() > _type->vi) {
-                        hasError = 1;
-                        return;
+                    if (_type->withi) {
+                        if ( _type->vi > MAXSTRINGLEN) {
+                            hasError = 1;
+                            return;
+                        }
+                        if (_type->canChange && dVal->dt.vs->length() > _type->vi) {
+                            hasError = 1;
+                            return;
+                        }
+                        if (!_type->canChange && dVal->dt.vs->length() != _type->vi) {
+                            hasError = 1;
+                            return;
+                        }
                     } else if (!_type->withi && dVal->dt.vs->length() > MAXSTRINGLEN) {
                         hasError = 1;
                         return;

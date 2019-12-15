@@ -1,6 +1,6 @@
 create database test;
 use database test;
-create table tbclass(id int default 1, score float default 1.5, class varchar 4 default 'xxxx');
+create table tbclass(id int default 1, score float default 1.5, class varchar(4) default 'xxxx');
 alter table tbclass add primary key (id, score);
 show tables;
 alter table tbclass drop primary key;

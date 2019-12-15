@@ -105,13 +105,13 @@ RC SM_Manager::DropTable(const std::string& relName) {
     SMRC(rc, SM_ERROR);
     if (table.linkedByOthers())
         return SM_OTHERS_FOREIGN;
-    rc = rmm.DestroyFile(relName.c_str());
-    RMRC(rc, SM_ERROR);
     if (table.hasPrimary()) {
         RC rc = DropIndex(relName, "@Primary");
-        assert(rc == OK_RC);
         SMRC(rc, SM_ERROR);
     }
+    rc = rmm.DestroyFile(relName.c_str());
+    RMRC(rc, SM_ERROR);
+    assert(rc == OK_RC);
     return OK_RC;
 }
 
