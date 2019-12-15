@@ -600,4 +600,34 @@ public:
     std::string *tbName, *fkName;
 };
 
+class AddUniqueKey: public Stmt {
+public:
+    AddUniqueKey(std::string* _tbName, std::string* _fkName, std::vector<Column*>* _cols) : tbName(_tbName), fkName(_fkName), cols(_cols) {}
+    ~AddUniqueKey() {
+        delete tbName;
+        delete fkName;
+        for (auto c: *cols) {
+            delete c;
+        }        
+    }
+
+    void visit() override;
+
+    std::string *tbName, *fkName;
+    std::vector<Column*> *cols;
+};
+
+class DropUniqueKey: public Stmt {
+public:
+    DropUniqueKey(std::string* _tbName, std::string* _fkName) : tbName(_tbName), fkName(_fkName) {}
+    ~DropUniqueKey() {
+        delete tbName;
+        delete fkName; 
+    }
+
+    void visit() override;
+
+    std::string *tbName, *fkName;
+};
+
 }

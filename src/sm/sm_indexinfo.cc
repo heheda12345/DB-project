@@ -90,7 +90,10 @@ int IndexInfo::getNextId(const std::vector<IndexInfo> &idxKeys) {
 }
 
 std::ostream& operator << (std::ostream& os, const IndexInfo& fKey) {
-    os << fKey.idxName << "(" << fKey.idxID << "):";
+    os << fKey.idxName;
+    if (fKey.idxID != -1)
+        os << "(" << fKey.idxID << ")";
+    os << ":";
     for (auto &x :fKey.attrs) {
         os << " " << x;
     }

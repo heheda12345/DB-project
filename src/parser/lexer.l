@@ -50,6 +50,7 @@ RENAME { return RENAME; }
 DESC { return DESC; }
 REFERENCES { return REFERENCES; }
 INDEX { return INDEX; }
+UNIQUE { return UNIQUE; }
 ON { return ON; }
 AND { return AND; }
 DATE { return TYPE_DATE; }

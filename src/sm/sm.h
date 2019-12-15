@@ -99,6 +99,7 @@ struct TableInfo {
     std::vector<std::string> primaryKeys;
     std::vector<ForeignKeyInfo> foreignGroups;
     std::vector<ForeignKeyInfo> linkedBy;
+    std::vector<IndexInfo> uniqueGroups;
     std::vector<IndexInfo> indexes;
     int load(const char* pData);
     int dump(char* pData) const;
@@ -143,6 +144,9 @@ public:
 
     RC AddForeignKey(const std::string& tbName, const ForeignKeyInfo& fKey);
     RC DropForeignKey(const std::string& tbName, const std::string& fkName);
+
+    RC AddUniqueKey(const std::string& tbName, const std::string& pkName, const std::vector<std::string>& pKeys);
+    RC DropUniqueKey(const std::string& tbName, const std::string& pkName);
 
     RC AddAttr(const std::string& tbName, const AttrInfo& attr);
     RC DropAttr(const std::string& tbName, const std::string& attrName);

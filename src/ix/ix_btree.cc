@@ -11,7 +11,9 @@ IX_BTKEY::IX_BTKEY(const char* pData, const std::vector<int>& attrLen) { // from
         cur += sizeof(AttrType);
     }
     for (auto x: attrLen) {
-        attr.push_back(std::string(pData + cur, x));
+        char len = *reinterpret_cast<const char*>(pData + cur); cur += sizeof(char);
+        assert(len <= x);
+        attr.push_back(std::string(pData + cur, len));
         cur += x;
     }
 }
@@ -26,8 +28,9 @@ void IX_BTKEY::toCharArray(char* pData) {
         cur += sizeof(AttrType);
     }
     for (auto& x: attr) {
+        *reinterpret_cast<char*>(pData + cur) = x.length(); cur += sizeof(char);
         memcpy(pData + cur, x.c_str(), x.length());
-        cur += x.length();
+        cur += x.length() + sizeof(char);
     }
 }
 
@@ -76,7 +79,7 @@ int IX_BTKEY::cmp(const IX_BTKEY &that) const {
 }
 
 int IX_BTKEY::getSize(const std::vector<int>& attrLen) {
-    return RID::getSize() + sizeof(AttrType) * attrLen.size() + getSum(attrLen);
+    return RID::getSize() + sizeof(AttrType) * attrLen.size() + sizeof(char) * attrLen.size() + getSum(attrLen);
 }
 
 int IX_BTKEY::search(const std::vector<IX_BTKEY> vec, IX_BTKEY e) {

@@ -1,0 +1,15 @@
+create database test;
+use database test;
+create table tbclass(id int not null default 1, score float not null default 1.5, class varchar 4 default 'xxxx', primary key(id));
+show tables;
+alter table tbclass add constraint idx1 unique key (id, score);
+show tables;
+alter table tbclass drop unique key idx1;
+show tables;
+alter table tbclass add constraint idx1 unique key (id);
+show tables;
+alter table tbclass add constraint fail1 unique key (id, class);
+alter table tbclass add constraint idx1 unique key (id, score);
+alter table tbclass add constraint fail2 unique key (id1);
+alter table tbclass drop unique key idx2;
+exit;

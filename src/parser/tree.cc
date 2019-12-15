@@ -363,3 +363,33 @@ void Parser::DropForeignKey::visit() {
     }
     printf("[Succ] foreigh key %s in %s is dropped\n", fk.c_str(), srcTb.c_str());
 }
+
+void Parser::AddUniqueKey::visit() {
+    std::string srcTb(*tbName);
+    std::string fk = std::string(*fkName);
+    vector<string> attrs;
+    for (Column* col: *cols) {
+        attrs.push_back(*(col->colName));
+    }
+    if (!QL_Manager::instance().CanAddUniqueKey()) {
+        printf("[Fail] Invalid value in table!\n");
+        return;
+    }
+    RC rc = SM_Manager::instance().AddUniqueKey(srcTb, fk, attrs);
+    if (rc != OK_RC) {
+        printf("[Fail] Can not add!");
+        return;
+    }
+    printf("[Succ] unique key %s added to %s\n", fk.c_str(), srcTb.c_str());
+}
+
+void Parser::DropUniqueKey::visit() {
+    std::string srcTb(*tbName);
+    std::string fk(*fkName);
+    RC rc = SM_Manager::instance().DropUniqueKey(srcTb, fk);
+    if (rc != OK_RC) {
+        printf("[Fail] Can not drop!");
+        return;
+    }
+    printf("[Succ] unique key %s in %s is dropped\n", fk.c_str(), srcTb.c_str());
+}

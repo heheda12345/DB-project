@@ -13,6 +13,8 @@ int TableInfo::load(const char* pData) {
     cur += ForeignKeyInfo::getForeignsSize(foreignGroups);
     linkedBy = ForeignKeyInfo::loadForeigns(pData + cur);
     cur += ForeignKeyInfo::getForeignsSize(linkedBy);
+    uniqueGroups = IndexInfo::loadIndexes(pData + cur);
+    cur += IndexInfo::getIndexesSize(uniqueGroups);
     indexes = IndexInfo::loadIndexes(pData + cur);
     cur += IndexInfo::getIndexesSize(indexes);
     return cur;
@@ -29,6 +31,8 @@ int TableInfo::dump(char* pData) const {
     cur += ForeignKeyInfo::getForeignsSize(foreignGroups);
     ForeignKeyInfo::dumpForeigns(pData + cur, linkedBy);
     cur += ForeignKeyInfo::getForeignsSize(linkedBy);
+    IndexInfo::dumpIndexes(pData + cur, uniqueGroups);
+    cur += IndexInfo::getIndexesSize(uniqueGroups);
     IndexInfo::dumpIndexes(pData + cur, indexes);
     cur += IndexInfo::getIndexesSize(indexes);
     return cur;
@@ -39,6 +43,7 @@ int TableInfo::getSize() const {
         + sizeof(int) + MAXNAME * primaryKeys.size()
         + ForeignKeyInfo::getForeignsSize(foreignGroups)
         + ForeignKeyInfo::getForeignsSize(linkedBy)
+        + IndexInfo::getIndexesSize(uniqueGroups)
         + IndexInfo::getIndexesSize(indexes);
 }
 
@@ -66,6 +71,12 @@ std::ostream& operator << (std::ostream& os, const TableInfo& table) {
     if (table.linkedBy.size() > 0) {
         os << "Linked by:" << endl;
         for (auto& x: table.linkedBy) {
+            os << x << endl;
+        }
+    }
+    if (table.uniqueGroups.size() > 0) {
+        os << "Unique Keys:" << endl;
+        for (auto& x: table.uniqueGroups) {
             os << x << endl;
         }
     }
