@@ -23,6 +23,7 @@ struct Item {
 };
 std::ostream& operator << (std::ostream& os, const Item& item);
 std::ostream& operator << (std::ostream& os, const std::vector<Item>& items);
+RC formatItem(const TableInfo& table, std::vector<Item> & items);
 
 //
 // QL_Manager: query language (DML)
@@ -84,5 +85,9 @@ void QL_PrintError(RC rc);
 
 #define QL_INVAILD_VALUE (START_QL_WARN + 1)
 #define QL_INVALID_TABLE (START_QL_WARN + 2)
-
+#define QL_LEN_NOT_MATCH (START_QL_WARN + 3)
+#define QL_REQUIRE_NOT_NULL (START_QL_WARN + 4)
+#define QL_TYPE_NOT_MATCH (START_QL_WARN + 5)
+#define QL_ATTR_TO_LONG (START_QL_WARN + 6)
+#define QL_ERROR (START_QL_WARN + 7)
 #endif

@@ -151,6 +151,10 @@ void Parser::InsertValue::visit() {
     }
     vector<Item> items;
     for (auto& val: *values) {
+        if (val->hasError) {
+            printf("[Fail] Invalid value!\n");
+            return;
+        }
         items.push_back(val->toItem());
     }
     RC rc = QL_Manager::instance().Insert(*tbName, items);

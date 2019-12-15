@@ -1,7 +1,15 @@
 CREATE DATABASE orderDB;
 USE DATABASE orderDB;
-CREATE TABLE nation (in INT NOT NULL, cn CHAR(100) NOT NULL, fn float NOT NULL, dn date NOT NULL, cc VARCHAR(25));
+CREATE TABLE nation (in INT NOT NULL, cn CHAR(100) NOT NULL, fn float NOT NULL, dn date NOT NULL, cc VARCHAR(25), cd CHAR(10) default 'a b c');
 SHOW TABLES;
-INSERT INTO nation VALUES (86, 'xxxxx', 0, 2019-12-15, NULL);
-INSERT INTO nation VALUES (86, 'aaaa bbbb cccc dddd eeee ffff', 0, 2019-12-6, 'xxxxx');
+INSERT INTO nation VALUES (86, 'xxxxx', 0.0, 2019-12-15, NULL, NULL);
+INSERT INTO nation VALUES (87, 'aaaa bbbb cccc dddd eeee ffff', 0.0, 2019-12-06, 'xxxxx', 'xxxxx');
+INSERT INTO nation VALUES (1.1, 'fail', 0.0, 2019-12-15, NULL, NULL);
+INSERT INTO nation VALUES (86, 0, 0, 2019-12-15, 'fail', NULL, NULL);
+INSERT INTO nation VALUES (86, 'fail', 0, 2019-12-15, NULL, NULL);
+INSERT INTO nation VALUES (86, 'fail', 0.0, 1, NULL, NULL);
+INSERT INTO nation VALUES (86, 'fail', 0.0, 2100-2-29, NULL, NULL);
+INSERT INTO nation VALUES (86, 'fail', 0.0, 2019-12-15, NULL);
+INSERT INTO nation VALUES (86, 'fail', 0.0, 2019-12-15, NULL, 'fail fail fail fail');
+INSERT INTO nation VALUES (86, 'fail', NULL, 2019-12-15, NULL, NULL);
 exit;

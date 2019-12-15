@@ -4,6 +4,7 @@
 #include "../redbase.h"
 #include "../sm/sm.h"
 #include "../ql/ql.h"
+#include "../utils/utils.h"
 
 namespace Parser {
 
@@ -27,27 +28,29 @@ public:
 
 class Value {
 public:
-    Value(int vi, bool isDate = false) {
+    Value(int vi, bool isDate = false): hasError(0) {
         if (isDate) {
             dt.vd = vi;
             ty = DATE;
+            if (!isLegalDate(vi))
+                hasError = 1;
         } else {
             dt.vi = vi;
             ty = INT;
         }
     }
 
-    Value(float vf) {
+    Value(float vf): hasError(0) {
         dt.vf = vf;
         ty = FLOAT;
     }
 
-    Value(std::string* vs) {
+    Value(std::string* vs): hasError(0) {
         dt.vs = vs;
         ty = STRING;
     }
 
-    Value() {
+    Value(): hasError(0) {
         ty = NO_TYPE;
     }
 
@@ -62,6 +65,7 @@ public:
                 return std::string(reinterpret_cast<char*>(&dt.vi), sizeof(int));
             }
             case DATE: {
+                assert(isLegalDate(dt.vi));
                 return std::string(reinterpret_cast<char*>(&dt.vi), sizeof(int));
             }
             case FLOAT: {
@@ -92,6 +96,7 @@ public:
         float vf;
         std::string* vs;
     } dt;
+    bool hasError;
 };
 
 class Table {

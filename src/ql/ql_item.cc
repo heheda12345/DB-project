@@ -47,3 +47,28 @@ std::ostream& operator << (std::ostream& os, const std::vector<Item>& items) {
     }
     return os;
 }
+
+RC formatItem(const TableInfo& table, std::vector<Item> & items) {
+    if (table.attrs.size() != items.size())
+        return QL_LEN_NOT_MATCH;
+    int n = table.attrs.size();
+    for (int i=0; i<n; i++) {
+        AttrInfo a = table.attrs[i];
+        Item& item = items[i];
+        if (a.hasDefault() && item.isNull) {
+            item.value = a.dVal;
+            item.type = a.type;
+            item.isNull = 0;
+        }
+        if (a.isNotNull() && item.isNull) {
+            return QL_REQUIRE_NOT_NULL;
+        }
+        if (item.type != NO_TYPE && a.type != item.type) {
+            return QL_TYPE_NOT_MATCH;
+        }
+        if (item.type != NO_TYPE && item.value.length() > a.getMaxLen()) {
+            return QL_ATTR_TO_LONG;
+        }
+    }
+    return OK_RC;
+}
