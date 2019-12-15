@@ -12,4 +12,13 @@ INSERT INTO nation VALUES (89, 'aaaa bbbb cccc dddd eeee ffff', 0.0, 2019-12-18,
 INSERT INTO nation VALUES (90, 'xxxxx', 0.0, 2019-12-19, 'xxxxx', NULL);
 INSERT INTO nation VALUES (91, 'aaaa bbbb cccc dddd eeee ffff', 0.0, 2019-12-20, 'xxxxx', 'xxxxx');
 desc nation;
+delete from nation where in = 88;
+delete from nation where in <> 88;
+delete from nation where in <= 88;
+delete from nation where in >= 88;
+delete from nation where in < 88;
+delete from nation where in > 88;
+delete from nation where cn = cc;
+delete from nation where in is null;
 delete from nation where in is not null;
+exit;

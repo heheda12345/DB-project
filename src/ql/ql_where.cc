@@ -64,6 +64,7 @@ RC RawSingleWhere::Compile(SingleWhere& where, const vector<AttrInfo>& attrs, co
     switch (whereType) {
         case SingleWhere::TY_OP_COL: {
             where.idx2 = AttrInfo::getPos(attrs, idx2);
+            where.op = op;
             if (where.idx2 == -1)
                 return QL_NO_SUCH_KEY;
             if (attrs[where.idx2].type != where.ty)
@@ -74,6 +75,7 @@ RC RawSingleWhere::Compile(SingleWhere& where, const vector<AttrInfo>& attrs, co
             if (this->ty != where.ty)
                 return QL_TYPE_NOT_MATCH;
             where.val = this->value;
+            where.op = op;
             break;
         }
         case SingleWhere::TY_NOT_NULL: {

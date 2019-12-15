@@ -64,12 +64,12 @@ EXIT { return EXIT; }
 ")" { return yytext[0]; }
 "." { return yytext[0]; }
 ";" { return yytext[0]; }
-'=' { return EQ; }
-'<>' { return NE; }
-'<=' { return LE; }
-'>=' { return GE; }
-'<' { return LT; }
-'>' { return GT; }
+"=" { return EQ; }
+"<>" { return NE; }
+"<=" { return LE; }
+">=" { return GE; }
+"<" { return LT; }
+">" { return GT; }
 {IDENTIFIER} { yylval.strval = new std::string(yytext, yyleng); return IDENTIFIER; }
 {FORMAT_INT} { sscanf(yytext, "%d", &yylval.intval); return VALUE_INT; }
 {FORMAT_FLOAT} { sscanf(yytext, "%f", &yylval.floatval); return VALUE_FLOAT; }

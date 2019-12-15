@@ -55,6 +55,7 @@ struct RawSingleWhere {
     std::string like;
     std::string value;
     AttrType ty;
+    CompOp op;
     bool hasError;
     RC Compile(SingleWhere& where, const std::vector<AttrInfo>& attrs, const std::string& tbName_i) const;
 };
