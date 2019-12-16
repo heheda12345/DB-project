@@ -239,4 +239,5 @@ void QL_PrintError(RC rc);
 #define QL_NAME_NOT_MATCH (START_QL_WARN + 13)
 #define QL_LINKED_BY_OTHERS (START_QL_WARN + 14)
 #define QL_NOTHING_IS_FOUND (START_QL_WARN + 15)
+#define QL_REGEX_ERROR (START_QL_WARN + 16)
 #endif

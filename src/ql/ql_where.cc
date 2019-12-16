@@ -1,4 +1,5 @@
 #include "ql.h"
+#include <regex>
 using namespace std;
 
 bool SingleWhere::satisfy(const TableLine& value) const {
@@ -25,8 +26,12 @@ bool SingleWhere::satisfy(const TableLine& value) const {
             return value[idx1].isNull;
         }
         case TY_LIKE: {
-            assert(false);
-            return false;
+            if (value[idx1].isNull) {
+                return 0;
+            }
+            std::regex re(this->val);
+            std::cmatch m;
+            return std::regex_match(value[idx1].value.c_str(), m, re);
         }
     }
     assert(false);
@@ -88,8 +93,17 @@ RC RawSingleWhere::Compile(SingleWhere& where, const vector<AttrInfo>& attrs, co
             break;
         }
         case SingleWhere::TY_LIKE: {
-            assert(false);
-            return false;
+            try {
+                std::regex myregex(this->value);
+            } catch (std::regex_error& e) {
+                return QL_REGEX_ERROR;
+            }
+            if (where.ty != STRING) {
+                return QL_TYPE_NOT_MATCH;
+            }
+            where.val = this->value;
+            where.op = op;
+            break;
         }
         default: {
             assert(false);

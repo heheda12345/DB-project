@@ -298,6 +298,13 @@ public:
         singleWhere.idx1 = col->getColName();
         inSingle = 1;
     }
+    WhereClause(Col* _col, std::string* _pattern): col(_col), pattern(_pattern) {
+        singleWhere.hasError = 0;
+        singleWhere.whereType = SingleWhere::TY_LIKE;
+        singleWhere.idx1 = col->getColName();
+        singleWhere.value = *pattern;
+        inSingle = 1;
+    }
     ~WhereClause() {
         switch (ty) {
             case OP: {
@@ -316,11 +323,12 @@ public:
         }
     }
 
-    enum Ty { OP, IS_NULL, NOT_NULL };
+    enum Ty { OP, IS_NULL, NOT_NULL, LIKE };
     Ty ty;
     Col* col;
     CompOp op;
     Expr* expr;
+    std::string* pattern;
     bool inSingle;
     RawSingleWhere singleWhere;
     RawDualWhere dualWhere;

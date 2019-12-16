@@ -63,6 +63,7 @@ AVG { return AVG; }
 SUM { return SUM; }
 MIN { return MIN; }
 MAX { return MAX; }
+LIKE { return LIKE; }
 "," { return yytext[0]; }
 "(" { return yytext[0]; }
 ")" { return yytext[0]; }

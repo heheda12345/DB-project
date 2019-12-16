@@ -5,13 +5,15 @@ CREATE TABLE nation (in INT NOT NULL, cn CHAR(100) NOT NULL, fn float NOT NULL, 
 alter table nation add constraint dn_unique unique key (dn);
 SHOW TABLES;
 insert into test values ('xxxxx');
-INSERT INTO nation VALUES (86, 'xxxxx', 0.0, 2019-12-15, 'xxxxx', NULL);
+INSERT INTO nation VALUES (86, 'XXXXX', 0.0, 2019-12-15, 'xxxxx', NULL);
 INSERT INTO nation VALUES (87, 'aaaa bbbb cccc dddd eeee ffff', 0.0, 2019-12-16, 'xxxxx', 'xxxxx');
 INSERT INTO nation VALUES (88, 'xxxxx', 0.0, 2019-12-17, 'xxxxx', NULL);
 INSERT INTO nation VALUES (89, 'aaaa bbbb cccc dddd eeee ffff', 0.0, 2019-12-18, 'xxxxx', 'xxxxx');
 INSERT INTO nation VALUES (90, 'xxxxx', 0.0, 2019-12-19, 'xxxxx', NULL);
 INSERT INTO nation VALUES (91, 'aaaa bbbb cccc dddd eeee ffff', 0.0, 2019-12-20, 'xxxxx', 'xxxxx');
 desc nation;
+select * from nation where cn like 'x*';
+select * from nation where cn like '[';
 select * from nation where in = 88;
 select * from nation where in <> 88;
 select * from nation where in <= 88;
