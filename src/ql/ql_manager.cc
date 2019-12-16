@@ -127,7 +127,7 @@ RC QL_Manager::Update(const std::string& tbName, const std::vector<RawSetJob> &r
     RM_FileHandle handle;
     assert(updated.size() == selectedRids.size());
     rc = rmm.OpenFile(tbName.c_str(), handle); MUST_SUCC;
-    for (int i = 0; i < selectedValues.size(); i++) {
+    for (int i = 0; i < updated.size(); i++) {
         char pool[Item::getLineSize(table.attrs)];
         int size = Item::dumpTableLine(pool, updated[i], table.attrs);
         RM_Record record(pool, size, selectedRids[i]);

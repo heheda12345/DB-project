@@ -230,7 +230,7 @@ void Parser::UpdateValue::visit() {
         printf("[Fail] Cannot update\n");
         return;
     } else {
-        printf("Succussfully update value in %s\n", tbName->c_str());
+        printf("[Succ] Succussfully update value in %s\n", tbName->c_str());
     }
     assert(asst);
 }

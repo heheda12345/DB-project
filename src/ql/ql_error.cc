@@ -3,5 +3,5 @@ using namespace std;
 
 void QL_PrintError(RC rc)
 {
-    cout << "QL_PrintError\n   rc=" << rc << "\n";
+    cout << "QL Error  rc=" << rc << "\n";
 }

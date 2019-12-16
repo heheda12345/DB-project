@@ -265,7 +265,7 @@ std::string ComputeAdd(const std::string& l, const std::string& r, AttrType type
     if (type == INT) {
         int li = *reinterpret_cast<const int*>(l.c_str()), ri = *reinterpret_cast<const int*>(r.c_str());
         int ans = li + ri;
-        return std::string(*reinterpret_cast<char*>(&ans), sizeof(int));
+        return std::string(reinterpret_cast<char*>(&ans), sizeof(int));
     } else if (type == FLOAT) {
         float lf = *reinterpret_cast<const float*>(l.c_str()), rf = *reinterpret_cast<const float*>(r.c_str());
         float ans = lf + rf;
@@ -280,7 +280,7 @@ std::string ComputeSub(const std::string& l, const std::string& r, AttrType type
     if (type == INT) {
         int li = *reinterpret_cast<const int*>(l.c_str()), ri = *reinterpret_cast<const int*>(r.c_str());
         int ans = li - ri;
-        return std::string(*reinterpret_cast<char*>(&ans), sizeof(int));
+        return std::string(reinterpret_cast<char*>(&ans), sizeof(int));
     } else if (type == FLOAT) {
         float lf = *reinterpret_cast<const float*>(l.c_str()), rf = *reinterpret_cast<const float*>(r.c_str());
         float ans = lf - rf;
@@ -295,7 +295,7 @@ std::string ComputeMul(const std::string& l, const std::string& r, AttrType type
     if (type == INT) {
         int li = *reinterpret_cast<const int*>(l.c_str()), ri = *reinterpret_cast<const int*>(r.c_str());
         int ans = li * ri;
-        return std::string(*reinterpret_cast<char*>(&ans), sizeof(int));
+        return std::string(reinterpret_cast<char*>(&ans), sizeof(int));
     } else if (type == FLOAT) {
         float lf = *reinterpret_cast<const float*>(l.c_str()), rf = *reinterpret_cast<const float*>(r.c_str());
         float ans = lf * rf;
