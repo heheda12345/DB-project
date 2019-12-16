@@ -548,3 +548,20 @@ void QL_Manager::Join(std::vector<AttrInfo>& joinedInfo,
         }
     }
 }
+
+bool QL_Manager::TableIsEmpty(const std::string& tbName) {
+    printf("tablename %s\n", tbName.c_str());
+    RM_FileHandle handle;
+    RC rc = rmm.OpenFile(tbName.c_str(), handle); MUST_SUCC;
+    RM_FileScan scan;
+    rc = scan.OpenScan(handle); MUST_SUCC;
+    RM_Record rec;
+    rc = scan.GetNextRec(rec);
+    bool isEmpty = (rc == RM_EOF);
+    if (rc != RM_EOF) {
+        MUST_SUCC;
+    }
+    rc = scan.CloseScan(); MUST_SUCC;
+    rc = rmm.CloseFile(handle); MUST_SUCC;
+    return isEmpty;
+}

@@ -101,10 +101,6 @@ void Parser::CreateTable::visit() {
                 printf("[Fail] Invalid keys\n");
                 return;
             }
-            if (!QL_Manager::instance().CanAddForeignKey()) {
-                printf("[Fail] Invalid value in table!\n");
-                return;
-            }
             table.foreignGroups.push_back(fKey);
         }
     }
@@ -310,7 +306,7 @@ void Parser::AddIndex::visit() {
     for (auto& col: *columns) {
         attrNames.push_back(*(col->colName));
     }
-    if (!QL_Manager::instance().CanCreateIndex()) {
+    if (!QL_Manager::instance().CanCreateIndex(*tbName)) {
         printf("[Fail] Invalid data exists\n");
         return;
     }
@@ -369,7 +365,7 @@ void Parser::AddField::visit() {
             for (auto& col: *(field->columns)) {
                 attrNames.push_back(*(col->colName));
             }
-            if (!QL_Manager::instance().CanAddPrimaryKey(*tbName, attrNames)) {
+            if (!QL_Manager::instance().CanAddPrimaryKey(*tbName)) {
                 printf("[Fail] Invalid data exists\n");
                 return;
             }
@@ -418,7 +414,7 @@ void Parser::ChangeCol::visit() {
         printf("[Fail] Invalid Attr\n");
         return;
     }
-    if (!QL_Manager::instance().CanChangeCol()) {
+    if (!QL_Manager::instance().CanChangeCol(*tbName)) {
         printf("[Fail] Invalid data in table\n");
     }
     RC rc = SM_Manager::instance().ChangeAttr(*tbName, *colName, field->attr);
@@ -460,7 +456,7 @@ void Parser::AddForeignKey::visit() {
     for (Column* col: *refCols) {
         refAttrs.push_back(*(col->colName));
     }
-    if (!QL_Manager::instance().CanAddForeignKey()) {
+    if (!QL_Manager::instance().CanAddForeignKey(*tbName)) {
         printf("[Fail] Invalid value in table!\n");
         return;
     }
@@ -495,7 +491,7 @@ void Parser::AddUniqueKey::visit() {
     for (Column* col: *cols) {
         attrs.push_back(*(col->colName));
     }
-    if (!QL_Manager::instance().CanAddUniqueKey()) {
+    if (!QL_Manager::instance().CanAddUniqueKey(*tbName)) {
         printf("[Fail] Invalid value in table!\n");
         return;
     }

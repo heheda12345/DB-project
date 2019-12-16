@@ -195,11 +195,12 @@ public:
               const std::vector<DualWhere>& dualConds,
               const std::vector<RawTbAttr>& toShow);
 
-    bool CanAddPrimaryKey(const std::string& tbName, const std::vector<std::string>& attrNames) { return true; }
-    bool CanAddForeignKey() { return true; }
-    bool CanChangeCol() { return true; }
-    bool CanCreateIndex() { return true; }
-    bool CanAddUniqueKey() { return true; }
+    bool TableIsEmpty(const std::string& tbName);
+    bool CanAddPrimaryKey(const std::string& tbName) { return TableIsEmpty(tbName); }
+    bool CanAddForeignKey(const std::string& tbName) { return TableIsEmpty(tbName);; }
+    bool CanChangeCol(const std::string& tbName) { return TableIsEmpty(tbName);; }
+    bool CanCreateIndex(const std::string& tbName) { return TableIsEmpty(tbName);; }
+    bool CanAddUniqueKey(const std::string& tbName) { return TableIsEmpty(tbName);; }
 
     static QL_Manager& instance() { 
         static QL_Manager ins;
