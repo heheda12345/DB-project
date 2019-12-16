@@ -60,13 +60,40 @@ RC QL_Manager::Delete(const std::string& tbName, const vector<RawSingleWhere>& R
     TableInfo table;
     RC rc = smm.GetTable(tbName, table);
     SMRC(rc, QL_INVALID_TABLE);
+    if (table.linkedByOthers()) {
+        return QL_LINKED_BY_OTHERS;
+    }
     std::vector<SingleWhere> conds;
     rc = CompileWheres(conds, RawConds, table.attrs, tbName);
     QLRC(rc, rc);
     std::vector<TableLine> values;
-    rc = GetAllItems(tbName, values);
-    auto selected = select(values, conds);
-    PrintTable(table, selected);
+    std::vector<RID> rids;
+    rc = GetAllItems(tbName, values, rids);
+    auto selected = select(values, rids, conds);
+    auto& selectedValues = selected.first;
+    auto& selectedRids = selected.second;
+    PrintTable(table, selectedValues);
+
+    RM_FileHandle handle;
+    rc = rmm.OpenFile(tbName.c_str(), handle); MUST_SUCC;
+    for (auto& rid: selectedRids) {
+        rc = handle.DeleteRec(rid); MUST_SUCC;
+    }
+    rc = rmm.CloseFile(handle); MUST_SUCC;
+
+    for (auto& idx: table.indexes) {
+        IX_IndexHandle handle;
+        rc = ixm.OpenIndex(tbName.c_str(), idx.idxID, handle); MUST_SUCC;
+        IXRC(rc, QL_ERROR);
+        assert(selectedValues.size() == selectedRids.size());
+        for (int i = 0; i <selectedValues.size(); i++) {
+            rc = handle.DeleteEntry(formatIndex(table.attrs, idx.attrs, selectedValues[i]), selectedRids[i]);
+            assert(rc == OK_RC);
+            IXRC(rc, QL_ERROR);
+        }
+        rc = ixm.CloseIndex(handle); MUST_SUCC;
+        IXRC(rc, QL_ERROR);
+    }
     return OK_RC;
 }
 
@@ -75,17 +102,19 @@ RC QL_Manager::Desc(const std::string& tbName) {
     RC rc = smm.GetTable(tbName, table);
     SMRC(rc, QL_INVALID_TABLE);
     std::vector<TableLine> values;
-    rc = GetAllItems(tbName, values);
+    std::vector<RID> rids;
+    rc = GetAllItems(tbName, values, rids);
     QLRC(rc, QL_ERROR);
     PrintTable(table, values);
     return OK_RC;
 }
 
-RC QL_Manager::GetAllItems(const std::string& tbName, std::vector<TableLine>& values) {
+RC QL_Manager::GetAllItems(const std::string& tbName, std::vector<TableLine>& values, std::vector<RID>& rids) {
     TableInfo table;
     RC rc = smm.GetTable(tbName, table);
     SMRC(rc, QL_INVALID_TABLE);
     values.clear();
+    rids.clear();
     RM_FileHandle handle;
     rc = rmm.OpenFile(tbName.c_str(), handle);
     RMRC(rc, QL_ERROR);
@@ -104,6 +133,11 @@ RC QL_Manager::GetAllItems(const std::string& tbName, std::vector<TableLine>& va
         RMRC(rc, QL_ERROR);
         TableLine value = Item::loadTableLine(pData, table.attrs);
         values.push_back(value);
+        RID rid;
+        rc = record.GetRid(rid);
+        assert(rc == OK_RC);
+        RMRC(rc, QL_ERROR);
+        rids.push_back(rid);
     }
     rc = scanner.CloseScan();
     RMRC(rc, QL_ERROR);

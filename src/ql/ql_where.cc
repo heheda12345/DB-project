@@ -33,21 +33,24 @@ bool SingleWhere::satisfy(const TableLine& value) const {
     return false;
 }
 
-std::vector<TableLine> select(const std::vector<TableLine>& values, const std::vector<SingleWhere>& conds) {
-    std::vector<TableLine> ret;
-    for (auto& v: values) {
+std::pair<std::vector<TableLine>, std::vector<RID>> select(const std::vector<TableLine>& values, const std::vector<RID>& rids, const std::vector<SingleWhere>& conds) {
+    std::vector<TableLine> retValues;
+    std::vector<RID> retRIDs;
+    assert(values.size() == rids.size());
+    for (int i = 0; i < values.size(); i++) {
         bool ok = 1;
         for (auto &c : conds) {
-            if (!c.satisfy(v)) {
+            if (!c.satisfy(values[i])) {
                 ok = 0;
                 break;
             }
         }
         if (ok) {
-            ret.push_back(v);
+            retValues.push_back(values[i]);
+            retRIDs.push_back(rids[i]);
         }
     }
-    return ret;
+    return make_pair(retValues, retRIDs);
 }
 
 RC RawSingleWhere::Compile(SingleWhere& where, const vector<AttrInfo>& attrs, const std::string& tbName_i) const {

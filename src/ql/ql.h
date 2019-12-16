@@ -15,6 +15,9 @@
 #include "../rm/rm.h"
 #include "../ix/ix.h"
 #include "../sm/sm.h"
+
+#define MUST_SUCC assert(rc == OK_RC)
+
 class Item;
 
 typedef std::vector<Item> TableLine;
@@ -45,7 +48,7 @@ struct SingleWhere {
     bool satisfy(const TableLine& value) const;
 };
 
-std::vector<TableLine> select(const std::vector<TableLine>& values, const std::vector<SingleWhere>& conds);
+std::pair<std::vector<TableLine>, std::vector<RID>> select(const std::vector<TableLine>& values, const std::vector<RID>& rids, const std::vector<SingleWhere>& conds);
 
 struct RawSingleWhere {
     SingleWhere::Type whereType;
@@ -82,7 +85,7 @@ public:
     RC Desc(const std::string& tbName);
 
 
-    RC GetAllItems(const std::string& tbName, std::vector<TableLine>& values);
+    RC GetAllItems(const std::string& tbName, std::vector<TableLine>& values, std::vector<RID>& rids);
     void PrintTable(const TableInfo& table, const std::vector<TableLine>& values);
     std::vector<RID> SearchIndex(const std::string& tbName, const std::string& idxName, const std::vector<std::string> & values, CompOp compOp);
     bool ExistInIndex(const std::string& tbName, const TableInfo& table, const std::string& idxName, const TableLine& value); // for index
@@ -130,4 +133,5 @@ void QL_PrintError(RC rc);
 #define QL_PRE_ERROR (START_QL_WARN + 11)
 #define QL_INVALID_WHERE (START_QL_WARN + 12)
 #define QL_NAME_NOT_MATCH (START_QL_WARN + 13)
+#define QL_LINKED_BY_OTHERS (START_QL_WARN + 14)
 #endif
