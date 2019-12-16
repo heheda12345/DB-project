@@ -46,7 +46,7 @@ using namespace std;
     Parser::SetNode* setNode;
 }
 
-%token DATABASE DATABASES TABLE TABLES SHOW CREATE DROP USE PRIMARY KEY NOT VALUE_NULL INSERT INTO VALUES DELETE FROM WHERE UPDATE SET SELECT IS TYPE_INT TYPE_CHAR TYPE_VARCHAR DEFAULT CONSTRAINT CHANGE ALTER ADD RENAME DESC REFERENCES INDEX UNIQUE ON AND TYPE_DATE TYPE_FLOAT FOREIGN EQ NE LT GT LE GE TO EXIT
+%token DATABASE DATABASES TABLE TABLES SHOW CREATE DROP USE PRIMARY KEY NOT VALUE_NULL INSERT INTO VALUES DELETE FROM WHERE UPDATE SET SELECT IS TYPE_INT TYPE_CHAR TYPE_VARCHAR DEFAULT CONSTRAINT CHANGE ALTER ADD RENAME DESC REFERENCES INDEX UNIQUE ON AND TYPE_DATE TYPE_FLOAT FOREIGN EQ NE LT GT LE GE TO EXIT AVG SUM MIN MAX
 
 %token <intval> VALUE_INT VALUE_DATE
 %token <floatval> VALUE_FLOAT
@@ -405,6 +405,22 @@ variable: colName
 selector: '*'
     {
         $$ = new Selector();
+    }
+    | AVG '(' col ')'
+    {
+        $$ = new Selector($3, AVG_GOP);
+    }
+    | SUM '(' col ')'
+    {
+        $$ = new Selector($3, SUM_GOP);
+    }
+    | MAX '(' col ')'
+    {
+        $$ = new Selector($3, MAX_GOP);
+    }
+    | MIN '(' col ')'
+    {
+        $$ = new Selector($3, MIN_GOP);
     }
     | colList
     {

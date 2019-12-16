@@ -1,21 +1,5 @@
 CREATE DATABASE orderDB;
 USE DATABASE orderDB;
-CREATE TABLE testInt1 (i1 int, i2 int, i3 int, i4 int);
-insert into testInt1 values(1, 22, NULL, NULL);
-insert into testInt1 values(3, 44, NULL, NULL);
-insert into testInt1 values(5, 66, NULL, NULL);
-insert into testInt1 values(7, 88, NULL, NULL);
-desc testInt1;
-CREATE TABLE testInt2 (i1 int, i2 int, i3 int, i4 int);
-insert into testInt2 values(1, 11, NULL, NULL);
-insert into testInt2 values(3, 33, NULL, NULL);
-insert into testInt2 values(5, 55, NULL, NULL);
-insert into testInt2 values(8, 88, NULL, NULL);
-desc testInt2;
-select testint1.i2, testint2.i2 from testint1, testint2 where testint1.i1 = testint2.i1;
-exit;
-
-
 CREATE TABLE test (ccc char(200) NOT NULL, primary key(ccc));
 CREATE TABLE nation (in INT NOT NULL, cn CHAR(100) NOT NULL, fn float NOT NULL, dn date NOT NULL, cc VARCHAR(25), cd CHAR(10) default 'a b c', primary key(in), foreign key(cc) references test(ccc));
 alter table nation add constraint dn_unique unique key (dn);
@@ -34,4 +18,23 @@ select * from nation where in <= 88;
 select cn, fn from nation where in >= 88;
 select nation.cn, fn from nation where in < 88;
 select cn, cn from nation where in > 88;
+
+CREATE TABLE testInt1 (i1 int, i2 int, i3 int, i4 int);
+insert into testInt1 values(1, 22, NULL, NULL);
+insert into testInt1 values(3, 44, NULL, NULL);
+insert into testInt1 values(5, 66, NULL, NULL);
+insert into testInt1 values(7, 88, NULL, NULL);
+desc testInt1;
+CREATE TABLE testInt2 (i1 int, i2 int, i3 int, i4 int);
+insert into testInt2 values(1, 11, NULL, NULL);
+insert into testInt2 values(3, 33, NULL, NULL);
+insert into testInt2 values(5, 55, NULL, NULL);
+insert into testInt2 values(8, 88, NULL, NULL);
+desc testInt2;
+select testint1.i2, testint2.i2 from testint1, testint2 where testint1.i1 = testint2.i1;
+select sum(i1) from testint1 where i1 > 10;
+select sum(i1) from testint1 where i1 < 7;
+select avg(i1) from testint1 where i1 < 7;
+select max(i1) from testint1 where i1 < 7;
+select min(i1) from testint1 where i1 < 7;
 exit;

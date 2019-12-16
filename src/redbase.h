@@ -82,6 +82,10 @@ enum ClientHint {
     NO_HINT                                     // default value
 };
 
+enum GatherOp {
+    NO_GOP, AVG_GOP, SUM_GOP, MAX_GOP, MIN_GOP
+};
+
 //
 // TRUE, FALSE and BOOLEAN
 //

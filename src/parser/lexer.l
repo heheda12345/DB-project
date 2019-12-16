@@ -59,6 +59,10 @@ FLOAT { return TYPE_FLOAT; }
 FOREIGN { return FOREIGN; }
 TO { return TO; }
 EXIT { return EXIT; }
+AVG { return AVG; }
+SUM { return SUM; }
+MIN { return MIN; }
+MAX { return MAX; }
 "," { return yytext[0]; }
 "(" { return yytext[0]; }
 ")" { return yytext[0]; }

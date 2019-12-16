@@ -279,6 +279,12 @@ void Parser::SelectValue::visit() {
             dualConds.push_back(where->dualWhere);
         }
     }
+    if (selector->gOp != NO_GOP) {
+        if (selector->attrNames.size() != 1) {
+            printf("[Fail] Provide one and only one selector when gathering\n");
+            return;
+        }
+    }
 
     if (tbNames.size() == 1) {
         for (auto& attr: selector->attrNames) {
@@ -286,7 +292,7 @@ void Parser::SelectValue::visit() {
                 attr.first = tbNames[0];
         }
     }
-    RC rc = QL_Manager::instance().Select(tbNames, selector->attrNames, singleConds, dualConds);
+    RC rc = QL_Manager::instance().Select(tbNames, selector->attrNames, singleConds, dualConds, selector->gOp);
     if (rc != OK_RC) {
         printf("[Fail] Cannot select!\n");
         return;

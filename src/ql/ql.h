@@ -153,7 +153,8 @@ public:
     RC Select(const std::vector<std::string>& tbNames,
                     std::vector<RawTbAttr>& rawSelectors, 
               const std::vector<RawSingleWhere>& singleConds,
-              const std::vector<RawDualWhere>& rawDualConds);
+              const std::vector<RawDualWhere>& rawDualConds,
+                    GatherOp gOp);
     
     RC Desc(const std::string& tbName);
 
@@ -237,4 +238,5 @@ void QL_PrintError(RC rc);
 #define QL_INVALID_WHERE (START_QL_WARN + 12)
 #define QL_NAME_NOT_MATCH (START_QL_WARN + 13)
 #define QL_LINKED_BY_OTHERS (START_QL_WARN + 14)
+#define QL_NOTHING_IS_FOUND (START_QL_WARN + 15)
 #endif

@@ -406,24 +406,38 @@ public:
 
 class Selector {
 public:
-    Selector(): all(true) {}
-    Selector(std::vector<Col*>* _colList): all(false), colList(_colList) {
+    enum Ty {
+        ALL, PART, GATHER
+    };
+    
+    Selector(): ty(ALL), gOp(NO_GOP) {}
+    Selector(std::vector<Col*>* _colList): ty(PART), colList(_colList), gOp(NO_GOP) {
         for (auto &col: *colList) {
             attrNames.push_back(make_pair(col->getTbName(), col->getColName()));
         }
     }
+    Selector(Col* _col, GatherOp _op): ty(GATHER), col(_col), gOp(_op) {
+        attrNames.push_back(make_pair(col->getTbName(), col->getColName()));
+    } 
+
     ~Selector() {
-        if (!all) {
+        if (ty == PART) {
              for (auto c: *colList) {
                 delete c;
             }
             delete colList;
+        } else {
+            if (ty == GATHER) {
+                delete col;
+            }
         }
     }
-
-    bool all;
+    
+    Ty ty;
+    Col* col;
     std::vector<Col*>* colList;
     std::vector<RawTbAttr> attrNames;
+    GatherOp gOp;
 };
 
 class Stmt: public TreeNode {

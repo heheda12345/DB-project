@@ -165,7 +165,7 @@ RC QL_Manager::Update(const std::string& tbName, const std::vector<RawSetJob> &r
     return OK_RC;
 }
 
-RC QL_Manager::Select(const std::vector<std::string>& tbNames, std::vector<RawTbAttr>& rawSelectors, const std::vector<RawSingleWhere>& rawSingleConds, const std::vector<RawDualWhere>& rawDualConds) {
+RC QL_Manager::Select(const std::vector<std::string>& tbNames, std::vector<RawTbAttr>& rawSelectors, const std::vector<RawSingleWhere>& rawSingleConds, const std::vector<RawDualWhere>& rawDualConds, GatherOp gOp) {
     map<string, TableInfo> tables;
     map<string, vector<AttrInfo>> attrss;
 
@@ -218,7 +218,105 @@ RC QL_Manager::Select(const std::vector<std::string>& tbNames, std::vector<RawTb
     vector<AttrInfo> joinedInfo;
     vector<TableLine> joinedValue;
     Join(joinedInfo, joinedValue, valuess, attrss, dualConds, rawSelectors);
-    PrintTable(joinedInfo, joinedValue);
+    if (gOp == NO_GOP) {
+        PrintTable(joinedInfo, joinedValue);
+    } else {
+        assert(joinedInfo.size() == 1);
+        AttrInfo info = joinedInfo[0];
+        vector<int> iValues;
+        vector<float> fValues;
+        if (info.type == INT) {
+            for (auto& x: joinedValue) {
+                assert(x.size() == 1);
+                if (!x[0].isNull)
+                    iValues.push_back(*reinterpret_cast<const int*>(x[0].value.c_str()));
+            }
+            if (iValues.size() == 0) {
+                return QL_NOTHING_IS_FOUND;
+            }
+        } else if (info.type == FLOAT) {
+            for (auto& x: joinedValue) {
+                assert(x.size() == 1);
+                if (!x[0].isNull)
+                    fValues.push_back(*reinterpret_cast<const float*>(x[0].value.c_str()));
+            }
+            if (fValues.size() == 0) {
+                return QL_NOTHING_IS_FOUND;
+            }
+        } else {
+            return QL_TYPE_NOT_MATCH;
+        }
+        switch (gOp)
+        {
+            case AVG_GOP: {
+                if (info.type == FLOAT) {
+                    float sum = 0;
+                    for (auto& f: fValues) {
+                        sum += f;
+                    }
+                    printf("Average: %f\n", sum / fValues.size());
+                } else {
+                    long long sum = 0;
+                    for (auto& x: iValues) {
+                        sum += x;
+                    }
+                    printf("Average: %f\n", sum * 1.0 / iValues.size());
+                }
+                break;
+            }
+            case SUM_GOP: {
+                if (info.type == FLOAT) {
+                    float sum = 0;
+                    for (auto& f: fValues) {
+                        sum += f;
+                    }
+                    printf("Sum: %f\n", sum);
+                } else {
+                    long long sum = 0;
+                    for (auto& x: iValues) {
+                        sum += x;
+                    }
+                    printf("Sum: %lld\n", sum);
+                }
+                break;
+            }
+            case MIN_GOP: {
+                if (info.type == FLOAT) {
+                    float mn = fValues[0];
+                    for (auto& f: fValues) {
+                        mn = min(mn, f);
+                    }
+                    printf("Min: %f\n", mn);
+                } else {
+                    int mn = iValues[0];
+                    for (auto& x: iValues) {
+                        mn = min(mn, x);
+                    }
+                    printf("Min: %d\n", mn);
+                }
+                break;
+            }
+            case MAX_GOP: {
+                if (info.type == FLOAT) {
+                    float mx = fValues[0];
+                    for (auto& f: fValues) {
+                        mx = max(mx, f);
+                    }
+                    printf("Max: %f\n", mx);
+                } else {
+                    int mx = iValues[0];
+                    for (auto& x: iValues) {
+                        mx = max(mx, x);
+                    }
+                    printf("Max: %d\n", mx);
+                }
+                break;
+            }
+            default: {
+                assert(false);
+            }
+        }
+    }
 
     return OK_RC;
 }
