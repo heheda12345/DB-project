@@ -1,6 +1,8 @@
 #include "ql.h"
 #include <iomanip>
+#include <set>
 using namespace std;
+
 
 RC QL_Manager::Insert(const std::string& tbName, const TableLine& values_i) {
     TableInfo table;
@@ -107,23 +109,37 @@ RC QL_Manager::Update(const std::string& tbName, const std::vector<RawSetJob> &r
     std::vector<SingleWhere> conds;
     rc = CompileWheres(conds, rawConds, table.attrs, tbName);
     QLRC(rc, rc);
-    // printf("where compiled!\n");
 
     std::vector<SetJob> setJobs;
     rc = CompileSetJobs(setJobs, rawJobs, table.attrs);
     QLRC(rc, rc);
-    // printf("set compiled!\n");
 
     std::vector<TableLine> values;
     std::vector<RID> rids;
     rc = GetAllItems(tbName, values, rids);
-    // printf("get all items!\n");
     auto selected = select(values, rids, conds);
     auto& selectedValues = selected.first;
     auto& selectedRids = selected.second;
     auto updated = DoSetJobs(selectedValues, setJobs);
 
-    // TODO check constraints
+    // check primary key
+    if (table.hasPrimary()) {
+        if (!CanUpdate(tbName, table, "@Primary", updated, selectedRids))
+            return QL_DUMPLICATED;
+    }
+    // check foreign key
+    for (auto& fi: table.foreignGroups) {
+        for (auto value: updated) {
+            if (!ExistInIndex(table, fi.fkName, value, fi.refTable, "@Primary"))
+                return QL_NOT_IN_FOREIGN;
+        }
+    }
+    // check unique key
+    for (auto& pi: table.uniqueGroups) {
+        if (!CanUpdate(tbName, table, std::string("@Unique.").append(pi.idxName), updated, selectedRids))
+            return QL_DUMPLICATED;
+    }
+
     RM_FileHandle handle;
     assert(updated.size() == selectedRids.size());
     rc = rmm.OpenFile(tbName.c_str(), handle); MUST_SUCC;
@@ -140,9 +156,9 @@ RC QL_Manager::Update(const std::string& tbName, const std::vector<RawSetJob> &r
         rc = ixm.OpenIndex(tbName.c_str(), idx.idxID, handle); MUST_SUCC;
         assert(selectedValues.size() == selectedRids.size());
         for (int i = 0; i <selectedValues.size(); i++) {
+            printf("selected RID %lld %d\n", selectedRids[i].GetPageNum(), selectedRids[i].GetSlotNum());
             rc = handle.DeleteEntry(formatIndex(table.attrs, idx.attrs, selectedValues[i]), selectedRids[i]); MUST_SUCC;
-            rc = handle.InsertEntry(formatIndex(table.attrs, idx.attrs, updated[i]), selectedRids[i]);
-            MUST_SUCC;
+            rc = handle.InsertEntry(formatIndex(table.attrs, idx.attrs, updated[i]), selectedRids[i]); MUST_SUCC;
         }
         rc = ixm.CloseIndex(handle); MUST_SUCC;
         IXRC(rc, QL_ERROR);
@@ -248,4 +264,28 @@ bool QL_Manager::ExistInIndex(const std::string& tbName, const TableInfo& table,
     assert(pos != -1);
     auto toSearch = formatIndex(table.attrs, table.indexes[pos].attrs, value);
     return SearchIndex(tbName, idxName, toSearch, EQ_OP).size() > 0;
+}
+
+bool QL_Manager::CanUpdate(const std::string &tbName, const TableInfo& table, const std::string& idxName, const std::vector<TableLine>& toUpdate, const std::vector<RID>& rids) {
+    int pos = IndexInfo::getPos(table.indexes, idxName);
+    assert(pos != -1);
+    set<RID> sRid;
+    for (auto& rid: rids) {
+        sRid.insert(rid);
+    }
+
+    vector<vector<string>> formated;
+    for (auto& value: toUpdate) {
+        formated.push_back(formatIndex(table.attrs, table.indexes[pos].attrs, value));
+    }
+    if (isDumplicated(formated))
+        return 0;
+    for (auto& toSearch: formated) {
+        auto result = SearchIndex(tbName, idxName, toSearch, EQ_OP);
+        for (auto& findRid: result) {
+            if (sRid.find(findRid) == sRid.end())
+                return 0;
+        }
+    }
+    return 1;
 }

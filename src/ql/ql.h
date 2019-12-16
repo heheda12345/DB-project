@@ -121,6 +121,7 @@ public:
     std::vector<RID> SearchIndex(const std::string& tbName, const std::string& idxName, const std::vector<std::string> & values, CompOp compOp);
     bool ExistInIndex(const std::string& tbName, const TableInfo& table, const std::string& idxName, const TableLine& value); // for index
     bool ExistInIndex(const TableInfo& table, const std::string& idxName, const TableLine & value, const std::string& refTbName, const std::string& refIdxName); // for foreign
+    bool CanUpdate(const std::string &tbName, const TableInfo& table, const std::string& idxName, const std::vector<TableLine>& toUpdate, const std::vector<RID>& rids);
 
     bool CanAddPrimaryKey(const std::string& tbName, const std::vector<std::string>& attrNames) { return true; }
     bool CanAddForeignKey() { return true; }

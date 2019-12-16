@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <dirent.h>
+#include <algorithm>
 using namespace std;
 
 bool DirExist(const char* dir) {
@@ -315,4 +316,22 @@ std::string ComputeDiv(const std::string& l, const std::string& r, AttrType type
         assert(false);
         return std::string();
     }
+}
+
+bool cmp(std::vector<std::string>& a, std::vector<std::string>& b) {
+    assert(a.size() == b.size());
+    for (int i = 0; i < a.size(); i++) {
+        if (a[i] != b[i])
+            return a[i] < b[i];
+    }
+    return 0;
+}
+
+bool isDumplicated(const vector<vector<std::string>>& vec) {
+    auto v = vec;
+    sort(v.begin(), v.end(), cmp);
+    for (int i = 1; i < v.size(); i++)
+        if (cmp(v[i-1], v[i]) == 0)
+            return 1;
+    return 0;
 }

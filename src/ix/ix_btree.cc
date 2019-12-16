@@ -237,7 +237,6 @@ RC IX_BTree::remove(IX_BTKEY& e) {
     }
     // printf("found entry, hot (%lld %d) v (%lld %d) start delete\n", _hot.pos.GetPageNum(), _hot.pos.GetSlotNum(), vid.GetPageNum(), vid.GetSlotNum());
     assert(vid.isValid());
-    assert(_hot.pos.isValid()); // hot is not used in remove
     IX_BTNode v = saver.get(vid);
     int r = IX_BTKEY::search(v.key, e);
     if (v.child[0].isValid()) { // not leaf

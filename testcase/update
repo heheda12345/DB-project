@@ -1,7 +1,16 @@
 CREATE DATABASE orderDB;
 USE DATABASE orderDB;
+
 CREATE TABLE testInt (i1 int, i2 int, i3 int, i4 int);
-create table testFloat (f1 float, f2 float, f3 float, f4 float);
+insert into testInt values(1, 2, NULL, NULL);
+insert into testInt values(3, 4, NULL, NULL);
+insert into testInt values(5, 6, NULL, NULL);
+insert into testInt values(7, 8, NULL, NULL);
+desc testInt;
+update testInt set i4 = i1 + i2 where i2 > 3;
+desc testInt;
+
+create table testFloat (f1 float, f2 float, f3 float, f4 float, primary key(f2));
 SHOW TABLES;
 insert into testFloat values (1.0, 2.0, NULL, NULL);
 insert into testFloat values (3.0, 4.0, NULL, NULL);
@@ -19,6 +28,10 @@ desc testFloat;
 update testFloat set f4 = f1 + f3 where f2 > 3.0;
 desc testFloat;
 update testFloat set f4 = (f1 + 0.1) * 0.7 + f2 where f2 > 3.0;
+desc testFloat;
+update testFloat set f2 = f2 - f1 where f2 > 3.0;
+update testFloat set f2 = f2 / 2.0 where f2 > 3.0;
+update testFloat set f2 = f2 / 2.0 where f2 > 0.0;
 desc testFloat;
 create table testType(ii int, ff float, dd date, ss char(25));
 insert into testType values(5, 6.0, 2019-12-16, 'xxxxx');

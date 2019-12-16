@@ -25,6 +25,7 @@ bool lengthIsMatch(std::vector<std::string> attr1, std::vector<std::string> attr
 int getSum(const std::vector<int> &vec);
 int findName(const std::vector<std::string>& vec, const std::string& target);
 bool isDumplicated(const std::vector<std::string>& vec);
+bool isDumplicated(const std::vector<std::vector<std::string>>& vec);
 
 bool isLegalDate(int date);
 std::string cutForPrint(std::string st);
