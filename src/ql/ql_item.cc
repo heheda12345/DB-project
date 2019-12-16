@@ -53,6 +53,13 @@ int Item::getLineSize(const std::vector<AttrInfo>& as) {
     // printf("[Line] getSize %d\n", AttrInfo::getRecordSize(as));
     return AttrInfo::getRecordSize(as);
 }
+Item Item::NullItem() {
+    Item ret;
+    ret.value = std::string();
+    ret.isNull = 1;
+    ret.type = NO_TYPE;
+    return ret;
+}
 
 std::ostream& operator << (std::ostream& os, const Item& item) {
     if (item.isNull) {

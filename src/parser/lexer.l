@@ -64,6 +64,10 @@ EXIT { return EXIT; }
 ")" { return yytext[0]; }
 "." { return yytext[0]; }
 ";" { return yytext[0]; }
+"+" { return yytext[0]; }
+"-" { return yytext[0]; }
+"*" { return yytext[0]; }
+"/" { return yytext[0]; }
 "=" { return EQ; }
 "<>" { return NE; }
 "<=" { return LE; }

@@ -1,0 +1,12 @@
+CREATE DATABASE orderDB;
+USE DATABASE orderDB;
+CREATE TABLE testInt (i1 int, i2 int, i3 int, i4 int);
+create table testFloat (f1 float, f2 float, f3 float, f4 float);
+SHOW TABLES;
+insert into testFloat values (1.0, 2.0, NULL, NULL);
+insert into testFloat values (3.0, 4.0, NULL, NULL);
+insert into testFloat values (5.0, 6.0, NULL, NULL);
+insert into testFloat values (7.0, 8.0, NULL, NULL);
+desc testFloat;
+update testFloat set f4 = f1 + f2 where f2 > 0.0;
+desc testFloat;

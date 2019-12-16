@@ -97,6 +97,59 @@ RC QL_Manager::Delete(const std::string& tbName, const vector<RawSingleWhere>& R
     return OK_RC;
 }
 
+RC QL_Manager::Update(const std::string& tbName, const std::vector<RawSetJob> &rawJobs, const std::vector<RawSingleWhere>& rawConds) {
+    TableInfo table;
+    RC rc = smm.GetTable(tbName, table);
+    SMRC(rc, QL_INVALID_TABLE);
+    if (table.linkedByOthers()) {
+        return QL_LINKED_BY_OTHERS;
+    }
+    std::vector<SingleWhere> conds;
+    rc = CompileWheres(conds, rawConds, table.attrs, tbName);
+    QLRC(rc, rc);
+    // printf("where compiled!\n");
+
+    std::vector<SetJob> setJobs;
+    rc = CompileSetJobs(setJobs, rawJobs, table.attrs);
+    QLRC(rc, rc);
+    // printf("set compiled!\n");
+
+    std::vector<TableLine> values;
+    std::vector<RID> rids;
+    rc = GetAllItems(tbName, values, rids);
+    // printf("get all items!\n");
+    auto selected = select(values, rids, conds);
+    auto& selectedValues = selected.first;
+    auto& selectedRids = selected.second;
+    auto updated = DoSetJobs(selectedValues, setJobs);
+
+    // TODO check constraints
+    RM_FileHandle handle;
+    assert(updated.size() == selectedRids.size());
+    rc = rmm.OpenFile(tbName.c_str(), handle); MUST_SUCC;
+    for (int i = 0; i < selectedValues.size(); i++) {
+        char pool[Item::getLineSize(table.attrs)];
+        int size = Item::dumpTableLine(pool, updated[i], table.attrs);
+        RM_Record record(pool, size, selectedRids[i]);
+        rc = handle.UpdateRec(record); MUST_SUCC;
+    }
+    rc = rmm.CloseFile(handle); MUST_SUCC;
+
+    for (auto& idx: table.indexes) {
+        IX_IndexHandle handle;
+        rc = ixm.OpenIndex(tbName.c_str(), idx.idxID, handle); MUST_SUCC;
+        assert(selectedValues.size() == selectedRids.size());
+        for (int i = 0; i <selectedValues.size(); i++) {
+            rc = handle.DeleteEntry(formatIndex(table.attrs, idx.attrs, selectedValues[i]), selectedRids[i]); MUST_SUCC;
+            rc = handle.InsertEntry(formatIndex(table.attrs, idx.attrs, updated[i]), selectedRids[i]);
+            MUST_SUCC;
+        }
+        rc = ixm.CloseIndex(handle); MUST_SUCC;
+        IXRC(rc, QL_ERROR);
+    }
+    return OK_RC;
+}
+
 RC QL_Manager::Desc(const std::string& tbName) {
     TableInfo table;
     RC rc = smm.GetTable(tbName, table);

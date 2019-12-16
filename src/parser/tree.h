@@ -317,16 +317,82 @@ public:
     RawSingleWhere singleWhere;
 };
 
-class SetClause {
+class SetNode {
 public:
-    SetClause(std::string* _colName, Value* _value): colName(_colName), value(_value) {}
-    ~SetClause() {
-        delete colName;
-        delete value;
+    SetNode(Value* _value) {
+        ty = ExprNode::VALUE;
+        value = _value;
+        hasError = _value->hasError;
+
+        node.nodeType = ty;
+        node.str = _value->dump();
+        node.hasError = hasError;
+        node.attrType = _value->ty;
     }
+    SetNode(std::string* _col) {
+        ty = ExprNode::COL;
+        hasError = 0;
+        colName = _col;
+
+        node.nodeType = ty;
+        node.str = *colName;
+        node.hasError = hasError;
+        node.attrType = NO_TYPE;
+    }
+    SetNode(SetNode* l, ExprNode::ExprNodeType _ty, SetNode* r) {
+        ty = _ty;
+        assert(ty == ExprNode::ADD || ty == ExprNode::SUB ||
+               ty == ExprNode::MUL || ty == ExprNode::DIV);
+        sonL = l, sonR = r;
+        hasError = l->hasError | r->hasError;
+
+        node.nodeType = ty;
+        node.hasError = hasError;
+        node.attrType = NO_TYPE;
+        node.sons.clear();
+        node.sons.push_back(l->node);
+        node.sons.push_back(r->node);
+    }
+    ~SetNode() {
+        switch (ty) {
+            case ExprNode::VALUE: {
+                delete value;
+                break;
+            }
+            case ExprNode::COL: {
+                delete colName;
+                break;
+            }
+            case ExprNode::ADD: // no break
+            case ExprNode::SUB: // no break
+            case ExprNode::MUL: // no break;
+            case ExprNode::DIV: {
+                delete sonL;
+                delete sonR;
+            }
+        }
+    }
+
+    ExprNode::ExprNodeType ty;
+    bool hasError;
 
     std::string* colName;
     Value* value;
+    SetNode *sonL;
+    SetNode *sonR;
+    RawExprNode node;
+};
+
+class SetClause {
+public:
+    SetClause(std::string* _colName, SetNode* _node): colName(_colName), node(_node) {}
+    ~SetClause() {
+        delete colName;
+        delete node;
+    }
+
+    std::string* colName;
+    SetNode* node;
 };
 
 class Selector {

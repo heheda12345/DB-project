@@ -31,6 +31,7 @@ struct Item {
     static int dumpTableLine(char* pData, const TableLine& items, const std::vector<AttrInfo>& as);
     static TableLine loadTableLine(const char* pData, const std::vector<AttrInfo>& as);
     static int getLineSize(const std::vector<AttrInfo>& as);
+    static Item NullItem();
 };
 std::ostream& operator << (std::ostream& os, const Item& item);
 std::ostream& operator << (std::ostream& os, const TableLine& items);
@@ -65,6 +66,42 @@ struct RawSingleWhere {
 
 RC CompileWheres(std::vector<SingleWhere>& conds, const std::vector<RawSingleWhere> &rawConds, const std::vector<AttrInfo>& attrs, const std::string& tbName_i);
 
+struct ExprNode {
+    enum ExprNodeType {
+        VALUE, COL, ADD, SUB, MUL, DIV
+    };
+    Item compute(const TableLine& in) const; // read "in" only in "col" node
+
+    ExprNodeType nodeType;
+    AttrType attrType;
+    int idx; // for col
+    std::string str; // for value
+    std::vector<ExprNode> sons; // for binary op
+};
+
+struct RawExprNode {
+    ExprNode::ExprNodeType nodeType;
+    bool hasError;
+    AttrType attrType; // value
+    std::string str; // leaf
+    std::vector<RawExprNode> sons; // binOp, sons.size == 2
+    RC Compile(ExprNode& node, const std::vector<AttrInfo>& attrs) const;
+};
+
+struct SetJob {
+    ExprNode expr;
+    int target;
+};
+
+std::vector<TableLine> DoSetJobs(const std::vector<TableLine>& values, const std::vector<SetJob>& setJobs);
+
+struct RawSetJob {
+    RawExprNode expr;
+    std::string target;
+};
+
+RC CompileSetJobs(std::vector<SetJob>& setJobs, const std::vector<RawSetJob>& rawJobs, const std::vector<AttrInfo>& attrs);
+
 //
 // QL_Manager: query language (DML)
 //
@@ -73,15 +110,9 @@ public:
     QL_Manager (): smm(SM_Manager::instance()), ixm(IX_Manager::instance()), rmm(RM_Manager::instance()) {}
     ~QL_Manager() = default;
 
-    // RC Select  (int nSelAttrs,           // # attrs in select clause
-    //     const RelAttr selAttrs[],        // attrs in select clause
-    //     int   nRelations,                // # relations in from clause
-    //     const char * const relations[],  // relations in from clause
-    //     int   nConditions,               // # conditions in where clause
-    //     const Condition conditions[]);   // conditions in where clause
-
     RC Insert(const std::string& tbName, const TableLine& values_i);
     RC Delete(const std::string& tbName, const std::vector<RawSingleWhere>& rawConds);
+    RC Update(const std::string& tbName, const std::vector<RawSetJob> &rawJobs, const std::vector<RawSingleWhere>& rawConds);
     RC Desc(const std::string& tbName);
 
 

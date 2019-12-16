@@ -30,3 +30,8 @@ bool isLegalDate(int date);
 std::string cutForPrint(std::string st);
 int cmpStr(const std::string& sl, const std::string& sr, AttrType type);
 bool satisfyOp(const std::string& sl, const std::string& sr, AttrType type, CompOp op);
+
+std::string ComputeAdd(const std::string& l, const std::string& r, AttrType type);
+std::string ComputeSub(const std::string& l, const std::string& r, AttrType type);
+std::string ComputeMul(const std::string& l, const std::string& r, AttrType type);
+std::string ComputeDiv(const std::string& l, const std::string& r, AttrType type);

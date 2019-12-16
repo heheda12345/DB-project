@@ -199,7 +199,39 @@ void Parser::UpdateValue::visit() {
         printf("[Fail] Use a database first!\n");
         return;
     }
-    printf("UpdateValue");
+
+    vector<RawSetJob> jobs;
+    for (auto& set: *sets) {
+        if (set->node->hasError) {
+            printf("[Fail] Invalid set clause!\n");
+            return;
+        }
+        RawSetJob job;
+        job.target = *set->colName;
+        job.expr = set->node->node;
+        jobs.push_back(job);
+    }
+    
+    vector<RawSingleWhere> conds;
+    for (auto& where: *wheres) {
+        if (!where->inSingle) {
+            printf("[Fail] One table only!\n");
+            return;
+        }
+        if (where->singleWhere.hasError) {
+            printf("[Fail] Invalid where clause!\n");
+            return;
+        }
+        conds.push_back(where->singleWhere);
+    }
+
+    RC rc = QL_Manager::instance().Update(*tbName, jobs, conds);
+    if (rc != OK_RC) {
+        printf("[Fail] Cannot update\n");
+        return;
+    } else {
+        printf("Succussfully update value in %s\n", tbName->c_str());
+    }
     assert(asst);
 }
 

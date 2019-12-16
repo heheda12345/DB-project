@@ -43,6 +43,7 @@ using namespace std;
     std::vector<Parser::Table*>* tableList;
     Parser::Column* column;
     std::vector<Parser::Column*>* columnList;
+    Parser::SetNode* setNode;
 }
 
 %token DATABASE DATABASES TABLE TABLES SHOW CREATE DROP USE PRIMARY KEY NOT VALUE_NULL INSERT INTO VALUES DELETE FROM WHERE UPDATE SET SELECT IS TYPE_INT TYPE_CHAR TYPE_VARCHAR DEFAULT CONSTRAINT CHANGE ALTER ADD RENAME DESC REFERENCES INDEX UNIQUE ON AND TYPE_DATE TYPE_FLOAT FOREIGN EQ NE LT GT LE GE TO EXIT
@@ -63,6 +64,7 @@ using namespace std;
 %type <col> col
 %type <expr> expr
 %type <setClauseList> setClauseList
+%type <setNode> addExpr mulExpr variable
 %type <selector> selector
 %type <colList> colList
 %type <tableList> tableList
@@ -350,15 +352,54 @@ expr: value
     }
     
 
-setClauseList: colName EQ value
+setClauseList: colName EQ addExpr
     {
         $$ = new vector<SetClause*>;
         $$->push_back(new SetClause($1, $3));
     }
-    | setClauseList ',' colName EQ value
+    | setClauseList ',' colName EQ addExpr
     {
         $$ = $1;
         $$->push_back(new SetClause($3, $5));
+    }
+
+addExpr: mulExpr
+    {
+        $$ = $1;
+    }
+    | mulExpr '+' addExpr
+    {
+        $$ = new SetNode($1, ExprNode::ADD, $3);
+    }
+    | mulExpr '-' addExpr
+    {
+        $$ = new SetNode($1, ExprNode::SUB, $3);
+    }
+
+mulExpr: variable
+    {
+        $$ = $1;
+    }
+    | variable '*' variable
+    {
+        $$ = new SetNode($1, ExprNode::MUL, $3);
+    }
+    | variable '/' variable
+    {
+        $$ = new SetNode($1, ExprNode::DIV, $3);
+    } 
+
+variable: colName
+    {
+        $$ = new SetNode($1);
+    }
+    | value
+    {
+        $$ = new SetNode($1);
+    }
+    | '(' addExpr ')'
+    {
+        $$ = $2;
     }
 
 selector: '*'
