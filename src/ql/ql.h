@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <iostream>
+#include <map>
 #include "../redbase.h"
 #include "../rm/rm.h"
 #include "../ix/ix.h"
@@ -36,7 +37,9 @@ struct Item {
 std::ostream& operator << (std::ostream& os, const Item& item);
 std::ostream& operator << (std::ostream& os, const TableLine& items);
 RC formatItem(const TableInfo& table, TableLine & items);
-std::vector<std::string> formatIndex(const std::vector<AttrInfo>& as, const std::vector<std::string>& attrNames, const TableLine& attrValues);
+std::vector<std::string> formatIndex(const std::vector<AttrInfo>& as,
+                                     const std::vector<std::string>& attrNames,
+                                     const TableLine& attrValues);
 
 struct SingleWhere {
     enum Type {
@@ -49,7 +52,9 @@ struct SingleWhere {
     bool satisfy(const TableLine& value) const;
 };
 
-std::pair<std::vector<TableLine>, std::vector<RID>> select(const std::vector<TableLine>& values, const std::vector<RID>& rids, const std::vector<SingleWhere>& conds);
+std::pair<std::vector<TableLine>, std::vector<RID>> select(const std::vector<TableLine>& values,
+                                                           const std::vector<RID>& rids,
+                                                           const std::vector<SingleWhere>& conds);
 
 struct RawSingleWhere {
     SingleWhere::Type whereType;
@@ -64,7 +69,36 @@ struct RawSingleWhere {
     RC Compile(SingleWhere& where, const std::vector<AttrInfo>& attrs, const std::string& tbName_i) const;
 };
 
-RC CompileWheres(std::vector<SingleWhere>& conds, const std::vector<RawSingleWhere> &rawConds, const std::vector<AttrInfo>& attrs, const std::string& tbName_i);
+RC CompileWheres(std::vector<SingleWhere>& conds,
+                 const std::vector<RawSingleWhere> &rawConds,
+                 const std::vector<AttrInfo>& attrs,
+                 const std::string& tbName_i);
+RC CompileWheres(std::map<std::string,
+                 std::vector<SingleWhere>>& conds,
+                 const std::vector<RawSingleWhere> &rawConds,
+                 const std::map<std::string,
+                 std::vector<AttrInfo>>& attrs);
+
+struct DualWhere {
+    std::string tbName1;
+    std::string tbName2;
+    int idx1;
+    int idx2;
+};
+
+struct RawDualWhere {
+    std::string tbName1;
+    std::string tbName2;
+    std::string idx1;
+    std::string idx2;
+    bool hasError;
+    RC compile(DualWhere& where, const std::map<std::string, std::vector<AttrInfo>>& attrs) const;
+};
+RC CompileDualWheres(std::vector<DualWhere>& conds,
+                     const std::vector<RawDualWhere>& rawConds,
+                     const std::map<std::string, std::vector<AttrInfo>>& attrs);
+
+typedef std::pair<std::string, std::string> RawTbAttr;
 
 struct ExprNode {
     enum ExprNodeType {
@@ -111,17 +145,54 @@ public:
     ~QL_Manager() = default;
 
     RC Insert(const std::string& tbName, const TableLine& values_i);
+
     RC Delete(const std::string& tbName, const std::vector<RawSingleWhere>& rawConds);
+    
     RC Update(const std::string& tbName, const std::vector<RawSetJob> &rawJobs, const std::vector<RawSingleWhere>& rawConds);
+    
+    RC Select(const std::vector<std::string>& tbNames,
+                    std::vector<RawTbAttr>& rawSelectors, 
+              const std::vector<RawSingleWhere>& singleConds,
+              const std::vector<RawDualWhere>& rawDualConds);
+    
     RC Desc(const std::string& tbName);
 
 
-    RC GetAllItems(const std::string& tbName, std::vector<TableLine>& values, std::vector<RID>& rids);
-    void PrintTable(const TableInfo& table, const std::vector<TableLine>& values);
-    std::vector<RID> SearchIndex(const std::string& tbName, const std::string& idxName, const std::vector<std::string> & values, CompOp compOp);
-    bool ExistInIndex(const std::string& tbName, const TableInfo& table, const std::string& idxName, const TableLine& value); // for index
-    bool ExistInIndex(const TableInfo& table, const std::string& idxName, const TableLine & value, const std::string& refTbName, const std::string& refIdxName); // for foreign
-    bool CanUpdate(const std::string &tbName, const TableInfo& table, const std::string& idxName, const std::vector<TableLine>& toUpdate, const std::vector<RID>& rids);
+    RC GetAllItems(const std::string& tbName,
+                   std::vector<TableLine>& values,
+                   std::vector<RID>& rids);
+
+    void PrintTable(const std::vector<AttrInfo>& attrs,
+                    const std::vector<TableLine>& values);
+
+    std::vector<RID> SearchIndex(const std::string& tbName,
+                                 const std::string& idxName,
+                                 const std::vector<std::string> & values,
+                                 CompOp compOp);
+                                 
+    bool ExistInIndex(const std::string& tbName,
+                      const TableInfo& table,
+                      const std::string& idxName,
+                      const TableLine& value); // for index
+
+    bool ExistInIndex(const TableInfo& table,
+                      const std::string& idxName,
+                      const TableLine & value,
+                      const std::string& refTbName,
+                      const std::string& refIdxName); // for foreign
+
+    bool CanUpdate(const std::string &tbName,
+                   const TableInfo& table,
+                   const std::string& idxName,
+                   const std::vector<TableLine>& toUpdate,
+                   const std::vector<RID>& rids);
+
+    void Join(std::vector<AttrInfo>& joinedInfo,
+              std::vector<TableLine>& joinedValue,
+              const std::map<std::string, std::vector<TableLine>>& values,
+              const std::map<std::string, std::vector<AttrInfo>>& attrss,
+              const std::vector<DualWhere>& dualConds,
+              const std::vector<RawTbAttr>& toShow);
 
     bool CanAddPrimaryKey(const std::string& tbName, const std::vector<std::string>& attrNames) { return true; }
     bool CanAddForeignKey() { return true; }

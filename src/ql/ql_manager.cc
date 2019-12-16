@@ -1,6 +1,7 @@
 #include "ql.h"
 #include <iomanip>
 #include <set>
+#include <algorithm>
 using namespace std;
 
 
@@ -74,7 +75,6 @@ RC QL_Manager::Delete(const std::string& tbName, const vector<RawSingleWhere>& R
     auto selected = select(values, rids, conds);
     auto& selectedValues = selected.first;
     auto& selectedRids = selected.second;
-    PrintTable(table, selectedValues);
 
     RM_FileHandle handle;
     rc = rmm.OpenFile(tbName.c_str(), handle); MUST_SUCC;
@@ -156,13 +156,70 @@ RC QL_Manager::Update(const std::string& tbName, const std::vector<RawSetJob> &r
         rc = ixm.OpenIndex(tbName.c_str(), idx.idxID, handle); MUST_SUCC;
         assert(selectedValues.size() == selectedRids.size());
         for (int i = 0; i <selectedValues.size(); i++) {
-            printf("selected RID %lld %d\n", selectedRids[i].GetPageNum(), selectedRids[i].GetSlotNum());
             rc = handle.DeleteEntry(formatIndex(table.attrs, idx.attrs, selectedValues[i]), selectedRids[i]); MUST_SUCC;
             rc = handle.InsertEntry(formatIndex(table.attrs, idx.attrs, updated[i]), selectedRids[i]); MUST_SUCC;
         }
         rc = ixm.CloseIndex(handle); MUST_SUCC;
         IXRC(rc, QL_ERROR);
     }
+    return OK_RC;
+}
+
+RC QL_Manager::Select(const std::vector<std::string>& tbNames, std::vector<RawTbAttr>& rawSelectors, const std::vector<RawSingleWhere>& rawSingleConds, const std::vector<RawDualWhere>& rawDualConds) {
+    map<string, TableInfo> tables;
+    map<string, vector<AttrInfo>> attrss;
+
+    // table
+    for (auto& tbName: tbNames) {
+        TableInfo table;
+        RC rc = smm.GetTable(tbName, table);
+        SMRC(rc, QL_INVALID_TABLE);
+        tables[tbName] = table;
+        attrss[tbName] = table.attrs;
+    }
+
+    // compile singleConds
+    map<string, vector<SingleWhere>> singleConds;
+    RC rc = CompileWheres(singleConds, rawSingleConds, attrss);
+    QLRC(rc, rc);
+
+    // compile dualConds
+    vector<DualWhere> dualConds;
+    rc = CompileDualWheres(dualConds, rawDualConds, attrss);
+    QLRC(rc, rc);
+
+    // compile selector
+    for (auto& selector: rawSelectors) {
+        // printf("selector %s.%s\n", selector.first.c_str(), selector.second.c_str());
+        if (tables.find(selector.first) == tables.end()) {
+            return QL_NO_SUCH_KEY;
+        }
+        if (AttrInfo::getPos(tables[selector.first].attrs, selector.second) == -1) {
+            return QL_NO_SUCH_KEY;
+        }
+    }
+    if (rawSelectors.size() == 0) {
+        for (auto& tb: tables) {
+            for (auto attr: tb.second.attrs)
+                rawSelectors.push_back(make_pair(tb.first, attr.attrName));
+        }
+    }
+
+    //gather values
+    map<string, vector<TableLine>> valuess;
+    for (auto& tbName: tbNames) {
+        vector<TableLine> values;
+        vector<RID> rids;
+        rc = GetAllItems(tbName, values, rids);
+        auto selected = select(values, rids, singleConds[tbName]);
+        valuess[tbName] = selected.first;
+    }
+
+    vector<AttrInfo> joinedInfo;
+    vector<TableLine> joinedValue;
+    Join(joinedInfo, joinedValue, valuess, attrss, dualConds, rawSelectors);
+    PrintTable(joinedInfo, joinedValue);
+
     return OK_RC;
 }
 
@@ -174,7 +231,7 @@ RC QL_Manager::Desc(const std::string& tbName) {
     std::vector<RID> rids;
     rc = GetAllItems(tbName, values, rids);
     QLRC(rc, QL_ERROR);
-    PrintTable(table, values);
+    PrintTable(table.attrs, values);
     return OK_RC;
 }
 
@@ -216,13 +273,13 @@ RC QL_Manager::GetAllItems(const std::string& tbName, std::vector<TableLine>& va
     return OK_RC;
 }
 
-void QL_Manager::PrintTable(const TableInfo& table, const std::vector<TableLine>& values) {
+void QL_Manager::PrintTable(const std::vector<AttrInfo>& attrs, const std::vector<TableLine>& values) {
     cout << endl;
-    int n = table.attrs.size();
+    int n = attrs.size();
     std::string line; while (line.length() < PRINT_WIDTH + 1) line.append("-");
     cout << "+"; for (int i = 0; i < n; i++) cout << line << "+"; cout << endl;
     cout << "|";
-    for (auto& attr: table.attrs) {
+    for (auto& attr: attrs) {
         cout << setiosflags(ios::left) << " " << setw(PRINT_WIDTH) << cutForPrint(attr.attrName) << "|";
     }
     cout << endl;
@@ -288,4 +345,108 @@ bool QL_Manager::CanUpdate(const std::string &tbName, const TableInfo& table, co
         }
     }
     return 1;
+}
+
+void QL_Manager::Join(std::vector<AttrInfo>& joinedInfo,
+          std::vector<TableLine>& joinedValue, 
+          const std::map<std::string, std::vector<TableLine>>& values,
+          const std::map<std::string, std::vector<AttrInfo>>& attrss,
+          const std::vector<DualWhere>& dualConds_i,
+          const std::vector<RawTbAttr>& toShow) {
+    
+    vector<pair<int, string>> sizeToName;
+    for (auto& x: values) {
+        sizeToName.push_back(make_pair(x.second.size(), x.first));
+    }
+    sort(sizeToName.begin(), sizeToName.end());
+    map<string, int> nameToRank;
+    for (int i = 0; i < sizeToName.size(); i++) {
+        nameToRank[sizeToName[i].second] = i;
+    }
+
+    map<string, vector<DualWhere>> conds;
+    for (auto cond: dualConds_i) {
+        if (nameToRank[cond.tbName1] > nameToRank[cond.tbName2]) {
+            swap(cond.tbName1, cond.tbName2);
+            swap(cond.idx1, cond.idx2);
+        }
+        conds[cond.tbName2].push_back(cond);
+    }
+    
+    vector<vector<AttrInfo>> joiningInfos;
+    vector<vector<TableLine>> joiningValues;
+    for (int i = 0; i < sizeToName.size(); i++) {
+        string tbName = sizeToName[i].second;
+        joiningInfos.push_back(attrss.find(tbName)->second);
+        if (i == 0) {
+            joiningValues.push_back(values.find(tbName)->second);
+            continue;
+        }
+        
+        auto oldValues = joiningValues;
+        auto toInsert = values.find(tbName)->second;
+        joiningValues.clear();
+        joiningValues.resize(i + 1);
+        int n = oldValues[0].size();
+
+        if (conds[tbName].empty()) {
+            for (int j = 0; j < n; j++) {
+                for (int k = 0; k < toInsert.size(); k++) {
+                    for (int d = 0; d < i; d++) {
+                        joiningValues[d].push_back(oldValues[d][j]);
+                    }
+                    joiningValues[i].push_back(toInsert[k]);
+                }
+            }
+            continue;
+        }
+
+        map<string, vector<int>> mp;
+        int tableID = nameToRank[conds[tbName][0].tbName1], colID = conds[tbName][0].idx1;
+        for (int j = 0; j < n; j++)
+            if (!oldValues[tableID][j][colID].isNull)
+                mp[oldValues[tableID][j][colID].value].push_back(j);
+        int colID2 = conds[tbName][0].idx2;
+        for (auto& tableLine: toInsert) {
+            if (tableLine[colID2].isNull)
+                continue;
+            if (mp.find(tableLine[colID2].value) != mp.end()) {
+                for (auto& matched: mp[tableLine[colID2].value]) {
+                    for (int d = 0; d < i; d++) {
+                        joiningValues[d].push_back(oldValues[d][matched]);
+                    }
+                    joiningValues[i].push_back(tableLine);
+                }
+            }
+        }
+        for (int cc = 1; cc < conds[tbName].size(); cc++) {
+            tableID = nameToRank[conds[tbName][cc].tbName1], colID = conds[tbName][cc].idx1;
+            colID2 = conds[tbName][cc].idx2;
+            oldValues = joiningValues;
+            joiningValues.clear();
+            joiningValues.resize(i + 1);
+            
+            n = oldValues[0].size();
+            for (int j = 0; j < n; j++) {
+                auto& value1 = oldValues[tableID][j][colID], value2 = oldValues[tableID][j][i];
+                if (value1.isNull || value2.isNull) continue;
+                if (value1.value == value2.value) {
+                    for (int d = 0; d <= i; d++)
+                        joiningValues[d].push_back(oldValues[d][j]);
+                }
+            }
+        }
+    }
+
+    joinedInfo.clear(); joinedValue.clear();
+    int total = joiningValues[0].size();
+    joinedValue.resize(total);
+    for (auto& show: toShow) {
+        int tableID = nameToRank[show.first], colID = AttrInfo::getPos(attrss.find(show.first)->second, show.second);
+        assert(colID != -1);
+        joinedInfo.push_back(joiningInfos[tableID][colID]);
+        for (int i = 0; i < total; i++) {
+            joinedValue[i].push_back(joiningValues[tableID][i][colID]);
+        }
+    }
 }

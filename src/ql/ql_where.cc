@@ -109,3 +109,62 @@ RC CompileWheres(std::vector<SingleWhere>& conds, const std::vector<RawSingleWhe
     }
     return OK_RC;
 }
+
+RC CompileWheres(std::map<std::string, std::vector<SingleWhere>>& conds, const std::vector<RawSingleWhere> &rawConds, const std::map<std::string, std::vector<AttrInfo>>& attrs) {
+    conds.clear();
+    for (auto &raw: rawConds) {
+        SingleWhere cond;
+        if (attrs.find(raw.tbName) == attrs.end()) {
+            return QL_NO_SUCH_KEY;
+        }
+        RC rc = raw.Compile(cond, attrs.find(raw.tbName)->second, raw.tbName);
+        QLRC(rc, rc);
+        conds[raw.tbName].push_back(cond);
+    }
+    return OK_RC;
+}
+
+RC RawDualWhere::compile(DualWhere& where, const std::map<std::string, std::vector<AttrInfo>>& attrs) const{
+    if (hasError) {
+        return QL_PRE_ERROR;
+    }
+
+    where.tbName1 = tbName1;
+    auto x = attrs.find(tbName1);
+    if (x == attrs.end()) {
+        return QL_NO_SUCH_KEY;
+    }
+    int idx = AttrInfo::getPos(x->second, idx1);
+    if (idx == -1) {
+        return QL_NO_SUCH_KEY;
+    }
+    where.idx1 = idx;
+    AttrType ty = x->second[idx].type;
+
+    where.tbName2 = tbName2;
+    x = attrs.find(tbName2);
+    if (x == attrs.end()) {
+        return QL_NO_SUCH_KEY;
+    }
+    idx = AttrInfo::getPos(x->second, idx2);
+    if (idx == -1) {
+        return QL_NO_SUCH_KEY;
+    }
+    where.idx2 = idx;
+    if (ty != x->second[idx].type) {
+        return QL_TYPE_NOT_MATCH;
+    }
+
+    return OK_RC;
+}
+
+RC CompileDualWheres(std::vector<DualWhere>& conds, const std::vector<RawDualWhere>& rawConds, const std::map<std::string, std::vector<AttrInfo>>& attrs) {
+    conds.clear();
+    for (auto& raw: rawConds) {
+        DualWhere cond;
+        RC rc = raw.compile(cond, attrs);
+        QLRC(rc, rc);
+        conds.push_back(cond);
+    }
+    return OK_RC;
+}

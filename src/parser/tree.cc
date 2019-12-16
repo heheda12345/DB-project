@@ -244,8 +244,54 @@ void Parser::SelectValue::visit() {
         printf("[Fail] Use a database first!\n");
         return;
     }
-    printf("SelectValue");
-    assert(asst);
+
+    std::vector<std::string> tbNames;
+    for (auto& table: *tables) {
+        tbNames.push_back(*table->tbName);
+    }
+    if (isDumplicated(tbNames)) {
+        printf("[Fail] Dumplicated table names\n");
+        return;
+    }
+    
+    vector<RawSingleWhere> singleConds;
+    vector<RawDualWhere> dualConds;
+    for (auto& where: *wheres) {
+        if (where->inSingle) {
+            if (where->singleWhere.hasError) {
+                printf("[Fail] Invalid where clause!\n");
+                return;
+            }
+            if (where->singleWhere.tbName == "") {
+                if (tbNames.size() == 1) {
+                    where->singleWhere.tbName = tbNames[0];
+                } else {
+                    printf("[Fail] Please provide table name\n");
+                    return;
+                }
+            }
+            singleConds.push_back(where->singleWhere);
+        } else {
+            if (where->dualWhere.hasError) {
+                printf("[Fail] Invalid where clause!\n");
+                return;
+            }
+            dualConds.push_back(where->dualWhere);
+        }
+    }
+
+    if (tbNames.size() == 1) {
+        for (auto& attr: selector->attrNames) {
+            if (attr.first == "")
+                attr.first = tbNames[0];
+        }
+    }
+    RC rc = QL_Manager::instance().Select(tbNames, selector->attrNames, singleConds, dualConds);
+    if (rc != OK_RC) {
+        printf("[Fail] Cannot select!\n");
+        return;
+    }
+    printf("[Succ] Select end\n");
 }
 
 

@@ -280,7 +280,15 @@ public:
                 singleWhere.tbName = col->getTbName();
                 singleWhere.op = _op;
             } else {
-                assert(false);
+                inSingle = 0;
+                if (col->getTbName() == "" || col2->getTbName() == "")
+                    dualWhere.hasError = 1;
+                if (_op != EQ_OP)
+                    dualWhere.hasError = 1;
+                dualWhere.tbName1 = col->getTbName();
+                dualWhere.idx1 = col->getColName();
+                dualWhere.tbName2 = col2->getTbName();
+                dualWhere.idx2 = col2->getColName();
             }
         }
     }
@@ -315,6 +323,7 @@ public:
     Expr* expr;
     bool inSingle;
     RawSingleWhere singleWhere;
+    RawDualWhere dualWhere;
 };
 
 class SetNode {
@@ -397,10 +406,14 @@ public:
 
 class Selector {
 public:
-    Selector(): exist(false) {}
-    Selector(std::vector<Col*>* _colList): exist(true), colList(_colList) {}
+    Selector(): all(true) {}
+    Selector(std::vector<Col*>* _colList): all(false), colList(_colList) {
+        for (auto &col: *colList) {
+            attrNames.push_back(make_pair(col->getTbName(), col->getColName()));
+        }
+    }
     ~Selector() {
-        if (exist) {
+        if (!all) {
              for (auto c: *colList) {
                 delete c;
             }
@@ -408,8 +421,9 @@ public:
         }
     }
 
-    bool exist;
+    bool all;
     std::vector<Col*>* colList;
+    std::vector<RawTbAttr> attrNames;
 };
 
 class Stmt: public TreeNode {

@@ -278,9 +278,14 @@ RC RM_FileHandle::GetNextRec(PageNum& pageNum, SlotNum& slotNum, RM_Record &rec)
     PF_PageHandle pgHandle;
     if (slotNum + 1 >= fileHeader.recordPerPage) {
         rc = pfFileHandle.GetNextPage(pageNum, pgHandle);
+        if (rc == PF_EOF) {
+            return RM_NO_SUCH_REC;
+        }
+        PFRC(rc, rc_ret);
         slotNum = 0;
     } else {
         rc = pfFileHandle.GetThisPage(pageNum, pgHandle);
+        PFRC(rc, rc_ret);
         slotNum++;
     }
     while (true) {

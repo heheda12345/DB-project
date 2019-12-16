@@ -11,7 +11,6 @@ RC IX_Manager::CreateIndex(const char *fileName, int indexNo,
     header.attrLength = attrLength;
     header.attrType = attrType;
     for (auto type: attrType) {
-        printf("type %d\n", type);
         assert(type != DATE);
     }
     header.btm = 3;
