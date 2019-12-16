@@ -22,5 +22,6 @@ alter table tbtest3 add constraint con1 foreign key (idx1, idx) references tbtes
 show tables;
 alter table tbtest3 add constraint con1 foreign key (idx1, idx) references tbtest2(id, id1);
 alter table tbtest3 add constraint con1 foreign key (idx1, idx) references tbtest2(id, id2);
+create table tbtest2(id int, name varchar, class varchar, score float, birthday date, foreign key(id) references tbtest2(id));
 drop table tbclass;
 exit;

@@ -89,6 +89,10 @@ void Parser::CreateTable::visit() {
             ForeignKeyInfo fKey;
             fKey.fkName = std::string("@@").append(std::to_string(table.foreignGroups.size())).append("-").append(*tbName);
             fKey.refTable = *(f->tbName);
+            if (fKey.refTable == *tbName) {
+                printf("[Fail] Cannot link with self\n");
+                return;
+            }
             fKey.attrs.push_back(*(f->colName));
             vector<std::string> refAttrs;
             refAttrs.push_back(*(f->othercol));
@@ -393,6 +397,10 @@ void Parser::AddForeignKey::visit() {
     ForeignKeyInfo key;
     key.fkName = std::string(*fkName);
     key.refTable = std::string(*refTable);
+    if (key.fkName == srcTb) {
+        printf("[Fail] Cannot link with self\n");
+        return;
+    }
     for (Column* col: *srcCols) {
         key.attrs.push_back(*(col->colName));
     }
