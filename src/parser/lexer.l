@@ -2,6 +2,7 @@
 
 %{
 #include "parser.tab.h"
+#include <algorithm>
 extern "C"
 {
 	int yywrap(void);
@@ -81,7 +82,11 @@ FROM { return FROM; }
 ">=" { return GE; }
 "<" { return LT; }
 ">" { return GT; }
-{IDENTIFIER} { yylval.strval = new std::string(yytext, yyleng); return IDENTIFIER; }
+{IDENTIFIER} {
+    yylval.strval = new std::string(yytext, yyleng);
+    transform(yylval.strval->begin(), yylval.strval->end(), yylval.strval->begin(), ::tolower);
+    return IDENTIFIER;
+}
 {FORMAT_INT} { sscanf(yytext, "%d", &yylval.intval); return VALUE_INT; }
 {FORMAT_FLOAT} { sscanf(yytext, "%f", &yylval.floatval); return VALUE_FLOAT; }
 {FORMAT_STRING} { yylval.strval = new std::string(yytext + 1, yyleng-2); return VALUE_STRING; }

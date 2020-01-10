@@ -392,10 +392,18 @@ void QL_Manager::PrintTable(const std::vector<AttrInfo>& attrs, const std::vecto
     }
     cout << endl;
     cout << "+"; for (int i = 0; i < n; i++) cout << line << "+"; cout << endl;
+    int cnt = 0;
+    const int max_print = 50;
     for (auto& value: values) {
+        cnt++;
+        if (cnt > max_print) // print first 50 lines only
+            break;
         cout << value << endl;
     }
     cout << "+"; for (int i = 0; i < n; i++) cout << line << "+"; cout << endl;
+    if (cnt > max_print) {
+        printf("......\n");
+    }
 }
 
 std::vector<RID> QL_Manager::SearchIndex(const std::string& tbName, const std::string& idxName, const std::vector<std::string> & toSearch, CompOp compOp) {

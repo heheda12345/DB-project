@@ -1,1 +1,1 @@
-cd ../build && make -j6 && cd ../src && ../build/main.out < ../testcase/copyfrom
+cd ../build && make -j6 && cd ../src && ../build/main.out < ../dataset/build-db.sql | tee output
