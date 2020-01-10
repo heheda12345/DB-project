@@ -130,6 +130,58 @@ RC formatItem(const TableInfo& table, TableLine& items) {
     return OK_RC;
 }
 
+RC toTableLine(const TableInfo& table, TableLine &items, const vector<std::string>& raws) {
+    if (table.attrs.size() != raws.size())
+        return QL_TYPE_NOT_MATCH;
+    items.clear();
+    // assume no null value;
+    for (int i = 0; i < table.attrs.size(); i++) {
+        Item item;
+        switch (table.attrs[i].type) {
+            case INT: {
+                int x;
+                try { x = stoi(raws[i]); } catch (const std::exception& e) { return QL_TYPE_NOT_MATCH; }
+                item.type = INT;
+                item.value = std::string(reinterpret_cast<char*>(&x), sizeof(int));
+                item.isNull = false;
+                break;
+            }
+            case FLOAT: {
+                float x;
+                try { x = stof(raws[i]); } catch (const std::exception& e) { return QL_TYPE_NOT_MATCH; }
+                item.type = FLOAT;
+                item.value = std::string(reinterpret_cast<char*>(&x), sizeof(float));
+                item.isNull = false;
+                break;
+            }
+            case STRING: {
+                item.type = STRING;
+                item.value = raws[i];
+                item.isNull = false;
+                break;
+            }
+            case DATE: {
+                std::string dt = raws[i];
+                if (dt.length() != 10 || dt[4] != '-' || dt[7] != '-') {
+                    return QL_TYPE_NOT_MATCH;
+                }
+                int x;
+                try {
+                    x = stoi(raws[i].substr(0, 4)) * 10000 + stoi(raws[i].substr(5, 2)) * 100 + stoi(raws[i].substr(8, 2)); 
+                } catch (const std::exception& e) { return QL_TYPE_NOT_MATCH; }
+                item.type = DATE;
+                item.value = std::string(reinterpret_cast<char*>(&x), sizeof(int));
+                item.isNull = false;
+                break;
+            }
+            default: {
+                assert(false);
+            }
+        }
+        items.push_back(item);
+    }
+};
+
 std::vector<std::string> formatIndex(const std::vector<AttrInfo>& as, const std::vector<std::string>& attrNames, const TableLine& value) {
     assert(as.size() == value.size());
     std::vector<std::string> ret;

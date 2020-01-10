@@ -298,27 +298,41 @@ void Parser::SelectValue::visit() {
 }
 
 void Parser::CopyFrom::visit() {
-    printf("Copy %s From %s\n", tbName->c_str(), path->c_str());
+    if (!SM_Manager::instance().usingDb()) {
+        printf("[Fail] Use a database first!\n");
+        return;
+    }
+
     ifstream is;
     is.open(path->c_str());
     char* buffer = new char[1000010];
+    RC rc;
     while (is.getline(buffer, 1e6)) {
-        vector<std::string> items;
+        vector<string> items;
         int l = strlen(buffer);
         int last = 0;
-        printf("%s\n", buffer);
+        // printf("%s\n", buffer);
         for (int i = 0; i < l; i++) {
             if (buffer[i] == '|') {
                 items.push_back(std::string(buffer + last, i - last));
                 last = i + 1;
             }
         }
-        for (auto& st: items) {
-            printf("%s\n", st.c_str());
-        }
+        // for (auto& st: items) {
+        //     printf("%s\n", st.c_str());
+        // }
+        rc = QL_Manager::instance().Insert(*tbName, items);
+        if (rc)
+            break;
     }
     delete[] buffer;
     is.close();
+
+    if (rc != OK_RC) {
+        printf("[Fail] Cannot load table %s from %s!\n", tbName->c_str(), path->c_str());
+        return;
+    }
+    printf("[Succ] Load Table End\n");
 }
 
 

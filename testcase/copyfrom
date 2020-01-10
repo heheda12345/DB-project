@@ -1,7 +1,7 @@
 create database test;
 use database test;
 CREATE TABLE REGION (R_REGIONKEY int, R_NAME CHAR(25), R_COMMENT VARCHAR(152), PRIMARY KEY(R_REGIONKEY));
-show tables;
+desc region;
 COPY region FROM '../../dataset/region.tbl';
-show tables;
+desc region;
 exit;

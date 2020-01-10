@@ -37,6 +37,7 @@ struct Item {
 std::ostream& operator << (std::ostream& os, const Item& item);
 std::ostream& operator << (std::ostream& os, const TableLine& items);
 RC formatItem(const TableInfo& table, TableLine & items);
+RC toTableLine(const TableInfo& table, TableLine &items, const std::vector<std::string>& raws);
 std::vector<std::string> formatIndex(const std::vector<AttrInfo>& as,
                                      const std::vector<std::string>& attrNames,
                                      const TableLine& attrValues);
@@ -145,6 +146,7 @@ public:
     ~QL_Manager() = default;
 
     RC Insert(const std::string& tbName, const TableLine& values_i);
+    RC Insert(const std::string& tbName, const std::vector<std::string>& rawValues);
 
     RC Delete(const std::string& tbName, const std::vector<RawSingleWhere>& rawConds);
     
