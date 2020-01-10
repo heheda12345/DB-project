@@ -296,6 +296,10 @@ void Parser::SelectValue::visit() {
     printf("[Succ] Select end\n");
 }
 
+void Parser::CopyFrom::visit() {
+    printf("Copy %s From %s\n", tbName->c_str(), path->c_str());
+}
+
 
 void Parser::AddIndex::visit() {
     if (!SM_Manager::instance().usingDb()) {

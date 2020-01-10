@@ -64,6 +64,8 @@ SUM { return SUM; }
 MIN { return MIN; }
 MAX { return MAX; }
 LIKE { return LIKE; }
+COPY { return COPY; }
+FROM { return FROM; }
 "," { return yytext[0]; }
 "(" { return yytext[0]; }
 ")" { return yytext[0]; }

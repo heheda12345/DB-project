@@ -641,6 +641,20 @@ public:
     std::vector<WhereClause*>* wheres;
 };
 
+class CopyFrom: public Stmt {
+public:
+    CopyFrom(std::string* _tbName, std::string* _path): tbName(_tbName), path(_path) {}
+    ~CopyFrom() {
+        delete tbName;
+        delete path;
+    }
+
+    void visit() override;
+
+    std::string* tbName;
+    std::string* path;
+};
+
 class AddIndex: public Stmt {
 public:
     AddIndex(std::string* _tbName, std::string* _idxName, std::vector<Column*>* _columns): tbName(_tbName), idxName(_idxName), columns(_columns) {}
