@@ -30,7 +30,7 @@ void IX_BTKEY::toCharArray(char* pData) {
     for (auto& x: attr) {
         *reinterpret_cast<char*>(pData + cur) = x.length(); cur += sizeof(char);
         memcpy(pData + cur, x.c_str(), x.length());
-        cur += x.length() + sizeof(char);
+        cur += x.length();
     }
 }
 
@@ -131,7 +131,7 @@ RC IX_BTNode::getSize(const std::vector<int>& attrLen, int m) {
 }
 
 void IX_BTNode::dump(char* pData, const std::vector<int>& attrLen, int m) {
-    // printf("dump(%d) size %d\n", m, (int)child.size());
+    // printf("dump(%d) size %d %d\n", m, (int)child.size(), IX_BTKEY::getSize(attrLen));
     assert(key.size() <= m);
     assert(child.size() == key.size() + 1);
     *reinterpret_cast<int*>(pData) = child.size();
@@ -147,7 +147,7 @@ void IX_BTNode::dump(char* pData, const std::vector<int>& attrLen, int m) {
 
 void IX_BTNode::load(char* pData, const std::vector<int>& attrLen, int m) {
     int n = *reinterpret_cast<int*>(pData);
-    // printf("load(%d) size %d\n", m, n);
+    // printf("load(%d) size %d %d\n", m, n, IX_BTKEY::getSize(attrLen));
     assert(n <= m+1);
     parent.loadFrom(pData + sizeof(int));
     pos.loadFrom(pData + sizeof(int) + RID::getSize());
@@ -205,7 +205,10 @@ RC IX_BTree::search(IX_BTKEY& e, RID& ret) {
 }
 
 RC IX_BTree::insert(IX_BTKEY& e) {
-    // printf("[[[[[[insert]]]]]] %d %lld %d\n", *reinterpret_cast<const int*>(e.attr[0].c_str()), e.rid.GetPageNum(), e.rid.GetSlotNum());
+    // printf("[[[[[[insert]]]]]] %d %d %lld %d\n",
+    //     *reinterpret_cast<const int*>(e.attr[0].c_str()),
+    //     *reinterpret_cast<const int*>(e.attr[1].c_str()), 
+    //     e.rid.GetPageNum(), e.rid.GetSlotNum());
     RID v;
     RC rc = search(e, v);
     if (rc == IX_ENTRYEXISTS) {
