@@ -105,18 +105,9 @@ RC RM_FileHandle::InsertRec(const char *pData, RID &rid) {
     char* data;
     bool findEmpty = false;
     
-    rc = pfFileHandle.GetFirstPage(pgHandle);
-    while (!findEmpty) {
-        rc = pgHandle.GetPageNum(pageNum);
-        PFRC(rc, rc_ret)
-
-        rc = pfFileHandle.UnpinPage(pageNum);
-        PFRC(rc, rc_ret)
-
-        rc = pfFileHandle.GetNextPage(pageNum, pgHandle);
-        if (rc == PF_EOF)
-            break;
-        PFRC(rc, rc_ret)
+    if (fileHeader.poolHead) {
+        rc = pfFileHandle.GetThisPage(fileHeader.poolHead, pgHandle);
+        PFRC(rc, rc_ret);
 
         rc = pgHandle.GetData(data);
         PFRC(rc, rc_ret)
@@ -129,6 +120,13 @@ RC RM_FileHandle::InsertRec(const char *pData, RID &rid) {
                 findEmpty = true;
                 break;
             }
+
+        if (!findEmpty) {
+            rc = pgHandle.GetPageNum(pageNum);
+            PFRC(rc, rc_ret)
+            rc = pfFileHandle.UnpinPage(pageNum);
+            PFRC(rc, rc_ret)
+        }
     }
 
     if (!findEmpty) {
@@ -140,8 +138,9 @@ RC RM_FileHandle::InsertRec(const char *pData, RID &rid) {
         PFRC(rc, rc_ret)
         slotNum = 0;
         memset(data, 0, sizeof(PF_PAGE_SIZE));
+        fileHeader.poolHead = pageNum;
+        UpdateHeader();
     }
-    
     //run
     memcpy(data + getIndex(slotNum), pData, fileHeader.recordSize);
     revRecord(data, slotNum);
@@ -377,6 +376,29 @@ RC RM_FileHandle::SetMeta(const char* pData, int size) {
     // printf("[SetMeta] fileHeader %d %d %d\n", fileHeader.recordSize, fileHeader.recordPerPage, fileHeader.metaSize);
     memcpy(data + sizeof(FileHeader), pData, size);
     // printf("%x %x\n", *reinterpret_cast<const int*>(pData), *reinterpret_cast<const int*>(pData + 4));
+    
+    PageNum pageNum;
+    rc = pfPageHandle.GetPageNum(pageNum);
+    PFRC(rc, rc_ret);
+    pfFileHandle.MarkDirty(pageNum);
+    PFRC(rc, rc_ret);
+    rc = pfFileHandle.UnpinPage(pageNum);
+    PFRC(rc, rc_ret);
+    return OK_RC;
+}
+
+RC RM_FileHandle::UpdateHeader() {
+    int rc_ret = RM_FILEHANDLE_UPDATEHEADER;
+    if (!isOpen) {
+        RMRC(RM_FILE_NOT_OPEN, rc_ret);
+    }
+    PF_PageHandle pfPageHandle;
+    int rc = pfFileHandle.GetFirstPage(pfPageHandle);
+    PFRC(rc, rc_ret)
+    char* data;
+    rc = pfPageHandle.GetData(data);
+    PFRC(rc, rc_ret)
+    *(reinterpret_cast<FileHeader*>(data)) = fileHeader;
     
     PageNum pageNum;
     rc = pfPageHandle.GetPageNum(pageNum);

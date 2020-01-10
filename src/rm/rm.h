@@ -41,6 +41,7 @@
 #define RM_FILEHANDLE_GETMETASIZE (START_RM_WARN + 21)
 #define RM_FILEHANDLE_SETMETA (START_RM_WARN + 22)
 #define RM_FILEHANDLE_GETMETA (START_RM_WARN + 23)
+#define RM_FILEHANDLE_UPDATEHEADER (START_RM_WARN + 24)
 #define RM_MANAGER_CREATEFILE (START_RM_WARN + 31)
 #define RM_MANAGER_DESTROYFILE (START_RM_WARN + 32)
 #define RM_MANAGER_OPENFILE (START_RM_WARN + 33)
@@ -161,6 +162,8 @@ private:
     RC Open(PF_FileHandle& handle);
     RC Close();
     RC checkRid(const RID &rid) const;
+
+    RC UpdateHeader();
 
     int getIndex(SlotNum slot) const;
     bool recordExist(char* data, SlotNum slot) const {

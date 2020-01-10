@@ -77,8 +77,6 @@ CREATE TABLE ORDERS (
 COPY orders FROM '../../dataset/orders.tbl';
 DESC orders;
 
-exit;
-
 CREATE TABLE LINEITEM (
 	L_ORDERKEY		INT NOT NULL,
 	L_PARTKEY		INT NOT NULL,

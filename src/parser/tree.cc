@@ -307,11 +307,14 @@ void Parser::CopyFrom::visit() {
     is.open(path->c_str());
     char* buffer = new char[1000010];
     RC rc;
+    int cnt = 0;
     while (is.getline(buffer, 1e6)) {
         vector<string> items;
         int l = strlen(buffer);
         int last = 0;
-        // printf("%s\n", buffer);
+        if (cnt % 100 == 99)
+            printf("%s\n", buffer);
+        cnt++;
         for (int i = 0; i < l; i++) {
             if (buffer[i] == '|') {
                 items.push_back(std::string(buffer + last, i - last));
