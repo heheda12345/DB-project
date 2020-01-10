@@ -420,6 +420,8 @@ std::vector<RID> QL_Manager::SearchIndex(const std::string& tbName, const std::s
     rc = IX_IndexScan::GetEntries(handle, compOp, toSearch, rids);
     assert(rc == OK_RC);
     // printf("[result] rid.size = %d\n", (int)rids.size());
+    rc = ixm.CloseIndex(handle);
+    assert(rc == OK_RC);
     return rids;
 }
 
