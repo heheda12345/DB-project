@@ -2,7 +2,6 @@ project (parser)
 
 add_compile_options("-ly")
 add_compile_options("-ll")
-add_compile_options("-g")
 
 # bison and flex
 find_package(BISON REQUIRED)
