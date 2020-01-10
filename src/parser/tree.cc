@@ -3,6 +3,7 @@
 #include "../sm/sm.h"
 #include "../ql/ql.h"
 #include <assert.h>
+#include <fstream>
 using namespace std;
 using namespace Parser;
 
@@ -298,6 +299,26 @@ void Parser::SelectValue::visit() {
 
 void Parser::CopyFrom::visit() {
     printf("Copy %s From %s\n", tbName->c_str(), path->c_str());
+    ifstream is;
+    is.open(path->c_str());
+    char* buffer = new char[1000010];
+    while (is.getline(buffer, 1e6)) {
+        vector<std::string> items;
+        int l = strlen(buffer);
+        int last = 0;
+        printf("%s\n", buffer);
+        for (int i = 0; i < l; i++) {
+            if (buffer[i] == '|') {
+                items.push_back(std::string(buffer + last, i - last));
+                last = i + 1;
+            }
+        }
+        for (auto& st: items) {
+            printf("%s\n", st.c_str());
+        }
+    }
+    delete[] buffer;
+    is.close();
 }
 
 
