@@ -1,22 +1,6 @@
 #include "sm.h"
 using namespace std;
 
-// struct IndexInfo {
-//     std::string idxName;
-//     int idxID;
-//     std::vector<std::string> attrs;
-
-//     int load(const char* pData) { return 0; }
-//     int dump(char* pData) const { return 0; }
-//     int getSize() const { return 0; }
-
-//     static std::vector<IndexInfo> loadIndexes(const char* pData) { return std::vector<IndexInfo>(); }
-//     static int dumpIndexes(char* pData, const std::vector<IndexInfo>& vec) { return 0; }
-//     static int getIndexesSize(const std::vector<IndexInfo>& vec) { return 0; }
-//     static int getPos(const std::vector<IndexInfo> &idxKeys, const std::string& idxName);
-//     static int getNextId(const std::vector<IndexInfo> &idxKeys);
-// };
-
 int IndexInfo::load(const char* pData) {
     int cur = 0;
     attrs.clear();
@@ -87,6 +71,14 @@ int IndexInfo::getNextId(const std::vector<IndexInfo> &idxKeys) {
     for (auto& key: idxKeys)
         mx = max(mx, key.idxID);
     return mx + 1;
+}
+
+bool IndexInfo::inUnique(const std::vector<IndexInfo> &uniqueGroups, const std::string& attrName) {
+    for (auto& g: uniqueGroups) {
+        if (findName(g.attrs, attrName) != -1)
+            return 1;
+    }
+    return 0;
 }
 
 std::ostream& operator << (std::ostream& os, const IndexInfo& fKey) {

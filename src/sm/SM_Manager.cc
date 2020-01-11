@@ -312,6 +312,10 @@ RC SM_Manager::DropAttr(const std::string& tbName, const std::string& attrName) 
     if (ForeignKeyInfo::isForeignKey(table.foreignGroups, attrName)) {
         return SM_IS_FOREIGN;
     }
+    if (IndexInfo::inUnique(table.uniqueGroups, attrName)) {
+        return SM_IS_UNIQUE;
+    }
+
     int idx = AttrInfo::getPos(table.attrs, attrName);
     if (idx == -1) {
         return SM_NO_SUCH_KEY;
@@ -476,7 +480,8 @@ RC SM_Manager::ShuffleForeign(const TableInfo& srcTable, ForeignKeyInfo &key, co
         int idxSrc = AttrInfo::getPos(srcTable.attrs, key.attrs[idx]);
         int idxDst = AttrInfo::getPos(table.attrs, x);
         assert(idxDst != -1);
-        if (idxSrc == -1 || idxDst == -1 || srcTable.attrs[idxSrc].type != table.attrs[idxDst].type) {
+        if (idxSrc == -1 || idxDst == -1 || srcTable.attrs[idxSrc].type != table.attrs[idxDst].type ||
+            srcTable.attrs[idxSrc].mxLen != table.attrs[idxDst].mxLen) {
             return SM_FOREIGN_NOT_MATCH;
         }
         srcAttrs.push_back(key.attrs[idx]);

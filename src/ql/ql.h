@@ -204,16 +204,23 @@ public:
               const std::vector<RawTbAttr>& toShow);
 
     bool TableIsEmpty(const std::string& tbName);
-    bool CanAddPrimaryKey(const std::string& tbName) { return TableIsEmpty(tbName); }
-    bool CanAddForeignKey(const std::string& tbName) { return TableIsEmpty(tbName);; }
-    bool CanChangeCol(const std::string& tbName) { return TableIsEmpty(tbName);; }
-    bool CanCreateIndex(const std::string& tbName) { return TableIsEmpty(tbName);; }
-    bool CanAddUniqueKey(const std::string& tbName) { return TableIsEmpty(tbName);; }
+    bool IsUnique(const std::string& tbName,
+                  const std::vector<std::string>& attrNames);
+    
+    bool CanAddPrimaryKey(const std::string& tbName,
+                          const std::vector<std::string>& attrNames);
+    bool CanAddForeignKey(const std::string& tbName,
+                          const ForeignKeyInfo& fKey);
+    bool CanChangeCol(const std::string& tbName);
+    bool CanCreateIndex(const std::string& tbName);
+    bool CanAddUniqueKey(const std::string& tbName,
+                         const std::vector<std::string>& attrNames);
 
     static QL_Manager& instance() { 
         static QL_Manager ins;
         return ins;
     }
+
 
 private:
     SM_Manager &smm;

@@ -408,7 +408,7 @@ void Parser::AddField::visit() {
             for (auto& col: *(field->columns)) {
                 attrNames.push_back(*(col->colName));
             }
-            if (!QL_Manager::instance().CanAddPrimaryKey(*tbName)) {
+            if (!QL_Manager::instance().CanAddPrimaryKey(*tbName, attrNames)) {
                 printf("[Fail] Invalid data exists\n");
                 return;
             }
@@ -503,13 +503,13 @@ void Parser::AddForeignKey::visit() {
     for (Column* col: *refCols) {
         refAttrs.push_back(*(col->colName));
     }
-    if (!QL_Manager::instance().CanAddForeignKey(*tbName)) {
-        printf("[Fail] Invalid value in table!\n");
-        return;
-    }
     RC rc = SM_Manager::instance().ShuffleForeign(srcTb, key, refAttrs);
     if (rc != OK_RC) {
         printf("[Fail] Not match!\n");
+        return;
+    }
+    if (!QL_Manager::instance().CanAddForeignKey(srcTb, key)) {
+        printf("[Fail] Invalid value in table!\n");
         return;
     }
     rc = SM_Manager::instance().AddForeignKey(srcTb, key);
@@ -546,7 +546,7 @@ void Parser::AddUniqueKey::visit() {
     for (Column* col: *cols) {
         attrs.push_back(*(col->colName));
     }
-    if (!QL_Manager::instance().CanAddUniqueKey(*tbName)) {
+    if (!QL_Manager::instance().CanAddUniqueKey(*tbName, attrs)) {
         printf("[Fail] Invalid value in table!\n");
         return;
     }

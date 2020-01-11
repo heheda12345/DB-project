@@ -318,7 +318,7 @@ std::string ComputeDiv(const std::string& l, const std::string& r, AttrType type
     }
 }
 
-bool cmp(std::vector<std::string>& a, std::vector<std::string>& b) {
+bool cmp(const std::vector<std::string>& a, const std::vector<std::string>& b) {
     assert(a.size() == b.size());
     for (int i = 0; i < a.size(); i++) {
         if (a[i] != b[i])
@@ -334,4 +334,14 @@ bool isDumplicated(const vector<vector<std::string>>& vec) {
         if (cmp(v[i-1], v[i]) == 0)
             return 1;
     return 0;
+}
+
+bool AInB(const std::vector<std::vector<std::string>>& a, const std::vector<std::vector<std::string>>& bb) {
+    auto b = bb;
+    sort(b.begin(), b.end(), cmp);
+    for (auto &value: a) {
+        if (!binary_search(b.begin(), b.end(), value, cmp))
+            return 0;
+    }
+    return 1;
 }

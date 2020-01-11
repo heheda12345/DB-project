@@ -580,7 +580,6 @@ void QL_Manager::Join(std::vector<AttrInfo>& joinedInfo,
 }
 
 bool QL_Manager::TableIsEmpty(const std::string& tbName) {
-    printf("tablename %s\n", tbName.c_str());
     RM_FileHandle handle;
     RC rc = rmm.OpenFile(tbName.c_str(), handle); MUST_SUCC;
     RM_FileScan scan;
@@ -594,4 +593,74 @@ bool QL_Manager::TableIsEmpty(const std::string& tbName) {
     rc = scan.CloseScan(); MUST_SUCC;
     rc = rmm.CloseFile(handle); MUST_SUCC;
     return isEmpty;
+}
+
+bool QL_Manager::IsUnique(const std::string& tbName, const std::vector<std::string>& attrNames) {
+    TableInfo table;
+    RC rc = smm.GetTable(tbName, table);
+    SMRC(rc, QL_INVALID_TABLE);
+    vector<TableLine> values;
+    vector<RID> rids;
+    rc = GetAllItems(tbName, values, rids);
+    QLRC(rc, rc);
+    vector<vector<std::string>> formated;
+    for (auto& v: values) {
+        for (auto& item: v) {
+            if (item.isNull)
+                return 0;
+        }
+        formated.push_back(formatIndex(table.attrs, attrNames, v));
+    }
+    return !isDumplicated(formated);
+}
+
+bool QL_Manager::CanAddPrimaryKey(const std::string& tbName, const std::vector<std::string>& attrNames) {
+    return IsUnique(tbName, attrNames) && TableIsEmpty(tbName);
+}
+
+bool QL_Manager::CanAddForeignKey(const std::string& tbName, const ForeignKeyInfo& fKey) {
+    TableInfo table1;
+    RC rc = smm.GetTable(tbName, table1);
+    SMRC(rc, QL_INVALID_TABLE);
+    vector<TableLine> values1;
+    vector<RID> rids1;
+    rc = GetAllItems(tbName, values1, rids1);
+    QLRC(rc, rc);
+    vector<vector<std::string>> src;
+    for (auto& v: values1) {
+        if (!allNull(table1.attrs, fKey.attrs, v) &&
+            hasNull(table1.attrs, fKey.attrs, v))
+                return 0;
+        src.push_back(formatIndex(table1.attrs, fKey.attrs, v));
+    }
+
+    TableInfo table2;
+    rc = smm.GetTable(fKey.refTable, table2);
+    SMRC(rc, QL_INVALID_TABLE);
+    vector<TableLine> values2;
+    vector<RID> rids2;
+    rc = GetAllItems(fKey.refTable, values2, rids2);
+    QLRC(rc, rc);
+    vector<vector<std::string>> dst;
+    assert(table2.hasPrimary());
+    for (auto& v: values2) {
+        if (!allNull(table2.attrs, fKey.attrs, v) &&
+            hasNull(table2.attrs, fKey.attrs, v))
+                return 0;
+        dst.push_back(formatIndex(table2.attrs, table2.primaryKeys, v));
+    }
+
+    return AInB(src, dst) && TableIsEmpty(tbName);
+}
+
+bool QL_Manager::CanChangeCol(const std::string& tbName) {
+    return TableIsEmpty(tbName)  && TableIsEmpty(tbName);
+}
+
+bool QL_Manager::CanCreateIndex(const std::string& tbName) {
+    return true  && TableIsEmpty(tbName);
+}
+
+bool QL_Manager::CanAddUniqueKey(const std::string& tbName, const std::vector<std::string>& attrNames) {
+    return IsUnique(tbName, attrNames)  && TableIsEmpty(tbName);
 }

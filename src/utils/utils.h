@@ -26,6 +26,7 @@ int getSum(const std::vector<int> &vec);
 int findName(const std::vector<std::string>& vec, const std::string& target);
 bool isDumplicated(const std::vector<std::string>& vec);
 bool isDumplicated(const std::vector<std::vector<std::string>>& vec);
+bool AInB(const std::vector<std::vector<std::string>>& a, const std::vector<std::vector<std::string>>& b);
 
 bool isLegalDate(int date);
 std::string cutForPrint(std::string st);

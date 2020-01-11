@@ -93,6 +93,7 @@ struct IndexInfo {
     static int getIndexesSize(const std::vector<IndexInfo>& vec);
     static int getPos(const std::vector<IndexInfo> &idxKeys, const std::string& idxName);
     static int getNextId(const std::vector<IndexInfo> &idxKeys);
+    static bool inUnique(const std::vector<IndexInfo> &uniqueGroups, const std::string& attrName);
 };
 
 std::ostream& operator << (std::ostream& os, const IndexInfo& fKey);
@@ -217,7 +218,8 @@ void SM_PrintError(RC rc);
 #define SM_NO_SUCH_KEY          (START_SM_ERR - 10)
 #define SM_IS_PRIMARY           (START_SM_ERR - 11)
 #define SM_IS_FOREIGN           (START_SM_ERR - 12)
-#define SM_REQUIRE_NOT_NULL     (START_SM_ERR - 13)
+#define SM_IS_UNIQUE            (START_SM_ERR - 13)
+#define SM_REQUIRE_NOT_NULL     (START_SM_ERR - 14)
 #define SM_LASTERROR            SM_ERROR
 
 
