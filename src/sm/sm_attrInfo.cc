@@ -104,7 +104,11 @@ std::ostream& operator << (std::ostream& os, const std::vector<AttrInfo>& attrs)
     for (auto& attr: attrs) {
         std::string st_ty = getName(attr.type, attr.canChange());
         std::string info = "";
+        if (attr.type == STRING)
+            info += std::to_string(attr.mxLen);
         if (attr.isNotNull()) {
+            if (info != "")
+                info += ", ";
             info += "Not Null";
         }
         if (attr.hasDefault()) {

@@ -3,7 +3,7 @@
 #include "parser/parser.tab.h"
 
 int main() {
-    InitDir("../data");
+    // InitDir("../data");
     chdir("../data");
     printf("DB initialized!\n");
     yyparse();

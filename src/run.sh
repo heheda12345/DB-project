@@ -1,1 +1,1 @@
-cd ../build && make -j6 && cd ../src && ../build/main.out < ../dataset/build-db.sql
+cd ../build && make -j6 && cd ../src && ../build/main.out

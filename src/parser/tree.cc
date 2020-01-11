@@ -131,6 +131,7 @@ void Parser::Desc::visit() {
         printf("[Fail] Use a database first!\n");
         return;
     }
+    SM_Manager::instance().ShowTable(*tbName);
     QL_Manager::instance().Desc(*tbName);
 }
 
