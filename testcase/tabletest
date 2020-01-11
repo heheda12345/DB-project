@@ -1,0 +1,10 @@
+use orderDB;
+desc nation;
+desc customer;
+INSERT INTO nation VALUES (86, 'xxx', 0, '');
+INSERT INTO customer VALUES (23333, 'xxxxxx', NULL, 86, NULL, NULL, NULL, NULL);
+SELECT c_address FROM customer WHERE c_nationkey = 86;
+INSERT INTO part VALUES (2333, 'aaaaa', 'bbbbb', 'A', 'ccccc', 1, 'ddddd', 1861.96, 'fully. f');
+SELECT * FROM part WHERE p_brand='A';
+SELECT * FROM partsupp WHERE ps_partkey=12;
+UPDATE partsupp SET ps_availqty=8774 WHERE ps_partkey=12;

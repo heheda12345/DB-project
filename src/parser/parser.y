@@ -79,6 +79,7 @@ program: program stmt
         printf("\n");
         $2->run();
         delete $2;
+        printf(">>>");
     }
     | /* empty */
     {

@@ -6,5 +6,6 @@ int main() {
     // InitDir("../data");
     chdir("../data");
     printf("DB initialized!\n");
+    printf(">>>");
     yyparse();
 }

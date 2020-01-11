@@ -1,1 +1,1 @@
-cd ../build && make -j6 && cd ../src && ../build/main.out
+cd ../build && make -j6 && cd ../src && rm -r ../data/orderDB && cp -r ../data/db ../data/orderDB && ../build/main.out

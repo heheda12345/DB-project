@@ -114,7 +114,11 @@ RC QL_Manager::Update(const std::string& tbName, const std::vector<RawSetJob> &r
     RC rc = smm.GetTable(tbName, table);
     SMRC(rc, QL_INVALID_TABLE);
     if (table.linkedByOthers()) {
-        return QL_LINKED_BY_OTHERS;
+        for (auto &x: rawJobs) {
+            if (findName(table.primaryKeys, x.target) != -1) {
+                return QL_LINKED_BY_OTHERS;
+            }
+        }
     }
     std::vector<SingleWhere> conds;
     rc = CompileWheres(conds, rawConds, table.attrs, tbName);
