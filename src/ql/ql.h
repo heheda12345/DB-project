@@ -41,6 +41,12 @@ RC toTableLine(const TableInfo& table, TableLine &items, const std::vector<std::
 std::vector<std::string> formatIndex(const std::vector<AttrInfo>& as,
                                      const std::vector<std::string>& attrNames,
                                      const TableLine& attrValues);
+bool allNull(const std::vector<AttrInfo>& as,
+             const std::vector<std::string>& attrNames,
+             const TableLine& attrValues);
+bool hasNull(const std::vector<AttrInfo>& as,
+             const std::vector<std::string>& attrNames,
+             const TableLine& attrValues);
 
 struct SingleWhere {
     enum Type {
@@ -176,13 +182,13 @@ public:
     bool ExistInIndex(const std::string& tbName,
                       const TableInfo& table,
                       const std::string& idxName,
-                      const TableLine& value); // for index
+                      const TableLine& value); // for unique index
 
     bool ExistInIndex(const TableInfo& table,
                       const std::string& idxName,
                       const TableLine & value,
                       const std::string& refTbName,
-                      const std::string& refIdxName); // for foreign
+                      const std::string& refIdxName); // for foreign, allow null
 
     bool CanUpdate(const std::string &tbName,
                    const TableInfo& table,

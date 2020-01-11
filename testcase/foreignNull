@@ -1,0 +1,14 @@
+create database test;
+use test;
+create table tbclass(id1 int, id2 int, primary key(id1, id2));
+show tables;
+create table tbtest(id int, id1 int, id2 int);
+alter table tbtest add constraint xxx foreign key (id1, id2) references tbclass(id1, id2);
+show tables;
+insert into tbclass values(1, 1);
+show tables;
+insert into tbtest values(1, 1, 1);
+show tables;
+insert into tbtest values(1, 1, 2);
+insert into tbtest values(1, 1, NULL);
+insert into tbtest values(1, NULL, NULL);

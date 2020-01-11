@@ -484,6 +484,10 @@ void Parser::DropPrimaryKey::visit() {
 }
 
 void Parser::AddForeignKey::visit() {
+    if (!SM_Manager::instance().usingDb()) {
+        printf("[Fail] Use a database first!\n");
+        return;
+    }
     std::string srcTb(*tbName);
     ForeignKeyInfo key;
     key.fkName = std::string(*fkName);
@@ -517,6 +521,10 @@ void Parser::AddForeignKey::visit() {
 }
 
 void Parser::DropForeignKey::visit() {
+    if (!SM_Manager::instance().usingDb()) {
+        printf("[Fail] Use a database first!\n");
+        return;
+    }
     std::string srcTb(*tbName);
     std::string fk(*fkName);
     RC rc = SM_Manager::instance().DropForeignKey(srcTb, fk);
@@ -528,6 +536,10 @@ void Parser::DropForeignKey::visit() {
 }
 
 void Parser::AddUniqueKey::visit() {
+    if (!SM_Manager::instance().usingDb()) {
+        printf("[Fail] Use a database first!\n");
+        return;
+    }
     std::string srcTb(*tbName);
     std::string fk = std::string(*fkName);
     vector<string> attrs;
@@ -547,6 +559,10 @@ void Parser::AddUniqueKey::visit() {
 }
 
 void Parser::DropUniqueKey::visit() {
+    if (!SM_Manager::instance().usingDb()) {
+        printf("[Fail] Use a database first!\n");
+        return;
+    }
     std::string srcTb(*tbName);
     std::string fk(*fkName);
     RC rc = SM_Manager::instance().DropUniqueKey(srcTb, fk);

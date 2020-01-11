@@ -8,3 +8,6 @@ INSERT INTO part VALUES (2333, 'aaaaa', 'bbbbb', 'A', 'ccccc', 1, 'ddddd', 1861.
 SELECT * FROM part WHERE p_brand='A';
 SELECT * FROM partsupp WHERE ps_partkey=12;
 UPDATE partsupp SET ps_availqty=8774 WHERE ps_partkey=12;
+INSERT INTO orders VALUES (127664, 315000, 'G', 'X', '2019-02-28', null, null, null, null);
+INSERT INTO orders VALUES (127664, 315000, 'G', 8.8, '2019-02-29', null, null, null, null);
+INSERT INTO region VALUES (3,'BEIJING', 'THU is in Beijing'); 

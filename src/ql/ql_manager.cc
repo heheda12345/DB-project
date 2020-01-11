@@ -433,6 +433,12 @@ bool QL_Manager::ExistInIndex(const TableInfo& table, const std::string& fkName,
     int pos = ForeignKeyInfo::getPos(table.foreignGroups, fkName);
     // printf("searching %s\n", fkName.c_str());
     assert(pos != -1);
+    if (allNull(table.attrs, table.foreignGroups[pos].attrs, value)) {
+        return 1;
+    }
+    if (hasNull(table.attrs, table.foreignGroups[pos].attrs, value)) {
+        return 0;
+    }
     auto toSearch = formatIndex(table.attrs, table.foreignGroups[pos].attrs, value);
     return SearchIndex(refTbName, refIdxName, toSearch, EQ_OP).size() > 0;
 }

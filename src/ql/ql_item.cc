@@ -192,3 +192,26 @@ std::vector<std::string> formatIndex(const std::vector<AttrInfo>& as, const std:
     }
     return ret;
 }
+
+bool allNull(const std::vector<AttrInfo>& as, const std::vector<std::string>& attrNames, const TableLine& value) {
+    assert(as.size() == value.size());
+    for (auto& s: attrNames) {
+        int idx = AttrInfo::getPos(as, s);
+        assert(idx != -1);
+        if (!value[idx].isNull) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+bool hasNull(const std::vector<AttrInfo>& as, const std::vector<std::string>& attrNames, const TableLine& value) {
+    assert(as.size() == value.size());
+    for (auto& s: attrNames) {
+        int idx = AttrInfo::getPos(as, s);
+        assert(idx != -1);
+        if (value[idx].isNull)
+            return 1;
+    }
+    return 0;
+}
