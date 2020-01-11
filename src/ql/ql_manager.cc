@@ -644,10 +644,11 @@ bool QL_Manager::CanAddForeignKey(const std::string& tbName, const ForeignKeyInf
     QLRC(rc, rc);
     vector<vector<std::string>> src;
     for (auto& v: values1) {
-        if (!allNull(table1.attrs, fKey.attrs, v) &&
-            hasNull(table1.attrs, fKey.attrs, v))
+        if (!allNull(table1.attrs, fKey.attrs, v)) {
+            if (hasNull(table1.attrs, fKey.attrs, v))
                 return 0;
-        src.push_back(formatIndex(table1.attrs, fKey.attrs, v));
+            src.push_back(formatIndex(table1.attrs, fKey.attrs, v));
+        }
     }
 
     TableInfo table2;
@@ -660,13 +661,9 @@ bool QL_Manager::CanAddForeignKey(const std::string& tbName, const ForeignKeyInf
     vector<vector<std::string>> dst;
     assert(table2.hasPrimary());
     for (auto& v: values2) {
-        if (!allNull(table2.attrs, fKey.attrs, v) &&
-            hasNull(table2.attrs, fKey.attrs, v))
-                return 0;
         dst.push_back(formatIndex(table2.attrs, table2.primaryKeys, v));
     }
-
-    return AInB(src, dst) && TableIsEmpty(tbName);
+    return AInB(src, dst);
 }
 
 bool QL_Manager::CanChangeCol(const std::string& tbName) {

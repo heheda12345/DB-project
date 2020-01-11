@@ -340,8 +340,9 @@ bool AInB(const std::vector<std::vector<std::string>>& a, const std::vector<std:
     auto b = bb;
     sort(b.begin(), b.end(), cmp);
     for (auto &value: a) {
-        if (!binary_search(b.begin(), b.end(), value, cmp))
+        if (!binary_search(b.begin(), b.end(), value, cmp)) {
             return 0;
+        }
     }
     return 1;
 }
