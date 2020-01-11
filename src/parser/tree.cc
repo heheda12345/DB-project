@@ -325,17 +325,17 @@ void Parser::CopyFrom::visit() {
         //     printf("%s\n", st.c_str());
         // }
         rc = QL_Manager::instance().Insert(*tbName, items);
-        if (rc)
-            break;
+        if (rc) {
+            printf("[Fail] %s: %s\n", tbName->c_str(), buffer);
+        }
     }
     delete[] buffer;
     is.close();
 
     if (rc != OK_RC) {
-        printf("[Fail] Cannot load table %s from %s!\n", tbName->c_str(), path->c_str());
         return;
     }
-    printf("[Succ] Load Table End\n");
+    printf("[Succ] Load Table %s End\n", tbName->c_str());
 }
 
 
