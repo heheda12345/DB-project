@@ -613,6 +613,23 @@ bool QL_Manager::IsUnique(const std::string& tbName, const std::vector<std::stri
     return !isDumplicated(formated);
 }
 
+bool QL_Manager::HasNull(const std::string& tbName, const std::vector<std::string>& attrNames) {
+    TableInfo table;
+    RC rc = smm.GetTable(tbName, table);
+    SMRC(rc, QL_INVALID_TABLE);
+    vector<TableLine> values;
+    vector<RID> rids;
+    rc = GetAllItems(tbName, values, rids);
+    QLRC(rc, rc);
+    for (auto& v: values) {
+        for (auto& item: v) {
+            if (item.isNull)
+                return 1;
+        }
+    }
+    return 0;
+}
+
 bool QL_Manager::CanAddPrimaryKey(const std::string& tbName, const std::vector<std::string>& attrNames) {
     return IsUnique(tbName, attrNames);
 }
@@ -656,22 +673,30 @@ bool QL_Manager::CanChangeCol(const std::string& tbName) {
     return TableIsEmpty(tbName)  && TableIsEmpty(tbName);
 }
 
-bool QL_Manager::CanCreateIndex(const std::string& tbName) {
-    return true  && TableIsEmpty(tbName);
+bool QL_Manager::CanCreateIndex(const std::string& tbName, const std::vector<std::string>& attrNames) {
+    return !HasNull(tbName, attrNames);
 }
 
 bool QL_Manager::CanAddUniqueKey(const std::string& tbName, const std::vector<std::string>& attrNames) {
-    return IsUnique(tbName, attrNames)  && TableIsEmpty(tbName);
+    return IsUnique(tbName, attrNames);
 }
 
-RC QL_Manager::AddPrimaryKey(const std::string& tbName, const std::vector<std::string>& attrNames) {
+RC QL_Manager::AddPrimaryKey(const std::string& tbName) {
+    return InitIndex(tbName, "@Primary");
+}
+
+RC QL_Manager::AddUniqueKey(const std::string& tbName, const std::string& pkName) {
+    return InitIndex(tbName, std::string("@Unique.").append(pkName));
+}
+
+RC QL_Manager::InitIndex(const std::string& tbName, const std::string& idxName) {
     TableInfo table;
     RC rc = smm.GetTable(tbName, table); MUST_SUCC;
     vector<TableLine> values;
     vector<RID> rids;
     rc = GetAllItems(tbName, values, rids); MUST_SUCC;
     assert(values.size() == rids.size());
-    int pos = IndexInfo::getPos(table.indexes, "@Primary");
+    int pos = IndexInfo::getPos(table.indexes, idxName);
     assert(pos != -1);
     const IndexInfo& idxInfo = table.indexes[pos];
     for (int i = 0; i < values.size(); i++) {

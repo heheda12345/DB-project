@@ -349,18 +349,17 @@ void Parser::AddIndex::visit() {
     for (auto& col: *columns) {
         attrNames.push_back(*(col->colName));
     }
-    if (!QL_Manager::instance().CanCreateIndex(*tbName)) {
+    if (SM_Manager::instance().CheckCreateIndex(*tbName, *idxName, attrNames) != OK_RC) {
+        printf("[Fail] Cannot create index %s.%s\n", tbName->c_str(), idxName->c_str());
+        return;
+    }
+    if (!QL_Manager::instance().CanCreateIndex(*tbName, attrNames)) {
         printf("[Fail] Invalid data exists\n");
         return;
     }
-    RC rc = SM_Manager::instance().CreateIndex(*tbName, *idxName, attrNames);
-    if (rc != OK_RC) {
-        printf("[Fail] Cannot create index %s.%s\n", tbName->c_str(), idxName->c_str());
-        return;
-    } else {
-        printf("[Succ] Index %s.%s created!\n", tbName->c_str(), idxName->c_str());
-        return;
-    }
+    RC rc = SM_Manager::instance().CreateIndex(*tbName, *idxName, attrNames); MUST_SUCC;
+    rc = QL_Manager::instance().InitIndex(*tbName, *idxName); MUST_SUCC;
+    printf("[Succ] Index %s.%s created!\n", tbName->c_str(), idxName->c_str());
 }
 
 void Parser::DropIndex::visit() {
@@ -417,7 +416,7 @@ void Parser::AddField::visit() {
                 return;
             }
             RC rc = SM_Manager::instance().AddPrimaryKey(*tbName, attrNames); MUST_SUCC;
-            rc = QL_Manager::instance().AddPrimaryKey(*tbName, attrNames); MUST_SUCC;
+            rc = QL_Manager::instance().AddPrimaryKey(*tbName); MUST_SUCC;
             printf("[Succ] Primary keys added!\n");
             return;
         }
@@ -546,15 +545,16 @@ void Parser::AddUniqueKey::visit() {
     for (Column* col: *cols) {
         attrs.push_back(*(col->colName));
     }
+    if (SM_Manager::instance().CheckAddUniqueKey(srcTb, fk, attrs) != OK_RC) {
+        printf("[Fail] Can not add!");
+        return;
+    }
     if (!QL_Manager::instance().CanAddUniqueKey(*tbName, attrs)) {
         printf("[Fail] Invalid value in table!\n");
         return;
     }
-    RC rc = SM_Manager::instance().AddUniqueKey(srcTb, fk, attrs);
-    if (rc != OK_RC) {
-        printf("[Fail] Can not add!");
-        return;
-    }
+    RC rc = SM_Manager::instance().AddUniqueKey(srcTb, fk, attrs); MUST_SUCC;
+    rc = QL_Manager::instance().AddUniqueKey(*tbName, *fkName); MUST_SUCC;
     printf("[Succ] unique key %s added to %s\n", fk.c_str(), srcTb.c_str());
 }
 

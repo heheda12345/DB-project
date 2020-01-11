@@ -212,18 +212,23 @@ public:
     bool TableIsEmpty(const std::string& tbName);
     bool IsUnique(const std::string& tbName,
                   const std::vector<std::string>& attrNames);
+    bool HasNull(const std::string& tbName,
+                const std::vector<std::string>& attrNames);
     
     bool CanAddPrimaryKey(const std::string& tbName,
                           const std::vector<std::string>& attrNames);
     bool CanAddForeignKey(const std::string& tbName,
                           const ForeignKeyInfo& fKey);
     bool CanChangeCol(const std::string& tbName);
-    bool CanCreateIndex(const std::string& tbName);
+    bool CanCreateIndex(const std::string& tbName,
+                        const std::vector<std::string>& attrNames);
     bool CanAddUniqueKey(const std::string& tbName,
                          const std::vector<std::string>& attrNames);
 
-    RC AddPrimaryKey(const std::string& tbName,
-                     const std::vector<std::string>& attrNames);
+    RC AddPrimaryKey(const std::string& tbName);
+    RC AddUniqueKey(const std::string& tbName, const std::string& pkName);
+    RC InitIndex(const std::string& tbName,
+                 const std::string& idxName);
 
     static QL_Manager& instance() { 
         static QL_Manager ins;

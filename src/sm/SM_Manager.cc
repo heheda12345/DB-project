@@ -245,6 +245,31 @@ RC SM_Manager::DropForeignKey(const std::string& reqTb, const std::string& fkNam
     return OK_RC;
 }
 
+RC SM_Manager::CheckAddUniqueKey(const std::string& tbName, const std::string& pkName, const std::vector<std::string>& pKeys) {
+    if (!usingDb()) {
+        return SM_DB_NOT_OPEN;
+    }
+    TableInfo table;
+    RC rc = GetTable(tbName, table);
+    SMRC(rc, SM_ERROR);
+    if (isDumplicated(pKeys)) {
+        return SM_DUMPLICATED;
+    }
+    if (IndexInfo::getPos(table.uniqueGroups, pkName) != -1) {
+        return SM_DUMPLICATED;
+    }
+    for (auto name: pKeys) {
+        int idx = AttrInfo::getPos(table.attrs, name);
+        if (idx == -1) {
+            return SM_NO_SUCH_ATTR;
+        }
+        if (!table.attrs[idx].isNotNull()) {
+            return SM_REQUIRE_NOT_NULL;
+        }
+    }
+    return OK_RC;
+}
+
 RC SM_Manager::AddUniqueKey(const std::string& tbName, const std::string& pkName, const std::vector<std::string>& pKeys) {
     if (!usingDb()) {
         return SM_DB_NOT_OPEN;
@@ -369,6 +394,31 @@ RC SM_Manager::ChangeAttr(const std::string& tbName, const std::string& attrName
     table.attrs[idx] = newAttr;
     rc = UpdateTable(tbName, table);
     SMRC(rc, SM_ERROR);
+    return OK_RC;
+}
+
+RC SM_Manager::CheckCreateIndex(const std::string& tbName, const std::string& idxName, const std::vector<std::string>& attrNames) {
+    if (!usingDb()) {
+        return SM_DB_NOT_OPEN;
+    }
+    TableInfo table;
+    RC rc = GetTable(tbName, table);
+    SMRC(rc, SM_ERROR);
+    
+    for (auto name: attrNames) {
+        int idx = AttrInfo::getPos(table.attrs, name);
+        if (idx == -1) {
+            return SM_NO_SUCH_ATTR;
+        }
+        if (!table.attrs[idx].isNotNull()) {
+            return SM_REQUIRE_NOT_NULL;
+        }
+    }
+    
+    if (IndexInfo::getPos(table.indexes, idxName) != -1) {
+        return SM_DUMPLICATED;
+    }
+
     return OK_RC;
 }
 

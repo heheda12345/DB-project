@@ -150,6 +150,7 @@ public:
     RC AddForeignKey(const std::string& tbName, const ForeignKeyInfo& fKey);
     RC DropForeignKey(const std::string& tbName, const std::string& fkName);
 
+    RC CheckAddUniqueKey(const std::string& tbName, const std::string& pkName, const std::vector<std::string>& pKeys);
     RC AddUniqueKey(const std::string& tbName, const std::string& pkName, const std::vector<std::string>& pKeys);
     RC DropUniqueKey(const std::string& tbName, const std::string& pkName);
 
@@ -157,6 +158,7 @@ public:
     RC DropAttr(const std::string& tbName, const std::string& attrName);
     RC ChangeAttr(const std::string& tbName, const std::string& attrName, const AttrInfo& newAttr);
 
+    RC CheckCreateIndex(const std::string& tbName, const std::string& idxName, const std::vector<std::string>& attrNames);
     RC CreateIndex(const std::string& tbName, const std::string& idxName, const std::vector<std::string>& attrNames);
     RC DropIndex(const std::string& tbName, const std::string& idxName);
 
