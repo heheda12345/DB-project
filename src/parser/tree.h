@@ -733,7 +733,7 @@ public:
 
 class DropPrimaryKey: public Stmt {
 public:
-    DropPrimaryKey(std::string* _tbName): tbName(tbName) {}
+    DropPrimaryKey(std::string* _tbName): tbName(_tbName) {}
     ~DropPrimaryKey() {
         delete tbName;
     }

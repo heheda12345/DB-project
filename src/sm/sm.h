@@ -143,6 +143,7 @@ public:
     RC ShowTable(const std::string& relName);
     RC ShowTables();
 
+    RC CheckAddPrimaryKey(const std::string& tbName, const std::vector<std::string>& attrNames);
     RC AddPrimaryKey(const std::string& tbName, const std::vector<std::string>& attrNames);
     RC DropPrimaryKey(const std::string& tbName);
 

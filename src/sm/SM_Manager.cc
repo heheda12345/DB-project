@@ -138,6 +138,26 @@ RC SM_Manager::ShowTables() {
     return OK_RC;
 }
 
+RC SM_Manager::CheckAddPrimaryKey(const std::string& tbName, const std::vector<std::string>& attrNames) {
+    if (!usingDb()) {
+        return SM_DB_NOT_OPEN;
+    }
+    TableInfo table;
+    RC rc = GetTable(tbName, table);
+    SMRC(rc, SM_ERROR);
+    if (table.hasPrimary())
+        return SM_HAS_PRIMARY;
+    if (isDumplicated(attrNames)) {
+        return SM_DUMPLICATED;
+    }
+    for (auto name: attrNames) {
+        int idx = AttrInfo::getPos(table.attrs, name);
+        if (idx == -1) {
+            return SM_NO_SUCH_ATTR;
+        }
+    }
+    return OK_RC;
+}
 
 RC SM_Manager::AddPrimaryKey(const std::string& tbName, const std::vector<std::string>& attrNames) {
     if (!usingDb()) {

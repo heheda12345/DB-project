@@ -190,6 +190,12 @@ public:
                       const std::string& refTbName,
                       const std::string& refIdxName); // for foreign, allow null
 
+    RC InsertToIndex(const std::string& tbName,
+                       const IndexInfo& idxInfo,
+                       const TableInfo& tbInfo,
+                       const TableLine& value,
+                       const RID& rid);
+
     bool CanUpdate(const std::string &tbName,
                    const TableInfo& table,
                    const std::string& idxName,
@@ -215,6 +221,9 @@ public:
     bool CanCreateIndex(const std::string& tbName);
     bool CanAddUniqueKey(const std::string& tbName,
                          const std::vector<std::string>& attrNames);
+
+    RC AddPrimaryKey(const std::string& tbName,
+                     const std::vector<std::string>& attrNames);
 
     static QL_Manager& instance() { 
         static QL_Manager ins;

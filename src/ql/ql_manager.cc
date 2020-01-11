@@ -45,16 +45,7 @@ RC QL_Manager::Insert(const std::string& tbName, const TableLine& values_i) {
     RMRC(rc, QL_ERROR);
 
     for (auto& idx: table.indexes) {
-        IX_IndexHandle handle;
-        rc = ixm.OpenIndex(tbName.c_str(), idx.idxID, handle);
-        assert(rc == OK_RC);
-        IXRC(rc, QL_ERROR);
-        rc = handle.InsertEntry(formatIndex(table.attrs, idx.attrs, value), rid);
-        assert(rc == OK_RC);
-        IXRC(rc, QL_ERROR);
-        rc = ixm.CloseIndex(handle);
-        assert(rc == OK_RC);
-        IXRC(rc, QL_ERROR);
+        rc = InsertToIndex(tbName, idx, table, value, rid); MUST_SUCC;
     }
     return OK_RC;
 }
@@ -451,6 +442,14 @@ bool QL_Manager::ExistInIndex(const std::string& tbName, const TableInfo& table,
     return SearchIndex(tbName, idxName, toSearch, EQ_OP).size() > 0;
 }
 
+RC QL_Manager::InsertToIndex(const std::string& tbName, const IndexInfo& idxInfo, const TableInfo& table, const TableLine& value, const RID& rid) {
+    IX_IndexHandle handle;
+    RC rc = ixm.OpenIndex(tbName.c_str(), idxInfo.idxID, handle); MUST_SUCC;
+    rc = handle.InsertEntry(formatIndex(table.attrs, idxInfo.attrs, value), rid); MUST_SUCC;
+    rc = ixm.CloseIndex(handle); MUST_SUCC;
+    return OK_RC;
+}
+
 bool QL_Manager::CanUpdate(const std::string &tbName, const TableInfo& table, const std::string& idxName, const std::vector<TableLine>& toUpdate, const std::vector<RID>& rids) {
     int pos = IndexInfo::getPos(table.indexes, idxName);
     assert(pos != -1);
@@ -615,7 +614,7 @@ bool QL_Manager::IsUnique(const std::string& tbName, const std::vector<std::stri
 }
 
 bool QL_Manager::CanAddPrimaryKey(const std::string& tbName, const std::vector<std::string>& attrNames) {
-    return IsUnique(tbName, attrNames) && TableIsEmpty(tbName);
+    return IsUnique(tbName, attrNames);
 }
 
 bool QL_Manager::CanAddForeignKey(const std::string& tbName, const ForeignKeyInfo& fKey) {
@@ -663,4 +662,20 @@ bool QL_Manager::CanCreateIndex(const std::string& tbName) {
 
 bool QL_Manager::CanAddUniqueKey(const std::string& tbName, const std::vector<std::string>& attrNames) {
     return IsUnique(tbName, attrNames)  && TableIsEmpty(tbName);
+}
+
+RC QL_Manager::AddPrimaryKey(const std::string& tbName, const std::vector<std::string>& attrNames) {
+    TableInfo table;
+    RC rc = smm.GetTable(tbName, table); MUST_SUCC;
+    vector<TableLine> values;
+    vector<RID> rids;
+    rc = GetAllItems(tbName, values, rids); MUST_SUCC;
+    assert(values.size() == rids.size());
+    int pos = IndexInfo::getPos(table.indexes, "@Primary");
+    assert(pos != -1);
+    const IndexInfo& idxInfo = table.indexes[pos];
+    for (int i = 0; i < values.size(); i++) {
+        rc = InsertToIndex(tbName, idxInfo, table, values[i], rids[i]); MUST_SUCC;
+    }
+    return OK_RC;
 }

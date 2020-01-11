@@ -408,18 +408,18 @@ void Parser::AddField::visit() {
             for (auto& col: *(field->columns)) {
                 attrNames.push_back(*(col->colName));
             }
+            if (SM_Manager::instance().CheckAddPrimaryKey(*tbName, attrNames) != OK_RC) {
+                printf("[Fail] Cannot add these primary keys to %s\n", tbName->c_str());
+                return;
+            }
             if (!QL_Manager::instance().CanAddPrimaryKey(*tbName, attrNames)) {
                 printf("[Fail] Invalid data exists\n");
                 return;
             }
-            RC rc = SM_Manager::instance().AddPrimaryKey(*tbName, attrNames);
-            if (rc != OK_RC) {
-                printf("[Fail] Cannot add these primary keys to %s\n", tbName->c_str());
-                return;
-            } else {
-                printf("[Succ] Primary keys added!\n");
-                return;
-            }
+            RC rc = SM_Manager::instance().AddPrimaryKey(*tbName, attrNames); MUST_SUCC;
+            rc = QL_Manager::instance().AddPrimaryKey(*tbName, attrNames); MUST_SUCC;
+            printf("[Succ] Primary keys added!\n");
+            return;
         }
         case Field::Foreign: {
             printf("[Fail] please provide fkName by using add Constraint\n");
