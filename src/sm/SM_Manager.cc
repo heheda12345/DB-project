@@ -410,9 +410,9 @@ RC SM_Manager::CheckCreateIndex(const std::string& tbName, const std::string& id
         if (idx == -1) {
             return SM_NO_SUCH_ATTR;
         }
-        if (!table.attrs[idx].isNotNull()) {
-            return SM_REQUIRE_NOT_NULL;
-        }
+        // if (!table.attrs[idx].isNotNull()) {
+        //     return SM_REQUIRE_NOT_NULL;
+        // }
     }
     
     if (IndexInfo::getPos(table.indexes, idxName) != -1) {
@@ -435,9 +435,9 @@ RC SM_Manager::CreateIndex(const std::string& tbName, const std::string& idxName
         if (idx == -1) {
             return SM_NO_SUCH_ATTR;
         }
-        if (!table.attrs[idx].isNotNull()) {
-            return SM_REQUIRE_NOT_NULL;
-        }
+        // if (!table.attrs[idx].isNotNull()) {
+        //     return SM_REQUIRE_NOT_NULL;
+        // }
     }
     
     if (IndexInfo::getPos(table.indexes, idxName) != -1) {
@@ -588,5 +588,32 @@ RC SM_Manager::DropForeignLink(const std::string& refTb, const std::string& fkNa
     table.linkedBy.erase(table.linkedBy.begin() + idx);
     rc = UpdateTable(refTb, table);
     SMRC(rc, SM_ERROR);
+    return OK_RC;
+}
+
+RC SM_Manager::RenameTable(const std::string& oldName, const std::string& newName) {
+    if (!usingDb()) {
+        return SM_DB_NOT_OPEN;
+    }
+    TableInfo table;
+    RC rc = GetTable(oldName, table);
+    SMRC(rc, SM_ERROR);
+
+    if (table.linkedByOthers())
+        return SM_OTHERS_FOREIGN;
+
+    TableInfo table2;
+    rc = GetTable(newName, table2);
+    if (rc == OK_RC)
+        return SM_DUMPLICATED;
+    
+    char command[1000];
+    sprintf(command, "mv %s %s", oldName.c_str(), newName.c_str());
+    printf("command %s\n", command);
+    system(command);
+    for (auto &index: table.indexes) {
+        sprintf(command, "mv %s.%d %s.%d", oldName.c_str(), index.idxID, newName.c_str(), index.idxID);
+        system(command);
+    }
     return OK_RC;
 }

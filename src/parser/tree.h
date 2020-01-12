@@ -809,4 +809,17 @@ public:
     std::string *tbName, *fkName;
 };
 
+class RenameTable: public Stmt {
+public:
+    RenameTable(std::string* _oldName, std::string* _newName): oldName(_oldName), newName(_newName) {}
+    ~RenameTable() {
+        delete oldName;
+        delete newName;
+    }
+
+    void visit() override;
+
+    std::string *oldName, *newName;
+};
+
 }

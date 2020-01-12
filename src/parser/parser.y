@@ -208,6 +208,10 @@ alterStmt: ALTER TABLE tbName ADD field
     {
         $$ = new DropUniqueKey($3, $7);
     }
+    | ALTER TABLE tbName RENAME TO tbName
+    {
+        $$ = new RenameTable($3, $6);
+    }
 
 fieldList: field
     {

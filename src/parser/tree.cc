@@ -160,7 +160,7 @@ void Parser::InsertValue::visit() {
     }
     RC rc = QL_Manager::instance().Insert(*tbName, items);
     if (rc != OK_RC) {
-        printf("[Fail] Can not insert!\n");
+        printf("[Fail] Can not insert! code %d\n", rc);
         return;
     } else {
         printf("[Succ] Insert 1 item to table %s!\n", tbName->c_str());
@@ -188,7 +188,7 @@ void Parser::DeleteValue::visit() {
     
     RC rc = QL_Manager::instance().Delete(*tbName, conds);
     if (rc != OK_RC) {
-        printf("[Fail] Cannot delete!\n");
+        printf("[Fail] Cannot delete! code %d\n", rc);
         return;
     } else {
         printf("[Succ] Succussfully delete value in %s\n", tbName->c_str());
@@ -571,4 +571,18 @@ void Parser::DropUniqueKey::visit() {
         return;
     }
     printf("[Succ] unique key %s in %s is dropped\n", fk.c_str(), srcTb.c_str());
+}
+
+void Parser::RenameTable::visit() {
+    if (!SM_Manager::instance().usingDb()) {
+        printf("[Fail] Use a database first!\n");
+        return;
+    }
+    std::string oldName(*(this->oldName)), newName(*(this->newName));
+    RC rc = SM_Manager::instance().RenameTable(oldName, newName);
+    if (rc != OK_RC) {
+        printf("[Fail] Cannot rename!");
+        return;
+    }
+    printf("[Succ] rename %s to %s\n", oldName.c_str(), newName.c_str());
 }

@@ -1,0 +1,3 @@
+create database test;
+create table REGION2 (R_REGIONKEY INT, R_NAME CHAR(25) NOT NULL, R_COMMENT VARCHAR(152), PRIMARY KEY(R_REGIONKEY));
+alter table region2 rename to region1;

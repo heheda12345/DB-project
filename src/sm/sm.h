@@ -170,6 +170,8 @@ public:
     RC LinkForeign(const std::string& reqTb, const ForeignKeyInfo &key);
     RC DropForeignLink(const std::string& refTb, const std::string& fkName);
 
+    RC RenameTable(const std::string& oldName, const std::string& newName);
+
     static SM_Manager& instance() {
         static SM_Manager ins;
         return ins;
