@@ -37,8 +37,6 @@ void IX_BTKEY::toCharArray(char* pData) {
 bool IX_BTKEY::matches(const IX_BTKEY& attr1, const IX_BTKEY& attr2) {
     if (!typeIsMatch(attr1.ty, attr2.ty))
         return 0;
-    if (!lengthIsMatch(attr1.attr, attr2.attr))
-        return 0;
     return 1;
 }
 

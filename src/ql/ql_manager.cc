@@ -531,8 +531,9 @@ void QL_Manager::Join(std::vector<AttrInfo>& joinedInfo,
         map<string, vector<int>> mp;
         int tableID = nameToRank[conds[tbName][0].tbName1], colID = conds[tbName][0].idx1;
         for (int j = 0; j < n; j++)
-            if (!oldValues[tableID][j][colID].isNull)
+            if (!oldValues[tableID][j][colID].isNull) {
                 mp[oldValues[tableID][j][colID].value].push_back(j);
+            }
         int colID2 = conds[tbName][0].idx2;
         for (auto& tableLine: toInsert) {
             if (tableLine[colID2].isNull)

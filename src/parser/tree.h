@@ -256,7 +256,7 @@ public:
 class WhereClause {
 public:
     WhereClause(Col* _col, CompOp _op, Expr* _expr): ty(OP), col(_col), op(_op), expr(_expr) {
-        singleWhere.hasError = 0;
+        singleWhere.hasError = dualWhere.hasError = 0;
         if (expr->ty == Expr::EXPR_VALUE) {
             inSingle = 1;
             singleWhere.whereType = SingleWhere::TY_OP_VALUE;
