@@ -17,17 +17,7 @@ INSERT INTO nation VALUES (0,'America',0, 'nothing left');
 INSERT INTO nation VALUES ('id86','America',0, 'nothing left');
 
 INSERT INTO orders VALUES (127664,315000,'F',6.5,'2018-02-29',0,'Clerk101',1,'nice service');
--- 没实现涉及外键的删除
 DELETE FROM customer WHERE c_custkey=5;
-
---instead
-CREATE TABLE CUSTOMER2 (C_CUSTKEY INT, C_NAME VARCHAR(25), C_ADDRESS VARCHAR(40), C_NATIONKEY INT NOT NULL, C_PHONE CHAR(15), C_ACCTBAL FLOAT, C_MKTSEGMENT CHAR(10), C_COMMENT	VARCHAR(117), PRIMARY KEY(C_CUSTKEY));
-COPY customer2 FROM '../../dataset/customer.tbl';
-select * from customer2 where c_custkey=5;
-DELETE FROM customer2 WHERE c_custkey=5;
-select * from customer2 where c_custkey=5;
---
-
 
 UPDATE partsupp SET ps_availqty=8774 WHERE ps_partkey=12;
 
@@ -38,14 +28,14 @@ SELECT o_orderdate,o_totalprice FROM orders WHERE o_orderdate=1996-01-02;
 SELECT customer.c_phone, orders.o_orderstatus FROM customer,orders where customer.c_custkey=orders.o_custkey AND customer.c_name='Customer#000000001';
 
 UPDATE nation SET n_regionkey = 316001 WHERE n_nationkey= 15;
----
+
 CREATE TABLE NATION_EMPTY (N_NATIONKEY INT, N_NAME CHAR(25), N_REGIONKEY INT NOT NULL, N_COMMENT VARCHAR(152), PRIMARY KEY(N_NATIONKEY));
----
-ALTER TABLE nation_empty ADD n_comment_2 varchar(32);
 
-ALTER TABLE nation_empty drop n_comment_2;
+ALTER TABLE nation_empty ADD n_comment_2 varchar(32); -- should be nation
 
-ALTER TABLE nation RENAME TO province; -- not implement
+ALTER TABLE nation_empty drop n_comment_2; -- should be nation
+
+ALTER TABLE nation RENAME TO province;
 
 ALTER TABLE nation ADD PRIMARY KEY (n_nationkey);
 

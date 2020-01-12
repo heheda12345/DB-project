@@ -1,11 +1,11 @@
 # DB-project
 ## 编译运行
 ```sh
-cd src
-cmake .
-make
-./rm_test.out
-./ix_test.out
+mkdir build
+cd build
+cmake ../src
+make -j6
+./main.out
 ```
 ## 记录管理
 使用CS346中的页式文件系统与系统设计，实现了新建文件、删除文件、打开文件、关闭文件、插入记录、删除记录、更新记录、获取属性值满足特定条件的记录，进行了简单的单元测试。

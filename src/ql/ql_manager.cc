@@ -399,7 +399,7 @@ void QL_Manager::PrintTable(const std::vector<AttrInfo>& attrs, const std::vecto
     if (cnt > max_print) {
         printf("......\n");
     }
-    printf("total %d\n", values.size());
+    printf("total %d\n", (int)values.size());
 }
 
 std::vector<RID> QL_Manager::SearchIndex(const std::string& tbName, const std::string& idxName, const std::vector<std::string> & toSearch, CompOp compOp) {
